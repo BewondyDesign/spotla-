@@ -70,7 +70,7 @@ export function StoryViewer() {
   const [gi, setGi] = useState(() => Math.max(0, order.indexOf(authorId ?? '')))
   const group = groups.find((g) => g.authorId === order[gi])
   const [si, setSi] = useState(() => {
-    const first = group?.stories.findIndex((s) => !s.seenBy.includes('me')) ?? 0
+    const first = group?.stories.findIndex((s) => !s.seenBy.includes(useStore.getState().meId ?? '')) ?? 0
     return first < 0 ? 0 : first
   })
   const story = group?.stories[si]
@@ -95,7 +95,9 @@ export function StoryViewer() {
   useEffect(() => { setProgress(0); setSrc(null); if (story) seeStory(story.id) }, [story?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (story?.media.kind === 'video') blobUrl(story.media.blobKey).then(setSrc)
+    if (story?.media.kind !== 'video') return
+    if (story.media.url) setSrc(story.media.url)
+    else if (story.media.blobKey) blobUrl(story.media.blobKey).then(setSrc)
   }, [story])
 
   // Minuterie pour les stories de démo (pas de vidéo) ; la vidéo pilote sa propre progression.

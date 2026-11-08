@@ -74,7 +74,7 @@ export function Profile() {
       {tab === 'grid' && (
         <div className="grid-ig">
           {events.map((e) => <Link key={e.id} to={`/event/${e.id}`} className="cover tile"><Art colors={e.colors} word={e.vibe} /><span className="tile-t">{e.title}</span></Link>)}
-          {posts.filter((p) => p.colors || p.imageKey).map((p) => <div key={p.id} className="cover tile"><Art colors={p.colors ?? ['#2C2640', '#15121F']} /><span className="tile-t">{p.text.slice(0, 40)}</span></div>)}
+          {posts.filter((p) => p.colors || p.imageKey || p.imageUrl).map((p) => <div key={p.id} className="cover tile"><Art colors={p.colors ?? ['#2C2640', '#15121F']} /><span className="tile-t">{p.text.slice(0, 40)}</span></div>)}
           {events.length + posts.length === 0 && <Empty>Rien à afficher.</Empty>}
         </div>
       )}

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Camera, Clapperboard, ImagePlus, PartyPopper, PenLine } from 'lucide-react'
 import { toast, useMe, useStore } from '../data/store'
 import { MAX_STORY_SECONDS, putBlob, videoDuration } from '../data/media'
+import { isRemote, uploadMedia } from '../data/backend'
 import { momentOf, PALETTES, uid, VIBES, VIS_LABEL } from '../data/util'
 import type { Visibility } from '../data/types'
 
@@ -151,9 +152,19 @@ function StoryForm({ defaultEvent }: { defaultEvent: string }) {
   const publish = async () => {
     if (!file) return
     setBusy(true)
-    const key = uid('vid')
-    await putBlob(key, file)
-    createStory({ eventId: eventId || undefined, caption: caption.trim(), media: { kind: 'video', blobKey: key, duration: dur } })
+    try {
+      if (isRemote) {
+        const url = await uploadMedia(me.id, file, 'stories')
+        createStory({ eventId: eventId || undefined, caption: caption.trim(), media: { kind: 'video', url, duration: dur } })
+      } else {
+        const key = uid('vid')
+        await putBlob(key, file)
+        createStory({ eventId: eventId || undefined, caption: caption.trim(), media: { kind: 'video', blobKey: key, duration: dur } })
+      }
+    } catch (e) {
+      setBusy(false)
+      return setErr(`L'envoi de la vidéo a échoué : ${(e as Error).message}`)
+    }
     toast('Story publiée', 'Visible 24 h. Elle apparaît aussi sur la fiche de l\'événement.')
     nav(`/stories/${me.id}`, { replace: true })
   }
@@ -197,12 +208,21 @@ function PostForm() {
   const [text, setText] = useState('')
   const [img, setImg] = useState<File | null>(null)
   const [eventId, setEventId] = useState('')
+  const [busy, setBusy] = useState(false)
   const mineOrGoing = events.filter((e) => momentOf(e) !== 'past' && (e.hostId === me.id || e.going.includes(me.id)))
 
   const publish = async () => {
     let imageKey: string | undefined
-    if (img) { imageKey = uid('img'); await putBlob(imageKey, img) }
-    createPost({ text: text.trim(), eventId: eventId || undefined, imageKey })
+    let imageUrl: string | undefined
+    setBusy(true)
+    try {
+      if (img && isRemote) imageUrl = await uploadMedia(me.id, img, 'posts')
+      else if (img) { imageKey = uid('img'); await putBlob(imageKey, img) }
+    } catch (e) {
+      setBusy(false)
+      return toast('L\'envoi de la photo a échoué', (e as Error).message)
+    }
+    createPost({ text: text.trim(), eventId: eventId || undefined, imageKey, imageUrl })
     toast('Publié sur ton mur')
     nav('/u/me', { replace: true })
   }
@@ -220,7 +240,7 @@ function PostForm() {
           {mineOrGoing.map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}
         </select>
       </Field>
-      <button className="btn btn-primary btn-block" disabled={!text.trim() && !img} onClick={publish}>Publier sur mon mur</button>
+      <button className="btn btn-primary btn-block" disabled={(!text.trim() && !img) || busy} onClick={publish}>{busy ? 'Publication…' : 'Publier sur mon mur'}</button>
     </div>
   )
 }

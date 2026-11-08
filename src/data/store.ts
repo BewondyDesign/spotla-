@@ -2,7 +2,16 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { AccountKind, Notif, Post, SpotEvent, Story, StoryMedia, User } from './types'
 import { SEED_USERS, seedEvents, seedNotifs, seedPosts, seedStories } from './seed'
-import { PARIS, uid } from './util'
+import { PARIS, uid as localUid } from './util'
+import { isRemote, loadAll, remote, signOut } from './backend'
+
+// En mode Supabase, les ids sont des UUID partagés avec la base.
+const uid = (p: string) => (isRemote ? crypto.randomUUID() : localUid(p))
+/** Lance l'écriture distante sans bloquer l'interface ; en cas d'échec, on prévient et on recharge. */
+const sync = (fn: () => Promise<unknown>) => {
+  if (!isRemote) return
+  fn().catch((e: Error) => { toast('Ça n\'a pas marché', e.message); useStore.getState().reload() })
+}
 
 // État de l'app. Pour le MVP tout est stocké sur l'appareil (localStorage + IndexedDB).
 // Chaque action correspond à un appel d'API futur (voir supabase/schema.sql).
@@ -19,6 +28,10 @@ interface State {
   vibes: string[]
   pos: { lat: number; lng: number }
   seedDay: string
+  loading: boolean
+
+  reload: () => Promise<void>
+  setSession: (id: string | null) => Promise<void>
 
   onboard: (p: { name: string; kind: AccountKind; vibes: string[]; venueAddress?: string }) => void
   logout: () => void
@@ -29,7 +42,7 @@ interface State {
   createEvent: (e: Omit<SpotEvent, 'id' | 'hostId' | 'going' | 'requests' | 'accepted' | 'createdAt' | 'baseGoing' | 'views' | 'shares' | 'reports'>) => string
   createStory: (s: { eventId?: string; caption: string; media: StoryMedia }) => void
   seeStory: (id: string) => void
-  createPost: (p: { text: string; eventId?: string; imageKey?: string }) => void
+  createPost: (p: { text: string; eventId?: string; imageKey?: string; imageUrl?: string }) => void
   toggleLike: (postId: string) => void
   addComment: (postId: string, text: string) => void
   toggleFollow: (userId: string) => void
@@ -53,7 +66,24 @@ export const useStore = create<State>()(
       meId: null,
       vibes: [],
       pos: PARIS,
-      ...freshSeed(),
+      ...(isRemote ? { users: [], events: [], stories: [], posts: [], notifs: [], seedDay: today() } : freshSeed()),
+      loading: isRemote,
+
+      reload: async () => {
+        const me = get().meId
+        if (!isRemote || !me) return
+        try {
+          const data = await loadAll(me)
+          set({ ...data, loading: false })
+        } catch (e) {
+          set({ loading: false })
+          toast('Connexion impossible', (e as Error).message)
+        }
+      },
+      setSession: async (id) => {
+        set({ meId: id, loading: !!id })
+        if (id) await get().reload()
+      },
 
       onboard: ({ name, kind, vibes, venueAddress }) => {
         const id = 'me'
@@ -72,14 +102,23 @@ export const useStore = create<State>()(
           }, 8000)
         }
       },
-      logout: () => set({ meId: null, ...freshSeed() }),
+      logout: () => {
+        if (isRemote) { signOut(); set({ meId: null, users: [], events: [], stories: [], posts: [], notifs: [] }); return }
+        set({ meId: null, ...freshSeed() })
+      },
       setPos: (pos) => set({ pos }),
 
-      toggleGoing: (eventId) => set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, going: toggle(e.going, s.meId!) })) })),
+      toggleGoing: (eventId) => {
+        const me = get().meId!
+        const was = get().events.find((e) => e.id === eventId)?.going.includes(me)
+        set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, going: toggle(e.going, me) })) }))
+        sync(() => remote.setAttendance(eventId, me, was ? null : 'going'))
+      },
 
       requestJoin: (eventId) => {
         set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, requests: toggle(e.requests, s.meId!) })) }))
         const e = get().events.find((x) => x.id === eventId)
+        if (isRemote) { sync(() => remote.setAttendance(eventId, get().meId!, e?.requests.includes(get().meId!) ? 'requested' : null)); return }
         if (!e || e.hostId === get().meId || !e.requests.includes(get().meId!)) return
         // Démo : l'organisateur accepte au bout de quelques secondes.
         setTimeout(() => {
@@ -90,7 +129,8 @@ export const useStore = create<State>()(
         }, 6000)
       },
 
-      answerRequest: (eventId, userId, ok) =>
+      answerRequest: (eventId, userId, ok) => {
+        sync(() => remote.setAttendance(eventId, userId, ok ? 'accepted' : 'declined'))
         set((s) => ({
           events: mapEv(s, eventId, (e) => ({
             ...e,
@@ -98,13 +138,15 @@ export const useStore = create<State>()(
             accepted: ok ? [...new Set([...e.accepted, userId])] : e.accepted,
             going: ok ? [...new Set([...e.going, userId])] : e.going,
           })),
-        })),
+        }))
+      },
 
       createEvent: (data) => {
         const id = uid('ev')
         const e: SpotEvent = { ...data, id, hostId: get().meId!, going: [get().meId!], requests: [], accepted: [], createdAt: new Date().toISOString(), baseGoing: 0, views: 0, shares: 0, reports: 0 }
         set((s) => ({ events: [e, ...s.events] }))
-        if (e.visibility === 'request' || e.visibility === 'circle') {
+        sync(() => remote.createEvent(e))
+        if (!isRemote && e.visibility === 'request' || e.visibility === 'circle') {
           // Démo : deux personnes demandent à venir peu après la publication.
           setTimeout(() => {
             set((s) => ({ events: mapEv(s, id, (x) => ({ ...x, requests: [...new Set([...x.requests, 'u-ines', 'u-quai9'])] })) }))
@@ -118,18 +160,33 @@ export const useStore = create<State>()(
         const now = Date.now()
         const st: Story = { id: uid('st'), authorId: get().meId!, eventId, caption, media, createdAt: new Date(now).toISOString(), expiresAt: new Date(now + 24 * 3_600_000).toISOString(), seenBy: [] }
         set((s) => ({ stories: [st, ...s.stories] }))
+        sync(() => remote.createStory(st))
       },
-      seeStory: (id) => set((s) => ({ stories: s.stories.map((st) => (st.id === id && !st.seenBy.includes(s.meId!) ? { ...st, seenBy: [...st.seenBy, s.meId!] } : st)) })),
+      seeStory: (id) => {
+        if (get().stories.find((x) => x.id === id)?.seenBy.includes(get().meId!)) return
+        sync(() => remote.seeStory(id, get().meId!))
+        set((s) => ({ stories: s.stories.map((st) => (st.id === id && !st.seenBy.includes(s.meId!) ? { ...st, seenBy: [...st.seenBy, s.meId!] } : st)) }))
+      },
 
-      createPost: ({ text, eventId, imageKey }) => {
-        const p: Post = { id: uid('p'), authorId: get().meId!, text, eventId, imageKey, createdAt: new Date().toISOString(), likes: [], baseLikes: 0, comments: [] }
+      createPost: ({ text, eventId, imageKey, imageUrl }) => {
+        const p: Post = { id: uid('p'), authorId: get().meId!, text, eventId, imageKey, imageUrl, createdAt: new Date().toISOString(), likes: [], baseLikes: 0, comments: [] }
         set((s) => ({ posts: [p, ...s.posts] }))
+        sync(() => remote.createPost(p))
       },
-      toggleLike: (postId) => set((s) => ({ posts: s.posts.map((p) => (p.id === postId ? { ...p, likes: toggle(p.likes, s.meId!) } : p)) })),
-      addComment: (postId, text) =>
-        set((s) => ({ posts: s.posts.map((p) => (p.id === postId ? { ...p, comments: [...p.comments, { id: uid('c'), authorId: s.meId!, text, createdAt: new Date().toISOString() }] } : p)) })),
+      toggleLike: (postId) => {
+        const me = get().meId!
+        sync(() => remote.like(postId, me, !get().posts.find((p) => p.id === postId)?.likes.includes(me)))
+        set((s) => ({ posts: s.posts.map((p) => (p.id === postId ? { ...p, likes: toggle(p.likes, s.meId!) } : p)) }))
+      },
+      addComment: (postId, text) => {
+        const id = uid('c')
+        sync(() => remote.comment(id, postId, get().meId!, text))
+        set((s) => ({ posts: s.posts.map((p) => (p.id === postId ? { ...p, comments: [...p.comments, { id, authorId: s.meId!, text, createdAt: new Date().toISOString() }] } : p)) }))
+      },
 
-      toggleFollow: (userId) =>
+      toggleFollow: (userId) => {
+        const me = get().meId!
+        sync(() => remote.follow(me, userId, !get().users.find((u) => u.id === me)?.following.includes(userId)))
         set((s) => ({
           users: s.users.map((u) => {
             if (u.id === s.meId) return { ...u, following: toggle(u.following, userId) }
@@ -140,12 +197,22 @@ export const useStore = create<State>()(
             }
             return u
           }),
-        })),
+        }))
+      },
 
       // Au-delà de 3 signalements, l'événement est masqué en attendant la modération.
-      report: (eventId) => set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, reports: e.reports + 1 })) })),
-      boost: (eventId) => set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, boosted: true })) })),
-      bump: (eventId, field) => set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, [field]: e[field] + 1 })) })),
+      report: (eventId) => {
+        if (isRemote) { sync(() => remote.report(eventId, get().meId!)); return }
+        set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, reports: e.reports + 1 })) }))
+      },
+      boost: (eventId) => {
+        sync(() => remote.boost(eventId))
+        set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, boosted: true })) }))
+      },
+      bump: (eventId, field) => {
+        sync(() => remote.bump(eventId, field))
+        set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, [field]: e[field] + 1 })) }))
+      },
 
       readNotifs: () => set((s) => ({ notifs: s.notifs.map((n) => ({ ...n, read: true })) })),
       pushNotif: (n) => {
@@ -154,12 +221,15 @@ export const useStore = create<State>()(
       },
     }),
     {
-      name: 'spotla-v1',
+      name: isRemote ? 'spotla-live' : 'spotla-v1',
+      // En mode Supabase, seules les préférences restent sur l'appareil ; les données viennent de la base.
+      partialize: (s) => (isRemote ? { pos: s.pos, vibes: s.vibes } : s) as State,
       // Chaque jour, on régénère les données de démo pour garder des horaires réalistes,
       // sans toucher à ce que l'utilisateur a créé.
       merge: (persisted, current) => {
         const p = persisted as Partial<State> | undefined
         if (!p) return current
+        if (isRemote) return { ...current, pos: p.pos ?? current.pos, vibes: p.vibes ?? current.vibes }
         if (p.seedDay === today()) return { ...current, ...p }
         const seed = freshSeed()
         const mine = <T extends { id: string }>(arr: T[] | undefined, seedArr: T[]) => (arr ?? []).filter((x) => !seedArr.some((y) => y.id === x.id))

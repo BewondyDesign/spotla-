@@ -328,3 +328,5 @@ input[type="range"] { width: 100%; accent-color: var(--neon); }
 .backdrop { position: absolute; inset: 0; z-index: 70; background: rgba(5, 4, 10, .6); backdrop-filter: blur(4px); display: flex; align-items: flex-end; padding: 12px 12px calc(16px + var(--safe-b)); animation: in .15s ease; }
 .confirm { width: 100%; background: var(--night-2); border: 1px solid var(--line); border-radius: var(--r-l); padding: 18px; display: grid; gap: 16px; }
 .confirm p { font-size: 16px; }
+.splash { position: absolute; inset: 0; display: grid; place-content: center; grid-auto-flow: column; gap: 10px; align-items: center; font-family: var(--f-display); font-weight: 800; font-size: 28px; }
+.splash .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--neon); box-shadow: 0 0 14px var(--neon); animation: blink 1.2s infinite; }

@@ -20,6 +20,7 @@ export interface User {
   followers: number
   /** ids des comptes suivis */
   following: string[]
+  vibes?: string[]
   /** Business : adresse du lieu */
   venueAddress?: string
 }
@@ -56,7 +57,7 @@ export interface SpotEvent {
 }
 
 export type StoryMedia =
-  | { kind: 'video'; blobKey: string; duration: number }
+  | { kind: 'video'; blobKey?: string; url?: string; duration: number }
   | { kind: 'demo'; colors: [string, string]; label: string }
 
 export interface Story {
@@ -83,6 +84,7 @@ export interface Post {
   text: string
   eventId?: string
   imageKey?: string
+  imageUrl?: string
   colors?: [string, string]
   createdAt: string
   likes: string[]

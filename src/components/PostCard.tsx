@@ -22,7 +22,7 @@ export function PostCard({ p }: { p: Post }) {
   const u = users.find((x) => x.id === p.authorId)
   const liked = p.likes.includes(meId ?? '')
 
-  useEffect(() => { if (p.imageKey) blobUrl(p.imageKey).then(setImg) }, [p.imageKey])
+  useEffect(() => { if (p.imageUrl) setImg(p.imageUrl); else if (p.imageKey) blobUrl(p.imageKey).then(setImg) }, [p.imageKey, p.imageUrl])
 
   const visual = img ? <img src={img} alt="" className="post-img" /> : p.colors ? <div className="cover post-art"><Art colors={p.colors} word={ev?.vibe} big /></div> : null
 

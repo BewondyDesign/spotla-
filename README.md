@@ -25,11 +25,18 @@ npm run build      # version de production dans dist/
 
 ## Limites actuelles (volontaires pour le MVP)
 
-Tout est stocké **sur l'appareil** (localStorage + IndexedDB pour les vidéos) : pas encore de vrais comptes partagés entre utilisateurs. Les données de démo (Paris) sont régénérées chaque jour. Les demandes / acceptations sont simulées pour montrer le parcours.
+En mode démo, tout est stocké sur l'appareil et les demandes / acceptations sont simulées. En mode Supabase : pas encore de géocodage des adresses (position approximative), paiement du boost simulé, notifications push à brancher.
 
-## Prochaine étape : le backend
+## Brancher Supabase (vraies données partagées)
 
-`supabase/schema.sql` contient le schéma Postgres (profils, événements, présences, stories, posts, signalements, sécurité par ligne, adresse masquée). Il suffit de créer un projet Supabase, d'y coller le schéma, puis de remplacer `src/data/store.ts` et `src/data/media.ts` par des appels Supabase (Auth, Database, Storage, Realtime).
+1. Dans Supabase, crée un projet, puis **SQL Editor → New query**, colle tout `supabase/schema.sql` et clique **Run**.
+2. **Authentication → URL Configuration** : mets `https://spotla.vercel.app` comme *Site URL* et ajoute-le dans *Redirect URLs* (plus `http://localhost:5173` pour le dev).
+3. Option : **Authentication → Email Templates → Magic Link**, ajoute `{{ .Token }}` dans le texte pour recevoir aussi un code à 6 chiffres (pratique quand le lien s'ouvre dans un autre navigateur).
+4. Mets l'URL du projet et la clé *anon / publishable* dans `src/config.ts` (ou en variables `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`). La clé anon est faite pour être publique ; ne mets **jamais** la clé `service_role` dans l'app.
+
+Sans configuration, l'app tourne en **mode démo** (données locales sur l'appareil).
+
+Pour vérifier un compte business : dans **Table Editor → profiles**, passe `verified` à `true` (seul le tableau de bord / la clé service peut le faire).
 
 ## Structure
 

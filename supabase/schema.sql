@@ -1,118 +1,239 @@
--- SpotLa : schéma Postgres pour Supabase (étape suivante du MVP).
--- Les tables reprennent src/data/types.ts. À coller dans l'éditeur SQL de Supabase.
+-- SpotLa : schéma Postgres pour Supabase.
+-- À coller en une fois dans Supabase → SQL Editor → New query → Run.
+-- Il crée les tables, la sécurité par ligne (RLS), le stockage des médias et le temps réel.
 
-create type account_kind as enum ('perso', 'business');
-create type visibility as enum ('open', 'limited', 'request', 'circle');
-create type attendance_status as enum ('going', 'requested', 'accepted', 'declined');
+create extension if not exists pgcrypto;
 
-create table profiles (
+-- ---------- Profils ----------
+create table public.profiles (
   id uuid primary key references auth.users on delete cascade,
-  name text not null,
+  name text not null check (char_length(name) between 2 and 60),
   handle text unique not null,
-  kind account_kind not null default 'perso',
-  verified boolean not null default false,       -- business : passé à true après contrôle SIRET
-  siret text,                                      -- jamais exposé publiquement
-  bio text default '',
-  city text default 'Paris',
+  kind text not null default 'perso' check (kind in ('perso', 'business')),
+  verified boolean not null default false,     -- seul l'équipe SpotLa (service_role) peut le passer à true
+  bio text not null default '',
+  city text not null default 'Paris',
   venue_address text,
-  color text default '#FF4F9A',
-  avatar_url text,
-  created_at timestamptz default now()
+  color text not null default '#FF4F9A',
+  vibes text[] not null default '{}',
+  created_at timestamptz not null default now()
 );
 
-create table follows (
-  follower uuid references profiles on delete cascade,
-  followee uuid references profiles on delete cascade,
-  created_at timestamptz default now(),
-  primary key (follower, followee)
+-- Empêche un utilisateur de se déclarer « vérifié » lui-même.
+create function public.protect_verified() returns trigger language plpgsql as $$
+begin
+  if coalesce(auth.role(), '') <> 'service_role' then
+    new.verified := case when tg_op = 'UPDATE' then old.verified else false end;
+  end if;
+  return new;
+end $$;
+create trigger profiles_protect_verified before insert or update on public.profiles
+  for each row execute function public.protect_verified();
+
+create table public.follows (
+  follower uuid not null references public.profiles on delete cascade,
+  followee uuid not null references public.profiles on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (follower, followee),
+  check (follower <> followee)
 );
 
-create table events (
+-- ---------- Événements ----------
+create table public.events (
   id uuid primary key default gen_random_uuid(),
-  host_id uuid not null references profiles on delete cascade,
+  host_id uuid not null references public.profiles on delete cascade default auth.uid(),
   title text not null check (char_length(title) between 3 and 80),
-  vibe text, tags text[] default '{}',
-  starts_at timestamptz not null, ends_at timestamptz not null,
-  venue text not null, area text, address text not null,  -- adresse lue via la vue events_public
-  lat double precision not null, lng double precision not null,
-  price numeric(8,2) not null default 0, ticket_url text,
-  visibility visibility not null default 'open', capacity int,
-  description text default '', colors text[] default '{}',
-  boosted_until timestamptz,
-  views int default 0, shares int default 0,
-  hidden boolean not null default false,          -- masqué après 3 signalements, en attente de modération
-  created_at timestamptz default now()
+  vibe text not null default '',
+  tags text[] not null default '{}',
+  starts_at timestamptz not null,
+  ends_at timestamptz not null,
+  venue text not null,
+  area text not null default '',
+  lat double precision not null,
+  lng double precision not null,
+  price numeric(8,2) not null default 0 check (price >= 0),
+  ticket_url text,
+  visibility text not null default 'open' check (visibility in ('open', 'limited', 'request', 'circle')),
+  capacity int check (capacity is null or capacity > 0),
+  description text not null default '',
+  colors text[] not null default '{}',
+  boosted boolean not null default false,       -- MVP : boost simulé, à relier au paiement plus tard
+  views int not null default 0,
+  shares int not null default 0,
+  hidden boolean not null default false,        -- masqué après 3 signalements, en attente de modération
+  created_at timestamptz not null default now()
 );
-create index events_time_idx on events (starts_at);
+create index events_starts_idx on public.events (starts_at);
 
-create table attendances (
-  event_id uuid references events on delete cascade,
-  user_id uuid references profiles on delete cascade,
-  status attendance_status not null,
-  created_at timestamptz default now(),
+-- L'adresse exacte est dans une table à part : la RLS décide qui peut la lire.
+create table public.event_addresses (
+  event_id uuid primary key references public.events on delete cascade,
+  address text not null
+);
+
+create table public.attendances (
+  event_id uuid not null references public.events on delete cascade,
+  user_id uuid not null references public.profiles on delete cascade default auth.uid(),
+  status text not null check (status in ('going', 'requested', 'accepted', 'declined')),
+  created_at timestamptz not null default now(),
   primary key (event_id, user_id)
 );
 
-create table stories (
+create table public.reports (
+  reporter uuid not null references public.profiles on delete cascade default auth.uid(),
+  event_id uuid not null references public.events on delete cascade,
+  reason text,
+  created_at timestamptz not null default now(),
+  primary key (reporter, event_id)
+);
+
+-- ---------- Stories & murs ----------
+create table public.stories (
   id uuid primary key default gen_random_uuid(),
-  author_id uuid not null references profiles on delete cascade,
-  event_id uuid references events on delete set null,
-  caption text default '',
-  video_path text not null,                        -- Supabase Storage, bucket "stories"
-  duration_s numeric(4,1) not null check (duration_s <= 30.5),
-  created_at timestamptz default now(),
+  author_id uuid not null references public.profiles on delete cascade default auth.uid(),
+  event_id uuid references public.events on delete set null,
+  caption text not null default '',
+  video_url text not null,
+  duration_s numeric(4,1) not null check (duration_s > 0 and duration_s <= 30.5),
+  created_at timestamptz not null default now(),
   expires_at timestamptz not null default now() + interval '24 hours'
 );
 
-create table story_views (story_id uuid references stories on delete cascade, user_id uuid references profiles on delete cascade, primary key (story_id, user_id));
-
-create table posts (
-  id uuid primary key default gen_random_uuid(),
-  author_id uuid not null references profiles on delete cascade,
-  event_id uuid references events on delete set null,
-  body text default '', image_path text,
-  created_at timestamptz default now()
-);
-create table post_likes (post_id uuid references posts on delete cascade, user_id uuid references profiles on delete cascade, primary key (post_id, user_id));
-create table comments (id uuid primary key default gen_random_uuid(), post_id uuid references posts on delete cascade, author_id uuid references profiles on delete cascade, body text not null, created_at timestamptz default now());
-
-create table reports (
-  id uuid primary key default gen_random_uuid(),
-  reporter uuid references profiles on delete cascade,
-  event_id uuid references events on delete cascade,
-  reason text, created_at timestamptz default now(),
-  unique (reporter, event_id)
+create table public.story_views (
+  story_id uuid not null references public.stories on delete cascade,
+  user_id uuid not null references public.profiles on delete cascade default auth.uid(),
+  primary key (story_id, user_id)
 );
 
--- Masquage automatique à 3 signalements
-create function hide_reported() returns trigger language plpgsql as $$
+create table public.posts (
+  id uuid primary key default gen_random_uuid(),
+  author_id uuid not null references public.profiles on delete cascade default auth.uid(),
+  event_id uuid references public.events on delete set null,
+  body text not null default '',
+  image_url text,
+  created_at timestamptz not null default now()
+);
+
+create table public.post_likes (
+  post_id uuid not null references public.posts on delete cascade,
+  user_id uuid not null references public.profiles on delete cascade default auth.uid(),
+  primary key (post_id, user_id)
+);
+
+create table public.comments (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid not null references public.posts on delete cascade,
+  author_id uuid not null references public.profiles on delete cascade default auth.uid(),
+  body text not null check (char_length(body) between 1 and 500),
+  created_at timestamptz not null default now()
+);
+
+-- ---------- Fonctions ----------
+-- Masquage automatique à 3 signalements.
+create function public.hide_reported() returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  update events set hidden = true where id = new.event_id and (select count(*) from reports where event_id = new.event_id) >= 3;
+  update events set hidden = true
+  where id = new.event_id and (select count(*) from reports where event_id = new.event_id) >= 3;
   return new;
 end $$;
-create trigger reports_hide after insert on reports for each row execute function hide_reported();
+create trigger reports_hide after insert on public.reports for each row execute function public.hide_reported();
 
--- Vue publique : l'adresse exacte n'est donnée qu'aux personnes autorisées
-create view events_public with (security_invoker = true) as
-select e.*,
-  case when e.visibility in ('open','limited') or e.host_id = auth.uid()
-         or exists (select 1 from attendances a where a.event_id = e.id and a.user_id = auth.uid() and a.status = 'accepted')
-         or (e.visibility = 'circle' and exists (select 1 from follows f where f.follower = auth.uid() and f.followee = e.host_id))
-       then e.address else null end as visible_address
-from events e where not e.hidden;
+-- Compteurs de vues et de partages (pour les statistiques business).
+create function public.bump_event(p_event uuid, p_field text) returns void language plpgsql security definer set search_path = public as $$
+begin
+  if p_field = 'views' then update events set views = views + 1 where id = p_event;
+  elsif p_field = 'shares' then update events set shares = shares + 1 where id = p_event;
+  end if;
+end $$;
+grant execute on function public.bump_event(uuid, text) to authenticated;
 
--- Sécurité par ligne (à compléter pour chaque table)
-alter table profiles enable row level security;
-alter table events enable row level security;
-alter table attendances enable row level security;
-alter table stories enable row level security;
-alter table posts enable row level security;
-create policy "profils lisibles" on profiles for select using (true);
-create policy "je modifie mon profil" on profiles for update using (id = auth.uid());
-create policy "événements visibles" on events for select using (not hidden or host_id = auth.uid());
-create policy "je crée mes événements" on events for insert with check (host_id = auth.uid());
-create policy "je modifie mes événements" on events for update using (host_id = auth.uid());
-create policy "stories actives" on stories for select using (expires_at > now());
-create policy "je publie mes stories" on stories for insert with check (author_id = auth.uid());
-create policy "posts lisibles" on posts for select using (true);
-create policy "je publie mes posts" on posts for insert with check (author_id = auth.uid());
+-- Qui a le droit de voir l'adresse exacte d'un événement ?
+create function public.can_see_address(p_event uuid) returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from events e where e.id = p_event and (
+      e.visibility in ('open', 'limited')
+      or e.host_id = auth.uid()
+      or exists (select 1 from attendances a where a.event_id = e.id and a.user_id = auth.uid() and a.status = 'accepted')
+      or (e.visibility = 'circle' and exists (select 1 from follows f where f.follower = auth.uid() and f.followee = e.host_id))
+    )
+  )
+$$;
+
+create function public.is_host(p_event uuid) returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from events where id = p_event and host_id = auth.uid())
+$$;
+
+-- ---------- Sécurité par ligne ----------
+alter table public.profiles enable row level security;
+alter table public.follows enable row level security;
+alter table public.events enable row level security;
+alter table public.event_addresses enable row level security;
+alter table public.attendances enable row level security;
+alter table public.reports enable row level security;
+alter table public.stories enable row level security;
+alter table public.story_views enable row level security;
+alter table public.posts enable row level security;
+alter table public.post_likes enable row level security;
+alter table public.comments enable row level security;
+
+create policy "profils lisibles" on public.profiles for select to authenticated using (true);
+create policy "je crée mon profil" on public.profiles for insert to authenticated with check (id = auth.uid());
+create policy "je modifie mon profil" on public.profiles for update to authenticated using (id = auth.uid());
+
+create policy "abonnements lisibles" on public.follows for select to authenticated using (true);
+create policy "je suis quelqu'un" on public.follows for insert to authenticated with check (follower = auth.uid());
+create policy "je me désabonne" on public.follows for delete to authenticated using (follower = auth.uid());
+
+create policy "événements visibles" on public.events for select to authenticated using (not hidden or host_id = auth.uid());
+create policy "je publie un événement" on public.events for insert to authenticated with check (host_id = auth.uid());
+create policy "je modifie mon événement" on public.events for update to authenticated using (host_id = auth.uid());
+create policy "je supprime mon événement" on public.events for delete to authenticated using (host_id = auth.uid());
+
+create policy "adresse si autorisé" on public.event_addresses for select to authenticated using (public.can_see_address(event_id));
+create policy "l'hôte écrit l'adresse" on public.event_addresses for insert to authenticated with check (public.is_host(event_id));
+create policy "l'hôte modifie l'adresse" on public.event_addresses for update to authenticated using (public.is_host(event_id));
+
+create policy "présences lisibles" on public.attendances for select to authenticated using (true);
+create policy "je viens ou je demande" on public.attendances for insert to authenticated with check (
+  user_id = auth.uid() and (
+    status = 'requested'
+    or (status = 'going' and exists (select 1 from public.events e where e.id = event_id and (
+      e.visibility in ('open', 'limited')
+      or (e.visibility = 'circle' and exists (select 1 from public.follows f where f.follower = auth.uid() and f.followee = e.host_id))
+    )))
+  )
+);
+create policy "l'hôte répond aux demandes" on public.attendances for update to authenticated using (public.is_host(event_id));
+create policy "j'annule ma venue" on public.attendances for delete to authenticated using (user_id = auth.uid() or public.is_host(event_id));
+
+create policy "je signale" on public.reports for insert to authenticated with check (reporter = auth.uid());
+
+create policy "stories actives" on public.stories for select to authenticated using (expires_at > now() or author_id = auth.uid());
+create policy "je publie une story" on public.stories for insert to authenticated with check (author_id = auth.uid());
+create policy "je supprime ma story" on public.stories for delete to authenticated using (author_id = auth.uid());
+create policy "vues lisibles" on public.story_views for select to authenticated using (true);
+create policy "je vois une story" on public.story_views for insert to authenticated with check (user_id = auth.uid());
+
+create policy "posts lisibles" on public.posts for select to authenticated using (true);
+create policy "je publie un post" on public.posts for insert to authenticated with check (author_id = auth.uid());
+create policy "je supprime mon post" on public.posts for delete to authenticated using (author_id = auth.uid());
+create policy "likes lisibles" on public.post_likes for select to authenticated using (true);
+create policy "j'aime" on public.post_likes for insert to authenticated with check (user_id = auth.uid());
+create policy "je n'aime plus" on public.post_likes for delete to authenticated using (user_id = auth.uid());
+create policy "commentaires lisibles" on public.comments for select to authenticated using (true);
+create policy "je commente" on public.comments for insert to authenticated with check (author_id = auth.uid());
+create policy "je supprime mon commentaire" on public.comments for delete to authenticated using (author_id = auth.uid());
+
+-- ---------- Stockage des vidéos et photos ----------
+-- Bucket public « media » : chaque utilisateur écrit seulement dans son dossier <son id>/...
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('media', 'media', true, 52428800, array['video/mp4', 'video/quicktime', 'video/webm', 'image/jpeg', 'image/png', 'image/webp', 'image/heic'])
+on conflict (id) do nothing;
+
+create policy "médias : j'envoie dans mon dossier" on storage.objects for insert to authenticated
+  with check (bucket_id = 'media' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "médias : je supprime les miens" on storage.objects for delete to authenticated
+  using (bucket_id = 'media' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ---------- Temps réel ----------
+alter publication supabase_realtime add table public.events, public.attendances, public.stories, public.posts, public.post_likes, public.comments, public.follows, public.profiles;
