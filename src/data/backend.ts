@@ -7,7 +7,7 @@ const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || SUPABAS
 const key = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || SUPABASE_ANON_KEY
 
 export const sb: SupabaseClient | null = url && key
-  ? createClient(url, key, { auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true } })
+  ? createClient(url, key, { auth: { flowType: 'implicit', detectSessionInUrl: true, persistSession: true } })
   : null
 export const isRemote = !!sb
 

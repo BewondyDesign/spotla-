@@ -1,6 +1,27 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
+import { sb } from './data/backend'
+import { toast } from './data/store'
 import './styles.css'
 
-createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>)
+// Le lien de connexion revient avec les jetons (ou une erreur) dans l'URL, après le #.
+// On laisse Supabase les lire AVANT que le routeur (qui utilise aussi le #) ne démarre,
+// puis on nettoie l'adresse.
+async function boot() {
+  const raw = location.hash.slice(1)
+  const params = new URLSearchParams(raw.includes('access_token') || raw.includes('error') ? raw : location.search.slice(1))
+  if (sb) {
+    await sb.auth.getSession()
+    if (params.has('access_token') || params.has('error') || params.has('code')) {
+      history.replaceState(null, '', `${location.pathname}#/`)
+    }
+  }
+  createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>)
+  const err = params.get('error_description')
+  if (err) {
+    const expired = params.get('error_code') === 'otp_expired'
+    toast('Lien de connexion refusé', expired ? 'Ce lien a expiré ou a déjà été utilisé. Demande un nouveau lien.' : err.replace(/\+/g, ' '))
+  }
+}
+boot()
