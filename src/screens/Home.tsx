@@ -7,6 +7,8 @@ import type { Moment } from '../data/types'
 import { EventCard, HeroCard } from '../components/EventCard'
 import { StoriesBar } from '../components/Stories'
 import { LocationButton } from '../components/Location'
+import { VenueCard } from '../components/VenueCard'
+import { useVenues } from '../data/venues'
 import { PostCard } from '../components/PostCard'
 import { Empty } from '../components/ui'
 
@@ -44,6 +46,7 @@ export function Home() {
     return [...posts].sort((a, b) => Number(f.has(b.authorId)) - Number(f.has(a.authorId)) || b.createdAt.localeCompare(a.createdAt))
   }, [posts, me])
 
+  const { venues } = useVenues(pos, radius)
   const [hero, ...rest] = list
   return (
     <div className="scr">
@@ -84,6 +87,13 @@ export function Home() {
               {geo === 'denied' && <><b>Active ta localisation</b> pour voir ce qui se passe autour de toi, ou touche le nom de la ville en haut pour en choisir une.<br /><br /></>}
               Rien à moins de {radius} km de {city} pour l'instant. Agrandis le rayon en touchant la ville en haut, ou <Link to="/create">publie ta propre soirée</Link>.
             </Empty>
+          )}
+          {venues.length > 0 && (
+            <section className="stack12 mt16">
+              <div className="pad"><h2 className="sec-title">Lieux pour sortir autour de toi</h2><p className="sec-sub nolink">Bars, clubs et pubs à moins de {Math.min(radius, 15)} km · OpenStreetMap</p></div>
+              <div className="list">{venues.slice(0, 12).map((v) => <VenueCard key={v.id} v={v} />)}</div>
+              <div className="pad"><Link className="sec-sub" to="/map">Voir les {venues.length} lieux sur la carte</Link></div>
+            </section>
           )}
         </>
       ) : (

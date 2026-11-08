@@ -90,7 +90,7 @@ export const VIS_LABEL: Record<SpotEvent['visibility'], string> = {
 }
 
 // ---------- Géolocalisation (OpenStreetMap / Nominatim, sans clé) ----------
-export const RADII = [2, 5, 10, 25, 50]
+export const RADII = [2, 5, 10, 20, 50]
 const NOMINATIM = 'https://nominatim.openstreetmap.org'
 
 /** Nom de la ville à partir d'une position. */
@@ -106,9 +106,10 @@ export async function reverseCity(lat: number, lng: number): Promise<string | nu
 export interface Place { name: string; lat: number; lng: number }
 
 /** Recherche d'une ville ou d'une adresse, n'importe où dans le monde. */
-export async function geocode(q: string, near?: { lat: number; lng: number }): Promise<Place[]> {
+export async function geocode(q: string, near?: { lat: number; lng: number }, citiesOnly = false): Promise<Place[]> {
   try {
     let url = `${NOMINATIM}/search?format=jsonv2&limit=5&accept-language=fr&q=${encodeURIComponent(q)}`
+    if (citiesOnly) url += '&featureType=settlement'
     if (near) url += `&viewbox=${near.lng - 1},${near.lat + 1},${near.lng + 1},${near.lat - 1}`
     const r = await fetch(url)
     const j = (await r.json()) as { display_name: string; lat: string; lon: string }[]

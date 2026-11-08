@@ -31,9 +31,9 @@ export function LocationSheet({ onClose }: { onClose: () => void }) {
   // Recherche de ville, avec un petit délai pour ne pas interroger à chaque lettre.
   useEffect(() => {
     if (q.trim().length < 3) { setResults([]); return }
-    const t = setTimeout(() => geocode(q.trim()).then(setResults), 450)
+    const t = setTimeout(() => geocode(q.trim(), pos, true).then(setResults), 450)
     return () => clearTimeout(t)
-  }, [q])
+  }, [q]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="backdrop" onClick={onClose}>
@@ -41,7 +41,8 @@ export function LocationSheet({ onClose }: { onClose: () => void }) {
         <div className="row between"><b className="sec-title">Où chercher ?</b><button className="iconbtn" onClick={onClose} aria-label="Fermer"><X size={18} /></button></div>
         <button className="btn btn-ghost btn-block" onClick={() => { locate(); onClose() }}><LocateFixed size={18} /> Utiliser ma position</button>
         {geo === 'denied' && <p className="hint">La localisation est bloquée. Autorise-la dans les réglages du navigateur, ou choisis une ville ci-dessous.</p>}
-        <label className="search"><Search size={18} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Une autre ville : Montréal, Laval, Québec…" aria-label="Chercher une ville" /></label>
+        <label className="search"><Search size={18} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Changer de ville : Laval, Québec, Toronto…" aria-label="Changer de ville" /></label>
+        {q.trim().length >= 3 && results.length === 0 && <p className="hint">Aucune ville trouvée. Pour chercher un bar ou un club, utilise la recherche de la carte.</p>}
         {results.length > 0 && (
           <div className="places">
             {results.map((r) => (

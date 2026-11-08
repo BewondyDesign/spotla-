@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { AccountKind, Notif, Post, SpotEvent, Story, StoryMedia, User } from './types'
 import { SEED_USERS, seedEvents, seedNotifs, seedPosts, seedStories } from './seed'
-import { MONTREAL, PARIS, RADII, reverseCity, uid as localUid } from './util'
+import { distanceKm, MONTREAL, PARIS, RADII, reverseCity, uid as localUid } from './util'
 import { isRemote, loadAll, remote, signOut } from './backend'
 
 // En mode Supabase, les ids sont des UUID partagés avec la base.
@@ -17,6 +17,7 @@ const sync = (fn: () => Promise<unknown>) => {
 // Chaque action correspond à un appel d'API futur (voir supabase/schema.sql).
 
 const today = () => new Date().toDateString()
+let watchId: number | null = null
 
 interface State {
   meId: string | null
@@ -32,6 +33,8 @@ interface State {
   /** Rayon de recherche en km */
   radius: number
   geo: 'idle' | 'locating' | 'ok' | 'denied'
+  /** true si la ville a été choisie à la main */
+  manual: boolean
   locate: () => void
   setPlace: (p: { lat: number; lng: number; city: string }) => void
   setRadius: (km: number) => void
@@ -80,24 +83,39 @@ export const useStore = create<State>()(
       city: isRemote ? 'Montréal' : 'Paris',
       radius: 10,
       geo: 'idle',
+      manual: false,
 
       // Position GPS du téléphone, puis nom de la ville. Les événements sont recalculés autour.
+      // Suivi GPS en continu tant que l'app est ouverte : où que tu sois, la position se met à jour seule.
       locate: () => {
         if (!navigator.geolocation) { set({ geo: 'denied' }); return }
-        set({ geo: 'locating' })
-        navigator.geolocation.getCurrentPosition(
+        if (watchId != null) navigator.geolocation.clearWatch(watchId)
+        set({ geo: 'locating', manual: false })
+        let lastCity: { lat: number; lng: number } | null = null
+        let lastLoad: { lat: number; lng: number } | null = null
+        watchId = navigator.geolocation.watchPosition(
           async (p) => {
             const pos = { lat: p.coords.latitude, lng: p.coords.longitude }
-            set({ pos, geo: 'ok' })
-            get().reload()
-            const city = await reverseCity(pos.lat, pos.lng)
-            if (city) set({ city })
+            const prev = get().pos
+            // On ignore les micro-variations du GPS (moins de 50 m).
+            if (get().geo !== 'ok' || distanceKm(prev, pos) > 0.05) set({ pos, geo: 'ok' })
+            if (!lastLoad || distanceKm(lastLoad, pos) > 2) { lastLoad = pos; get().reload() }
+            if (!lastCity || distanceKm(lastCity, pos) > 2) {
+              lastCity = pos
+              const city = await reverseCity(pos.lat, pos.lng)
+              if (city) set({ city })
+            }
           },
           () => set({ geo: 'denied' }),
-          { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60_000 },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 10_000 },
         )
       },
-      setPlace: ({ lat, lng, city }) => { set({ pos: { lat, lng }, city, geo: 'ok' }); get().reload() },
+      // Ville choisie à la main : on arrête de suivre le GPS jusqu'à « Utiliser ma position ».
+      setPlace: ({ lat, lng, city }) => {
+        if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null }
+        set({ pos: { lat, lng }, city, geo: 'ok', manual: true })
+        get().reload()
+      },
       setRadius: (km) => set({ radius: RADII.includes(km) ? km : 10 }),
       ...(isRemote ? { users: [], events: [], stories: [], posts: [], notifs: [], seedDay: today() } : freshSeed()),
       loading: isRemote,
@@ -257,7 +275,7 @@ export const useStore = create<State>()(
     {
       name: isRemote ? 'spotla-live' : 'spotla-v1',
       // En mode Supabase, seules les préférences restent sur l'appareil ; les données viennent de la base.
-      partialize: (s) => (isRemote ? { pos: s.pos, city: s.city, radius: s.radius, vibes: s.vibes } : { ...s, recovery: false, geo: 'idle' }) as State,
+      partialize: (s) => (isRemote ? { pos: s.pos, city: s.city, radius: s.radius, vibes: s.vibes } : { ...s, recovery: false, geo: 'idle', manual: false }) as State,
       // Chaque jour, on régénère les données de démo pour garder des horaires réalistes,
       // sans toucher à ce que l'utilisateur a créé.
       merge: (persisted, current) => {

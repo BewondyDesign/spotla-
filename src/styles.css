@@ -352,3 +352,26 @@ input[type="range"] { width: 100%; accent-color: var(--neon); }
 .places svg { color: var(--neon); margin-top: 2px; }
 .seg.five { grid-template-columns: repeat(5, 1fr); }
 .tiles-night { filter: invert(1) hue-rotate(200deg) brightness(.85) contrast(.9) saturate(.6); }
+/* Vrais lieux (OpenStreetMap) */
+.vpin { width: 14px; height: 14px; border-radius: 50%; background: var(--violet); border: 2px solid var(--ink); box-shadow: 0 0 8px color-mix(in srgb, var(--violet) 70%, transparent); display: inline-block; }
+.vpin.club { background: var(--neon); box-shadow: 0 0 10px var(--neon); }
+.vpin.sel { outline: 3px solid var(--text); }
+.map-legend { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; font-size: 12px; background: color-mix(in srgb, var(--night-2) 90%, transparent); border: 1px solid var(--line); border-radius: 12px; padding: 6px 10px; width: fit-content; }
+.map-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.map-legend .vpin { width: 10px; height: 10px; border-width: 1px; }
+.venue { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--night); border: 1px solid var(--line); border-radius: var(--r-m); }
+.venue .grow { display: grid; }
+.venue b { font-size: 15px; }
+.venue span { font-size: 12px; color: var(--muted); }
+.venue .iconbtn { width: 40px; height: 40px; }
+.venue-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--violet); flex: none; }
+.venue-dot.k-club { background: var(--neon); box-shadow: 0 0 8px var(--neon); }
+.sheet.results { display: grid; gap: 2px; max-height: 45dvh; overflow-y: auto; }
+.vrow { display: grid; text-align: left; padding: 10px; border-radius: 12px; }
+.vrow:hover, .vrow:focus-visible { background: var(--night); }
+.vrow span { font-size: 12px; color: var(--muted); }
+.sec-sub.nolink { text-decoration: none; }
+.live-pill { font-weight: 600; color: var(--muted); }
+.live-pill.on { color: var(--mint); }
+.radius-row { overflow-x: auto; scrollbar-width: none; }
+.radius-row .chip { min-height: 34px; padding: 6px 12px; }

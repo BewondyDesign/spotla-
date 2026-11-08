@@ -34,7 +34,15 @@ function Shell() {
     return () => data.subscription.unsubscribe()
   }, [])
   // Localisation automatique dès qu'on est dans l'app.
-  useEffect(() => { if (meId && useStore.getState().geo === 'idle') useStore.getState().locate() }, [meId])
+  // Localisation automatique à chaque ouverture, et à chaque retour dans l'app.
+  useEffect(() => {
+    if (!meId) return
+    const go = () => { if (!useStore.getState().manual) useStore.getState().locate() }
+    go()
+    const onVis = () => { if (document.visibilityState === 'visible') go() }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [meId])
   useEffect(() => {
     if (!isRemote || !meId) return
     return subscribe(() => useStore.getState().reload())
