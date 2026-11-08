@@ -1,0 +1,215 @@
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import type { AccountKind, Notif, Post, SpotEvent, Story, StoryMedia, User } from './types'
+import { SEED_USERS, seedEvents, seedNotifs, seedPosts, seedStories } from './seed'
+import { PARIS, uid } from './util'
+
+// État de l'app. Pour le MVP tout est stocké sur l'appareil (localStorage + IndexedDB).
+// Chaque action correspond à un appel d'API futur (voir supabase/schema.sql).
+
+const today = () => new Date().toDateString()
+
+interface State {
+  meId: string | null
+  users: User[]
+  events: SpotEvent[]
+  stories: Story[]
+  posts: Post[]
+  notifs: Notif[]
+  vibes: string[]
+  pos: { lat: number; lng: number }
+  seedDay: string
+
+  onboard: (p: { name: string; kind: AccountKind; vibes: string[]; venueAddress?: string }) => void
+  logout: () => void
+  setPos: (p: { lat: number; lng: number }) => void
+  toggleGoing: (eventId: string) => void
+  requestJoin: (eventId: string) => void
+  answerRequest: (eventId: string, userId: string, ok: boolean) => void
+  createEvent: (e: Omit<SpotEvent, 'id' | 'hostId' | 'going' | 'requests' | 'accepted' | 'createdAt' | 'baseGoing' | 'views' | 'shares' | 'reports'>) => string
+  createStory: (s: { eventId?: string; caption: string; media: StoryMedia }) => void
+  seeStory: (id: string) => void
+  createPost: (p: { text: string; eventId?: string; imageKey?: string }) => void
+  toggleLike: (postId: string) => void
+  addComment: (postId: string, text: string) => void
+  toggleFollow: (userId: string) => void
+  report: (eventId: string) => void
+  boost: (eventId: string) => void
+  bump: (eventId: string, field: 'views' | 'shares') => void
+  readNotifs: () => void
+  pushNotif: (n: Omit<Notif, 'id' | 'createdAt' | 'read'>) => void
+}
+
+function freshSeed() {
+  return { users: SEED_USERS, events: seedEvents(), stories: seedStories(), posts: seedPosts(), notifs: seedNotifs(), seedDay: today() }
+}
+
+const mapEv = (s: State, id: string, f: (e: SpotEvent) => SpotEvent) => s.events.map((e) => (e.id === id ? f(e) : e))
+const toggle = (arr: string[], v: string) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v])
+
+export const useStore = create<State>()(
+  persist(
+    (set, get) => ({
+      meId: null,
+      vibes: [],
+      pos: PARIS,
+      ...freshSeed(),
+
+      onboard: ({ name, kind, vibes, venueAddress }) => {
+        const id = 'me'
+        const me: User = {
+          id, name, kind, venueAddress,
+          handle: name.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '') || 'moi',
+          verified: false, color: kind === 'business' ? '#8B7CFF' : '#FF4F9A',
+          bio: kind === 'business' ? 'Compte business en cours de vérification.' : '', city: 'Paris', followers: 0, following: [],
+        }
+        set((s) => ({ meId: id, vibes, users: [...s.users.filter((u) => u.id !== id), me] }))
+        if (kind === 'business') {
+          // Simulation de la vérification (en vrai : contrôle SIRET + modération humaine).
+          setTimeout(() => {
+            set((s) => ({ users: s.users.map((u) => (u.id === 'me' ? { ...u, verified: true, bio: 'Lieu vérifié par SpotLa.' } : u)) }))
+            get().pushNotif({ kind: 'accepted', title: 'Compte business vérifié', body: 'Ton badge vérifié est actif. Tes événements sont mis en avant.', link: '/business' })
+          }, 8000)
+        }
+      },
+      logout: () => set({ meId: null, ...freshSeed() }),
+      setPos: (pos) => set({ pos }),
+
+      toggleGoing: (eventId) => set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, going: toggle(e.going, s.meId!) })) })),
+
+      requestJoin: (eventId) => {
+        set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, requests: toggle(e.requests, s.meId!) })) }))
+        const e = get().events.find((x) => x.id === eventId)
+        if (!e || e.hostId === get().meId || !e.requests.includes(get().meId!)) return
+        // Démo : l'organisateur accepte au bout de quelques secondes.
+        setTimeout(() => {
+          const cur = get().events.find((x) => x.id === eventId)
+          if (!cur || !cur.requests.includes('me')) return
+          get().answerRequest(eventId, 'me', true)
+          get().pushNotif({ kind: 'accepted', title: 'Demande acceptée 🎉', body: `Tu es sur la liste pour « ${cur.title} ». L'adresse est maintenant visible.`, link: `/event/${eventId}` })
+        }, 6000)
+      },
+
+      answerRequest: (eventId, userId, ok) =>
+        set((s) => ({
+          events: mapEv(s, eventId, (e) => ({
+            ...e,
+            requests: e.requests.filter((x) => x !== userId),
+            accepted: ok ? [...new Set([...e.accepted, userId])] : e.accepted,
+            going: ok ? [...new Set([...e.going, userId])] : e.going,
+          })),
+        })),
+
+      createEvent: (data) => {
+        const id = uid('ev')
+        const e: SpotEvent = { ...data, id, hostId: get().meId!, going: [get().meId!], requests: [], accepted: [], createdAt: new Date().toISOString(), baseGoing: 0, views: 0, shares: 0, reports: 0 }
+        set((s) => ({ events: [e, ...s.events] }))
+        if (e.visibility === 'request' || e.visibility === 'circle') {
+          // Démo : deux personnes demandent à venir peu après la publication.
+          setTimeout(() => {
+            set((s) => ({ events: mapEv(s, id, (x) => ({ ...x, requests: [...new Set([...x.requests, 'u-ines', 'u-quai9'])] })) }))
+            get().pushNotif({ kind: 'request', title: '2 demandes pour ta soirée', body: `Inès L. et Collectif Quai 9 veulent venir à « ${e.title} ».`, link: `/event/${id}` })
+          }, 7000)
+        }
+        return id
+      },
+
+      createStory: ({ eventId, caption, media }) => {
+        const now = Date.now()
+        const st: Story = { id: uid('st'), authorId: get().meId!, eventId, caption, media, createdAt: new Date(now).toISOString(), expiresAt: new Date(now + 24 * 3_600_000).toISOString(), seenBy: [] }
+        set((s) => ({ stories: [st, ...s.stories] }))
+      },
+      seeStory: (id) => set((s) => ({ stories: s.stories.map((st) => (st.id === id && !st.seenBy.includes(s.meId!) ? { ...st, seenBy: [...st.seenBy, s.meId!] } : st)) })),
+
+      createPost: ({ text, eventId, imageKey }) => {
+        const p: Post = { id: uid('p'), authorId: get().meId!, text, eventId, imageKey, createdAt: new Date().toISOString(), likes: [], baseLikes: 0, comments: [] }
+        set((s) => ({ posts: [p, ...s.posts] }))
+      },
+      toggleLike: (postId) => set((s) => ({ posts: s.posts.map((p) => (p.id === postId ? { ...p, likes: toggle(p.likes, s.meId!) } : p)) })),
+      addComment: (postId, text) =>
+        set((s) => ({ posts: s.posts.map((p) => (p.id === postId ? { ...p, comments: [...p.comments, { id: uid('c'), authorId: s.meId!, text, createdAt: new Date().toISOString() }] } : p)) })),
+
+      toggleFollow: (userId) =>
+        set((s) => ({
+          users: s.users.map((u) => {
+            if (u.id === s.meId) return { ...u, following: toggle(u.following, userId) }
+            if (u.id === userId) {
+              const me = s.users.find((x) => x.id === s.meId)
+              const was = me?.following.includes(userId)
+              return { ...u, followers: u.followers + (was ? -1 : 1) }
+            }
+            return u
+          }),
+        })),
+
+      // Au-delà de 3 signalements, l'événement est masqué en attendant la modération.
+      report: (eventId) => set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, reports: e.reports + 1 })) })),
+      boost: (eventId) => set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, boosted: true })) })),
+      bump: (eventId, field) => set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, [field]: e[field] + 1 })) })),
+
+      readNotifs: () => set((s) => ({ notifs: s.notifs.map((n) => ({ ...n, read: true })) })),
+      pushNotif: (n) => {
+        set((s) => ({ notifs: [{ ...n, id: uid('n'), createdAt: new Date().toISOString(), read: false }, ...s.notifs] }))
+        useToast.getState().show(n.title, n.body)
+      },
+    }),
+    {
+      name: 'spotla-v1',
+      // Chaque jour, on régénère les données de démo pour garder des horaires réalistes,
+      // sans toucher à ce que l'utilisateur a créé.
+      merge: (persisted, current) => {
+        const p = persisted as Partial<State> | undefined
+        if (!p) return current
+        if (p.seedDay === today()) return { ...current, ...p }
+        const seed = freshSeed()
+        const mine = <T extends { id: string }>(arr: T[] | undefined, seedArr: T[]) => (arr ?? []).filter((x) => !seedArr.some((y) => y.id === x.id))
+        return {
+          ...current,
+          ...p,
+          ...seed,
+          users: [...seed.users, ...mine(p.users, seed.users)],
+          events: [...mine(p.events, seed.events), ...seed.events],
+          stories: [...mine(p.stories, seed.stories), ...seed.stories],
+          posts: [...mine(p.posts, seed.posts), ...seed.posts],
+          notifs: [...seed.notifs, ...mine(p.notifs, seed.notifs)],
+        }
+      },
+    },
+  ),
+)
+
+export const useMe = () => useStore((s) => s.users.find((u) => u.id === s.meId) ?? null)
+
+/** Les événements signalés 3 fois ou plus sont masqués (sauf pour leur organisateur). */
+export const isHidden = (e: SpotEvent, meId: string | null) => e.reports >= 3 && e.hostId !== meId
+
+/** Adresse exacte visible ? Masquée pour les événements privés tant que la personne n'est pas acceptée. */
+export function canSeeAddress(e: SpotEvent, me: User | null) {
+  if (!me) return false
+  if (e.hostId === me.id) return true
+  if (e.visibility === 'open' || e.visibility === 'limited') return true
+  if (e.accepted.includes(me.id)) return true
+  if (e.visibility === 'circle') return me.following.includes(e.hostId)
+  return false
+}
+
+export const goingCount = (e: SpotEvent) => e.baseGoing + e.going.length
+
+// ---------- Toasts (non persistés) ----------
+interface ToastState { t: { title: string; body?: string } | null; show: (title: string, body?: string) => void }
+let timer: ReturnType<typeof setTimeout> | undefined
+export const useToast = create<ToastState>((set) => ({
+  t: null,
+  show: (title, body) => {
+    set({ t: { title, body } })
+    clearTimeout(timer)
+    timer = setTimeout(() => set({ t: null }), 3500)
+  },
+}))
+export const toast = (title: string, body?: string) => useToast.getState().show(title, body)
+
+// ---------- Fenêtre de confirmation dans l'app (remplace window.confirm) ----------
+interface ConfirmState { q: { text: string; ok: string; resolve: (v: boolean) => void } | null }
+export const useConfirm = create<ConfirmState>(() => ({ q: null }))
+export const askConfirm = (text: string, ok = 'Confirmer') =>
+  new Promise<boolean>((resolve) => useConfirm.setState({ q: { text, ok, resolve } }))
