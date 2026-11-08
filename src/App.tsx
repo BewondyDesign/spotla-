@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useMe, useStore } from './data/store'
 import { isRemote, sb, subscribe } from './data/backend'
-import { Onboarding } from './screens/Onboarding'
+import { NewPassword, Onboarding } from './screens/Onboarding'
 import { Home } from './screens/Home'
 import { MapScreen } from './screens/MapScreen'
 import { EventDetail } from './screens/EventDetail'
@@ -17,6 +17,7 @@ import { ConfirmSheet, Toast } from './components/ui'
 function Shell() {
   const meId = useStore((s) => s.meId)
   const loading = useStore((s) => s.loading)
+  const recovery = useStore((s) => s.recovery)
   const me = useMe()
   const loc = useLocation()
 
@@ -25,7 +26,8 @@ function Shell() {
     if (!sb) return
     const { setSession } = useStore.getState()
     sb.auth.getSession().then(({ data }) => setSession(data.session?.user.id ?? null))
-    const { data } = sb.auth.onAuthStateChange((_e, session) => {
+    const { data } = sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') useStore.setState({ recovery: true })
       const id = session?.user.id ?? null
       if (id !== useStore.getState().meId) setSession(id)
     })
@@ -37,6 +39,7 @@ function Shell() {
   }, [meId])
 
   if (isRemote && loading) return <div className="app"><div className="splash"><span className="dot" />SpotLa</div></div>
+  if (recovery) return <div className="app"><NewPassword /><Toast /></div>
   if (!meId) return <div className="app"><Onboarding /><Toast /></div>
   if (!me) return <div className="app"><Onboarding authId={meId} /><Toast /></div>
   const fullscreen = loc.pathname.startsWith('/event/') || loc.pathname.startsWith('/stories/')

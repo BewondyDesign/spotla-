@@ -330,3 +330,16 @@ input[type="range"] { width: 100%; accent-color: var(--neon); }
 .confirm p { font-size: 16px; }
 .splash { position: absolute; inset: 0; display: grid; place-content: center; grid-auto-flow: column; gap: 10px; align-items: center; font-family: var(--f-display); font-weight: 800; font-size: 28px; }
 .splash .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--neon); box-shadow: 0 0 14px var(--neon); animation: blink 1.2s infinite; }
+/* Inscription / connexion */
+.btn-light { background: #fff; color: #1f1f1f; }
+.link-strong { color: var(--neon); font-weight: 700; }
+.textlink.right { justify-self: end; margin-top: -8px; }
+.or { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.pw { position: relative; }
+.pw .input { padding-right: 52px; }
+.pw-eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; display: grid; place-items: center; color: var(--muted); }
+.handle { display: flex; align-items: center; background: var(--night); border: 1px solid var(--line); border-radius: 14px; padding-left: 14px; }
+.handle:focus-within { border-color: var(--neon); }
+.handle span { color: var(--muted); font-weight: 600; }
+.handle .input { border: 0; background: transparent; padding-left: 4px; }

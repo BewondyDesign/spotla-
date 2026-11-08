@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
 import { sb } from './data/backend'
-import { toast } from './data/store'
+import { toast, useStore } from './data/store'
 import './styles.css'
 
 // Le lien de connexion revient avec les jetons (ou une erreur) dans l'URL, après le #.
@@ -13,6 +13,7 @@ async function boot() {
   const params = new URLSearchParams(raw.includes('access_token') || raw.includes('error') ? raw : location.search.slice(1))
   if (sb) {
     await sb.auth.getSession()
+    if (params.get('type') === 'recovery') useStore.setState({ recovery: true })
     if (params.has('access_token') || params.has('error') || params.has('code')) {
       history.replaceState(null, '', `${location.pathname}#/`)
     }

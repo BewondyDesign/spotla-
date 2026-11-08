@@ -16,26 +16,66 @@ const must = <T,>(r: { data: T; error: { message: string } | null }) => {
   return r.data
 }
 
-// ---------- Connexion ----------
-export async function sendLoginEmail(email: string) {
-  const redirect = `${location.origin}${location.pathname}`
-  const { error } = await sb!.auth.signInWithOtp({ email, options: { emailRedirectTo: redirect, shouldCreateUser: true } })
-  if (error) throw new Error(error.message)
+// ---------- Connexion (comme sur les réseaux sociaux) ----------
+const home = () => `${location.origin}${location.pathname}`
+
+/** Traduit les erreurs Supabase en messages clairs. */
+function fr(msg: string) {
+  const m = msg.toLowerCase()
+  if (m.includes('invalid login credentials')) return 'E-mail ou mot de passe incorrect.'
+  if (m.includes('already registered') || m.includes('already been registered')) return 'Un compte existe déjà avec cet e-mail. Connecte-toi.'
+  if (m.includes('password should be') || m.includes('weak')) return 'Mot de passe trop faible : 8 caractères minimum, avec des lettres et des chiffres.'
+  if (m.includes('email not confirmed')) return 'Confirme d\'abord ton e-mail avec le lien qu\'on t\'a envoyé.'
+  if (m.includes('provider is not enabled') || m.includes('unsupported provider')) return 'La connexion avec Google n\'est pas encore activée.'
+  if (m.includes('rate limit') || m.includes('security purposes')) return 'Trop de tentatives. Réessaie dans une minute.'
+  if (m.includes('profiles_handle_key') || m.includes('duplicate key')) return 'Ce nom d\'utilisateur est déjà pris.'
+  return msg
 }
-export async function verifyCode(email: string, token: string) {
-  const { error } = await sb!.auth.verifyOtp({ email, token, type: 'email' })
-  if (error) throw new Error(error.message)
+const check = (error: { message: string } | null) => { if (error) throw new Error(fr(error.message)) }
+
+export const cleanHandle = (h: string) => h.toLowerCase().normalize('NFD').replace(/[^a-z0-9._]/g, '').slice(0, 30)
+
+/** Inscription. Renvoie true si le compte est actif tout de suite, false s'il faut confirmer l'e-mail. */
+export async function signUp(p: { email: string; password: string; name: string; handle: string }) {
+  const taken = await sb!.from('profiles').select('id').eq('handle', p.handle).maybeSingle()
+  if (taken.data) throw new Error('Ce nom d\'utilisateur est déjà pris.')
+  const { data, error } = await sb!.auth.signUp({ email: p.email, password: p.password, options: { emailRedirectTo: home(), data: { name: p.name, handle: p.handle } } })
+  check(error)
+  if (data.user && data.user.identities?.length === 0) throw new Error('Un compte existe déjà avec cet e-mail. Connecte-toi.')
+  return !!data.session
+}
+export async function signIn(email: string, password: string) {
+  const { error } = await sb!.auth.signInWithPassword({ email, password })
+  check(error)
+}
+export async function signInWithGoogle() {
+  const { error } = await sb!.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: home() } })
+  check(error)
+}
+export async function sendPasswordReset(email: string) {
+  const { error } = await sb!.auth.resetPasswordForEmail(email, { redirectTo: home() })
+  check(error)
+}
+export async function updatePassword(password: string) {
+  const { error } = await sb!.auth.updateUser({ password })
+  check(error)
+}
+/** Infos saisies à l'inscription (ou venant de Google), pour pré-remplir le profil. */
+export async function signupInfo() {
+  const { data } = await sb!.auth.getUser()
+  const m = (data.user?.user_metadata ?? {}) as Record<string, string>
+  return { name: m.name || m.full_name || '', handle: m.handle || '' }
 }
 export const signOut = () => sb!.auth.signOut()
 
-export async function createProfile(p: { id: string; name: string; kind: AccountKind; vibes: string[]; venueAddress?: string }) {
-  const base = p.name.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '') || 'membre'
-  const handle = `${base}.${p.id.slice(0, 4)}`
-  must(await sb!.from('profiles').insert({
+export async function createProfile(p: { id: string; name: string; handle?: string; kind: AccountKind; vibes: string[]; venueAddress?: string }) {
+  const handle = p.handle ? cleanHandle(p.handle) : `${cleanHandle(p.name.replace(/\s+/g, '.')) || 'membre'}.${p.id.slice(0, 4)}`
+  const { error } = await sb!.from('profiles').insert({
     id: p.id, name: p.name, handle, kind: p.kind, vibes: p.vibes, venue_address: p.venueAddress ?? null,
     color: p.kind === 'business' ? '#8B7CFF' : '#FF4F9A',
     bio: p.kind === 'business' ? 'Compte business en cours de vérification.' : '',
-  }))
+  })
+  check(error)
 }
 
 // ---------- Lecture ----------

@@ -29,6 +29,8 @@ interface State {
   pos: { lat: number; lng: number }
   seedDay: string
   loading: boolean
+  /** Retour d'un lien « mot de passe oublié » : on demande le nouveau mot de passe. */
+  recovery: boolean
 
   reload: () => Promise<void>
   setSession: (id: string | null) => Promise<void>
@@ -68,6 +70,7 @@ export const useStore = create<State>()(
       pos: PARIS,
       ...(isRemote ? { users: [], events: [], stories: [], posts: [], notifs: [], seedDay: today() } : freshSeed()),
       loading: isRemote,
+      recovery: false,
 
       reload: async () => {
         const me = get().meId
@@ -223,7 +226,7 @@ export const useStore = create<State>()(
     {
       name: isRemote ? 'spotla-live' : 'spotla-v1',
       // En mode Supabase, seules les préférences restent sur l'appareil ; les données viennent de la base.
-      partialize: (s) => (isRemote ? { pos: s.pos, vibes: s.vibes } : s) as State,
+      partialize: (s) => (isRemote ? { pos: s.pos, vibes: s.vibes } : { ...s, recovery: false }) as State,
       // Chaque jour, on régénère les données de démo pour garder des horaires réalistes,
       // sans toucher à ce que l'utilisateur a créé.
       merge: (persisted, current) => {
