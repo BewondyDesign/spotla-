@@ -1,3 +1,4 @@
+import { money } from '../data/util'
 import { useShallow } from 'zustand/react/shallow'
 import { Link, Navigate } from 'react-router-dom'
 import { BadgeCheck, Eye, Share2, Sparkles, Users } from 'lucide-react'
@@ -5,7 +6,7 @@ import { askConfirm, goingCount, toast, useMe, useStore } from '../data/store'
 import { fmtDay, fmtTime, momentOf } from '../data/util'
 import { Art, PriceBadge } from '../components/ui'
 
-export const BOOST_PRICE = '9,90 €'
+export const BOOST_PRICE = money(9.99)
 
 export function Business() {
   const me = useMe()!

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { AccountKind, Notif, Post, SpotEvent, Story, StoryMedia, User } from './types'
 import { SEED_USERS, seedEvents, seedNotifs, seedPosts, seedStories } from './seed'
-import { PARIS, uid as localUid } from './util'
+import { MONTREAL, PARIS, RADII, reverseCity, uid as localUid } from './util'
 import { isRemote, loadAll, remote, signOut } from './backend'
 
 // En mode Supabase, les ids sont des UUID partagés avec la base.
@@ -27,6 +27,14 @@ interface State {
   notifs: Notif[]
   vibes: string[]
   pos: { lat: number; lng: number }
+  /** Ville affichée (trouvée depuis la position) */
+  city: string
+  /** Rayon de recherche en km */
+  radius: number
+  geo: 'idle' | 'locating' | 'ok' | 'denied'
+  locate: () => void
+  setPlace: (p: { lat: number; lng: number; city: string }) => void
+  setRadius: (km: number) => void
   seedDay: string
   loading: boolean
   /** Retour d'un lien « mot de passe oublié » : on demande le nouveau mot de passe. */
@@ -67,7 +75,30 @@ export const useStore = create<State>()(
     (set, get) => ({
       meId: null,
       vibes: [],
-      pos: PARIS,
+      // Ville de lancement : Montréal (le mode démo garde ses données de Paris).
+      pos: isRemote ? MONTREAL : PARIS,
+      city: isRemote ? 'Montréal' : 'Paris',
+      radius: 10,
+      geo: 'idle',
+
+      // Position GPS du téléphone, puis nom de la ville. Les événements sont recalculés autour.
+      locate: () => {
+        if (!navigator.geolocation) { set({ geo: 'denied' }); return }
+        set({ geo: 'locating' })
+        navigator.geolocation.getCurrentPosition(
+          async (p) => {
+            const pos = { lat: p.coords.latitude, lng: p.coords.longitude }
+            set({ pos, geo: 'ok' })
+            get().reload()
+            const city = await reverseCity(pos.lat, pos.lng)
+            if (city) set({ city })
+          },
+          () => set({ geo: 'denied' }),
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60_000 },
+        )
+      },
+      setPlace: ({ lat, lng, city }) => { set({ pos: { lat, lng }, city, geo: 'ok' }); get().reload() },
+      setRadius: (km) => set({ radius: RADII.includes(km) ? km : 10 }),
       ...(isRemote ? { users: [], events: [], stories: [], posts: [], notifs: [], seedDay: today() } : freshSeed()),
       loading: isRemote,
       recovery: false,
@@ -76,7 +107,7 @@ export const useStore = create<State>()(
         const me = get().meId
         if (!isRemote || !me) return
         try {
-          const data = await loadAll(me)
+          const data = await loadAll(me, get().pos)
           set({ ...data, loading: false })
         } catch (e) {
           set({ loading: false })
@@ -226,14 +257,14 @@ export const useStore = create<State>()(
     {
       name: isRemote ? 'spotla-live' : 'spotla-v1',
       // En mode Supabase, seules les préférences restent sur l'appareil ; les données viennent de la base.
-      partialize: (s) => (isRemote ? { pos: s.pos, vibes: s.vibes } : { ...s, recovery: false }) as State,
+      partialize: (s) => (isRemote ? { pos: s.pos, city: s.city, radius: s.radius, vibes: s.vibes } : { ...s, recovery: false, geo: 'idle' }) as State,
       // Chaque jour, on régénère les données de démo pour garder des horaires réalistes,
       // sans toucher à ce que l'utilisateur a créé.
       merge: (persisted, current) => {
         const p = persisted as Partial<State> | undefined
         if (!p) return current
-        if (isRemote) return { ...current, pos: p.pos ?? current.pos, vibes: p.vibes ?? current.vibes }
-        if (p.seedDay === today()) return { ...current, ...p }
+        if (isRemote) return { ...current, pos: p.pos ?? current.pos, city: p.city ?? current.city, radius: p.radius ?? current.radius, vibes: p.vibes ?? current.vibes }
+        if (p.seedDay === today()) return { ...current, ...p, geo: 'idle' }
         const seed = freshSeed()
         const mine = <T extends { id: string }>(arr: T[] | undefined, seedArr: T[]) => (arr ?? []).filter((x) => !seedArr.some((y) => y.id === x.id))
         return {

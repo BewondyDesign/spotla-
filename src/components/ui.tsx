@@ -1,3 +1,4 @@
+import { money } from '../data/util'
 import { BadgeCheck, Lock, Users } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { SpotEvent, User } from '../data/types'
@@ -13,7 +14,7 @@ export function Art({ colors, word, big }: { colors: [string, string]; word?: st
 }
 
 export function PriceBadge({ e }: { e: SpotEvent }) {
-  return e.price === 0 ? <span className="badge b-free">Gratuit</span> : <span className="badge b-paid">{e.price} €</span>
+  return e.price === 0 ? <span className="badge b-free">Gratuit</span> : <span className="badge b-paid">{money(e.price)}</span>
 }
 
 export function VisBadge({ e }: { e: SpotEvent }) {

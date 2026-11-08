@@ -1,10 +1,11 @@
+import { CUR } from '../data/util'
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Camera, Clapperboard, ImagePlus, PartyPopper, PenLine } from 'lucide-react'
 import { toast, useMe, useStore } from '../data/store'
 import { MAX_STORY_SECONDS, putBlob, videoDuration } from '../data/media'
 import { isRemote, uploadMedia } from '../data/backend'
-import { momentOf, PALETTES, uid, VIBES, VIS_LABEL } from '../data/util'
+import { geocode, momentOf, PALETTES, uid, VIBES, VIS_LABEL } from '../data/util'
 import type { Visibility } from '../data/types'
 
 type Mode = 'event' | 'story' | 'post'
@@ -55,15 +56,20 @@ function EventForm() {
   const [desc, setDesc] = useState('')
 
   const ok = title.trim().length >= 3 && venue.trim() && address.trim()
-  const submit = () => {
+  const [busy, setBusy] = useState(false)
+  const submit = async () => {
+    setBusy(true)
+    // Géocodage de l'adresse (OpenStreetMap). Si elle est introuvable, on place l'événement près de toi.
+    const found = (await geocode(`${address.trim()}${area.trim() ? `, ${area.trim()}` : ''}`, pos))[0]
+    if (!found) toast('Adresse non trouvée sur la carte', 'L\'événement est placé près de ta position. Vérifie l\'adresse si besoin.')
+    const at = found ?? { lat: pos.lat + (Math.random() - 0.5) * 0.01, lng: pos.lng + (Math.random() - 0.5) * 0.01 }
     const s = new Date(`${date}T${start}`)
     const e = new Date(`${date}T${end}`)
     if (e <= s) e.setDate(e.getDate() + 1) // finit après minuit
     const id = createEvent({
       title: title.trim(), vibe: VIBES.find((v) => v.k === tag)!.l.split(' ')[0], tags: [tag],
-      start: s.toISOString(), end: e.toISOString(), venue: venue.trim(), area: area.trim() || 'Paris', address: address.trim(),
-      // MVP : position approximative autour de toi. En production : géocodage de l'adresse.
-      lat: pos.lat + (Math.random() - 0.5) * 0.02, lng: pos.lng + (Math.random() - 0.5) * 0.03,
+      start: s.toISOString(), end: e.toISOString(), venue: venue.trim(), area: area.trim() || useStore.getState().city, address: address.trim(),
+      lat: at.lat, lng: at.lng,
       price: paid ? price : 0, ticketUrl: paid && ticketUrl ? ticketUrl : undefined,
       visibility: vis, capacity: vis === 'open' ? undefined : cap, desc: desc.trim(), colors: PALETTES[Math.floor(Math.random() * PALETTES.length)],
     })
@@ -85,7 +91,7 @@ function EventForm() {
       </div>
       <Field label="Lieu"><input className="input" value={venue} onChange={(e) => setVenue(e.target.value)} placeholder="Ex. Chez moi, Le Comptoir…" /></Field>
       <div className="grid2">
-        <Field label="Quartier"><input className="input" value={area} onChange={(e) => setArea(e.target.value)} placeholder="Ex. Oberkampf" /></Field>
+        <Field label="Quartier"><input className="input" value={area} onChange={(e) => setArea(e.target.value)} placeholder="Ex. Plateau-Mont-Royal" /></Field>
         <Field label="Adresse exacte"><input className="input" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Rue, étage, code" /></Field>
       </div>
 
@@ -97,7 +103,7 @@ function EventForm() {
       </Field>
       {paid && (
         <div className="grid2">
-          <Field label="Prix (€)"><input className="input" type="number" min={1} value={price} onChange={(e) => setPrice(Math.max(1, Number(e.target.value)))} /></Field>
+          <Field label={`Prix (${CUR})`}><input className="input" type="number" min={1} value={price} onChange={(e) => setPrice(Math.max(1, Number(e.target.value)))} /></Field>
           <Field label="Lien billetterie (option)"><input className="input" type="url" value={ticketUrl} onChange={(e) => setTicketUrl(e.target.value)} placeholder="https://…" /></Field>
         </div>
       )}
@@ -115,7 +121,7 @@ function EventForm() {
       {vis !== 'open' && <Field label={`Nombre de places : ${cap}`}><input type="range" min={2} max={biz ? 1000 : 200} value={cap} onChange={(e) => setCap(Number(e.target.value))} /></Field>}
 
       <Field label="Description"><textarea className="input area" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ce qui t'attend, quoi ramener, dress code…" rows={4} maxLength={600} /></Field>
-      <button className="btn btn-primary btn-block" disabled={!ok} onClick={submit}>Publier l'événement</button>
+      <button className="btn btn-primary btn-block" disabled={!ok || busy} onClick={submit}>{busy ? 'Publication…' : 'Publier l\'événement'}</button>
     </div>
   )
 }

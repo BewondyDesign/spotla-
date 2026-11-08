@@ -343,3 +343,12 @@ input[type="range"] { width: 100%; accent-color: var(--neon); }
 .handle:focus-within { border-color: var(--neon); }
 .handle span { color: var(--muted); font-weight: 600; }
 .handle .input { border: 0; background: transparent; padding-left: 4px; }
+/* Localisation */
+.loc-caret { font-size: 12px; color: var(--muted); }
+.loc-sheet { gap: 14px; max-height: 85dvh; overflow-y: auto; }
+.places { display: grid; gap: 4px; }
+.places button { display: flex; gap: 10px; align-items: flex-start; text-align: left; padding: 10px; border-radius: 12px; font-size: 13px; color: var(--muted); }
+.places button:hover, .places button:focus-visible { background: var(--night); color: var(--text); }
+.places svg { color: var(--neon); margin-top: 2px; }
+.seg.five { grid-template-columns: repeat(5, 1fr); }
+.tiles-night { filter: invert(1) hue-rotate(200deg) brightness(.85) contrast(.9) saturate(.6); }

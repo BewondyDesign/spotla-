@@ -33,6 +33,8 @@ function Shell() {
     })
     return () => data.subscription.unsubscribe()
   }, [])
+  // Localisation automatique dès qu'on est dans l'app.
+  useEffect(() => { if (meId && useStore.getState().geo === 'idle') useStore.getState().locate() }, [meId])
   useEffect(() => {
     if (!isRemote || !meId) return
     return subscribe(() => useStore.getState().reload())

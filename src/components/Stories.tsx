@@ -1,3 +1,4 @@
+import { money } from '../data/util'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ChevronRight, Plus, X, Volume2, VolumeX } from 'lucide-react'
@@ -170,7 +171,7 @@ export function StoryViewer() {
         {ev && (
           <button className="viewer-ev" onClick={() => nav(`/event/${ev.id}`, { replace: true })}>
             <div className="cover mini"><Art colors={ev.colors} /></div>
-            <div><b>{ev.title}</b><span>{live ? 'Ça se passe maintenant · ' : ''}{ev.price === 0 ? 'Gratuit' : `${ev.price} €`} · {ev.area}</span></div>
+            <div><b>{ev.title}</b><span>{live ? 'Ça se passe maintenant · ' : ''}{ev.price === 0 ? 'Gratuit' : money(ev.price)} · {ev.area}</span></div>
             <ChevronRight size={20} />
           </button>
         )}

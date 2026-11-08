@@ -1,6 +1,8 @@
+import { isRemote } from './backend'
 import type { Moment, SpotEvent } from './types'
 
 export const PARIS = { lat: 48.8670, lng: 2.3740 }
+export const MONTREAL = { lat: 45.5088, lng: -73.5617 }
 
 export function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const R = 6371
@@ -86,3 +88,34 @@ export const VIS_LABEL: Record<SpotEvent['visibility'], string> = {
   request: 'Sur demande',
   circle: 'Cercle restreint',
 }
+
+// ---------- Géolocalisation (OpenStreetMap / Nominatim, sans clé) ----------
+export const RADII = [2, 5, 10, 25, 50]
+const NOMINATIM = 'https://nominatim.openstreetmap.org'
+
+/** Nom de la ville à partir d'une position. */
+export async function reverseCity(lat: number, lng: number): Promise<string | null> {
+  try {
+    const r = await fetch(`${NOMINATIM}/reverse?format=jsonv2&zoom=10&accept-language=fr&lat=${lat}&lon=${lng}`)
+    const j = await r.json()
+    const a = j.address ?? {}
+    return a.city || a.town || a.village || a.municipality || a.county || a.state || null
+  } catch { return null }
+}
+
+export interface Place { name: string; lat: number; lng: number }
+
+/** Recherche d'une ville ou d'une adresse, n'importe où dans le monde. */
+export async function geocode(q: string, near?: { lat: number; lng: number }): Promise<Place[]> {
+  try {
+    let url = `${NOMINATIM}/search?format=jsonv2&limit=5&accept-language=fr&q=${encodeURIComponent(q)}`
+    if (near) url += `&viewbox=${near.lng - 1},${near.lat + 1},${near.lng + 1},${near.lat - 1}`
+    const r = await fetch(url)
+    const j = (await r.json()) as { display_name: string; lat: string; lon: string }[]
+    return j.map((p) => ({ name: p.display_name, lat: Number(p.lat), lng: Number(p.lon) }))
+  } catch { return [] }
+}
+
+// Devise : dollar canadien pour le lancement à Montréal, euro pour la démo parisienne.
+export const CUR = isRemote ? '$' : '€'
+export const money = (n: number) => `${String(n).replace('.', ',')} ${CUR}`

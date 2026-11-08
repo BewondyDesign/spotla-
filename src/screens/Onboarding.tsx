@@ -255,7 +255,7 @@ function ProfileForm({ authId }: { authId?: string }) {
     const p = { name: name.trim(), kind, vibes, venueAddress: kind === 'business' ? addr.trim() : undefined }
     if (!isRemote) return onboard(p)
     setBusy(true)
-    try { await createProfile({ id: authId!, handle, ...p }); await reload() } catch (e) { toast('Création du profil impossible', (e as Error).message); setBusy(false) }
+    try { await createProfile({ id: authId!, handle, city: useStore.getState().city, ...p }); await reload() } catch (e) { toast('Création du profil impossible', (e as Error).message); setBusy(false) }
   }
 
   return (

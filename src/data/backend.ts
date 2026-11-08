@@ -68,10 +68,10 @@ export async function signupInfo() {
 }
 export const signOut = () => sb!.auth.signOut()
 
-export async function createProfile(p: { id: string; name: string; handle?: string; kind: AccountKind; vibes: string[]; venueAddress?: string }) {
+export async function createProfile(p: { id: string; name: string; handle?: string; city?: string; kind: AccountKind; vibes: string[]; venueAddress?: string }) {
   const handle = p.handle ? cleanHandle(p.handle) : `${cleanHandle(p.name.replace(/\s+/g, '.')) || 'membre'}.${p.id.slice(0, 4)}`
   const { error } = await sb!.from('profiles').insert({
-    id: p.id, name: p.name, handle, kind: p.kind, vibes: p.vibes, venue_address: p.venueAddress ?? null,
+    id: p.id, name: p.name, handle, city: p.city ?? 'Montréal', kind: p.kind, vibes: p.vibes, venue_address: p.venueAddress ?? null,
     color: p.kind === 'business' ? '#8B7CFF' : '#FF4F9A',
     bio: p.kind === 'business' ? 'Compte business en cours de vérification.' : '',
   })
@@ -81,11 +81,14 @@ export async function createProfile(p: { id: string; name: string; handle?: stri
 // ---------- Lecture ----------
 type Row = Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 
-export async function loadAll(meId: string) {
+// On charge les événements dans un carré d'environ 110 km autour de la personne.
+export async function loadAll(meId: string, pos: { lat: number; lng: number }) {
+  const dLng = 1 / Math.max(0.2, Math.cos((pos.lat * Math.PI) / 180))
   const [profiles, follows, events, addresses, att, stories, views, posts, likes, comments] = await Promise.all([
     sb!.from('profiles').select('*'),
     sb!.from('follows').select('follower, followee'),
-    sb!.from('events').select('*').gte('ends_at', new Date(Date.now() - 86_400_000).toISOString()).order('starts_at'),
+    sb!.from('events').select('*').gte('ends_at', new Date(Date.now() - 86_400_000).toISOString())
+      .gte('lat', pos.lat - 1).lte('lat', pos.lat + 1).gte('lng', pos.lng - dLng).lte('lng', pos.lng + dLng).order('starts_at'),
     sb!.from('event_addresses').select('*'),
     sb!.from('attendances').select('event_id, user_id, status'),
     sb!.from('stories').select('*').gt('expires_at', new Date().toISOString()),

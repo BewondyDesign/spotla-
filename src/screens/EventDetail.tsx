@@ -1,3 +1,4 @@
+import { money } from '../data/util'
 import { useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Calendar, Check, Clapperboard, ExternalLink, Flag, Lock, MapPin, Share2, Ticket, Users, X } from 'lucide-react'
@@ -67,7 +68,7 @@ export function EventDetail() {
         <div className="facts">
           <div className="fact"><Calendar size={20} /><div><b>{fmtDay(e.start)} · {fmtTime(e.start)} – {fmtTime(e.end)}</b><span>{startsIn(e)}</span></div></div>
           <div className="fact"><MapPin size={20} /><div><b>{e.venue} · {e.area}</b><span>{showAddr ? e.address : 'Adresse exacte visible une fois ta place confirmée'} · {fmtKm(distanceKm(pos, e))}</span></div></div>
-          <div className="fact"><Ticket size={20} /><div><b>{e.price === 0 ? 'Gratuit' : `${e.price} € l'entrée`}</b><span>{e.ticketUrl ? 'Billetterie du lieu' : e.price === 0 ? 'Entrée libre' : 'Paiement sur place'}</span></div>{e.ticketUrl && <a className="btn-mini" href={e.ticketUrl} target="_blank" rel="noreferrer">Billets <ExternalLink size={14} /></a>}</div>
+          <div className="fact"><Ticket size={20} /><div><b>{e.price === 0 ? 'Gratuit' : `${money(e.price)} l'entrée`}</b><span>{e.ticketUrl ? 'Billetterie du lieu' : e.price === 0 ? 'Entrée libre' : 'Paiement sur place'}</span></div>{e.ticketUrl && <a className="btn-mini" href={e.ticketUrl} target="_blank" rel="noreferrer">Billets <ExternalLink size={14} /></a>}</div>
           <div className="fact"><Users size={20} /><div><b>{goingCount(e)} y vont{e.capacity ? ` · ${e.capacity} places` : ''}</b><span>{VIS_LABEL[e.visibility]}</span></div></div>
         </div>
 
