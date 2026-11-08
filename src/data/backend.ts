@@ -27,6 +27,7 @@ function fr(msg: string) {
   if (m.includes('password should be') || m.includes('weak')) return 'Mot de passe trop faible : 8 caractères minimum, avec des lettres et des chiffres.'
   if (m.includes('email not confirmed')) return 'Confirme d\'abord ton e-mail avec le lien qu\'on t\'a envoyé.'
   if (m.includes('provider is not enabled') || m.includes('unsupported provider')) return 'La connexion avec Google n\'est pas encore activée.'
+  if (m.includes('email rate limit')) return 'Trop d\'e-mails envoyés pour l\'instant. Le service d\'e-mails gratuit de Supabase est limité à quelques envois par heure.'
   if (m.includes('rate limit') || m.includes('security purposes')) return 'Trop de tentatives. Réessaie dans une minute.'
   if (m.includes('profiles_handle_key') || m.includes('duplicate key')) return 'Ce nom d\'utilisateur est déjà pris.'
   return msg
