@@ -26,6 +26,10 @@ interface State {
   guest: boolean
   /** A confirmé avoir 18 ans ou plus (inscription ou écran d'âge). */
   adultOk: boolean
+  /** A répondu avoir moins de 18 ans : l'app reste bloquée tant que l'âge n'est pas confirmé. */
+  minorBlocked: boolean
+  /** Quand l'âge et les règles ont été acceptés (preuve de consentement). */
+  adultAt?: string
   /** Raison affichée dans la feuille « Crée ton compte » (null = fermée). */
   joinAsk: string | null
   setGuest: (on: boolean) => void
@@ -92,6 +96,7 @@ export const useStore = create<State>()(
       meId: null,
       guest: false,
       adultOk: false,
+      minorBlocked: false,
       joinAsk: null,
       setGuest: (on) => { set({ guest: on, joinAsk: null }); if (on) get().reload() },
       vibes: [],
@@ -329,13 +334,13 @@ export const useStore = create<State>()(
     {
       name: isRemote ? 'spotla-live' : 'spotla-v1',
       // En mode Supabase, seules les préférences restent sur l'appareil ; les données viennent de la base.
-      partialize: (s) => (isRemote ? { pos: s.pos, city: s.city, radius: s.radius, vibes: s.vibes, guest: s.guest, adultOk: s.adultOk } : { ...s, recovery: false, geo: 'idle', manual: false }) as State,
+      partialize: (s) => (isRemote ? { pos: s.pos, city: s.city, radius: s.radius, vibes: s.vibes, guest: s.guest, adultOk: s.adultOk, minorBlocked: s.minorBlocked, adultAt: s.adultAt } : { ...s, recovery: false, geo: 'idle', manual: false }) as State,
       // Chaque jour, on régénère les données de démo pour garder des horaires réalistes,
       // sans toucher à ce que l'utilisateur a créé.
       merge: (persisted, current) => {
         const p = persisted as Partial<State> | undefined
         if (!p) return current
-        if (isRemote) return { ...current, pos: p.pos ?? current.pos, city: p.city ?? current.city, radius: p.radius ?? current.radius, vibes: p.vibes ?? current.vibes, guest: !!p.guest, adultOk: !!p.adultOk }
+        if (isRemote) return { ...current, pos: p.pos ?? current.pos, city: p.city ?? current.city, radius: p.radius ?? current.radius, vibes: p.vibes ?? current.vibes, guest: !!p.guest, adultOk: !!p.adultOk, minorBlocked: !!p.minorBlocked, adultAt: p.adultAt }
         if (p.seedDay === today()) return { ...current, ...p, geo: 'idle' }
         const seed = freshSeed()
         const mine = <T extends { id: string }>(arr: T[] | undefined, seedArr: T[]) => (arr ?? []).filter((x) => !seedArr.some((y) => y.id === x.id))

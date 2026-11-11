@@ -263,7 +263,7 @@ function ProfileForm({ authId }: { authId?: string }) {
 
   const ok = adult && name.trim().length >= 2 && (!isRemote || handle.length >= 3) && (kind === 'perso' || addr.trim().length > 4)
   const submit = async () => {
-    useStore.setState({ adultOk: true })
+    useStore.setState({ adultOk: true, minorBlocked: false, adultAt: new Date().toISOString() })
     const p = { name: name.trim(), kind, vibes, venueAddress: kind === 'business' ? addr.trim() : undefined }
     if (!isRemote) { onboard(p); if (photo) useStore.getState().updateProfile({ avatarUrl: photo.url }); return }
     setBusy(true)

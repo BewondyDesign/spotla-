@@ -31,6 +31,7 @@ function Shell() {
   const recovery = useStore((s) => s.recovery)
   const guest = useStore((s) => s.guest)
   const adultOk = useStore((s) => s.adultOk)
+  const minorBlocked = useStore((s) => s.minorBlocked)
   const me = useMe()
   const loc = useLocation()
   useOutingReminders()
@@ -67,6 +68,8 @@ function Shell() {
     return subscribe(() => useStore.getState().reload())
   }, [meId, guest])
 
+  // Moins de 18 ans : rien d'autre ne s'affiche (ni inscription, ni visite) tant que l'âge n'est pas confirmé.
+  if (minorBlocked) return <div className="app"><AgeGate /></div>
   if (isRemote && loading) return <div className="app"><div className="splash"><span className="dot" />SpotLa</div></div>
   if (recovery) return <div className="app"><NewPassword /><Toast /></div>
   if (!meId && !guest) return <div className="app"><Onboarding /><Toast /></div>

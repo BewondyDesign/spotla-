@@ -245,6 +245,11 @@ export const EN: Record<string, string> = {
   'Oui, j\'ai 18 ans ou plus': 'Yes, I\'m 18 or older', 'Non': 'No', 'Publication refusée': 'Post refused',
   'SpotLa est réservé aux 18 ans et plus : les activités pour enfants ou familles ne sont pas acceptées.': 'SpotLa is for people 18 and over: activities for children or families are not allowed.',
   'Explorer par catégorie': 'Browse by category',
+  'Accès bloqué': 'Access blocked', 'Tu as indiqué avoir moins de 18 ans. SpotLa propose des sorties dans des bars, des clubs et des soirées pour adultes : l\'accès est donc fermé.': 'You said you are under 18. SpotLa lists outings in bars, clubs and adult parties, so access is closed.',
+  'Si tu as répondu par erreur, confirme ton âge et accepte les règles pour entrer.': 'If you answered by mistake, confirm your age and accept the rules to enter.',
+  'Je confirme avoir 18 ans ou plus': 'I confirm I am 18 or older', 'et j\'accepte les règles de la communauté SpotLa. Fournir un faux âge est contraire à nos règles.': 'and I accept the SpotLa community rules. Giving a false age is against our rules.',
+  'Confirmer et entrer': 'Confirm and enter', 'J\'accepte les règles de la communauté SpotLa': 'I accept the SpotLa community rules', 'En entrant, je confirme avoir 18 ans ou plus.': 'By entering, I confirm I am 18 or older.',
+  'Non, j\'ai moins de 18 ans': 'No, I\'m under 18',
   'Centre-ville': 'Downtown', 'Vieux-Montréal': 'Old Montréal', 'Quartier latin': 'Latin Quarter', 'Quartier chinois': 'Chinatown', 'Petite Italie': 'Little Italy', 'Vieux-Port': 'Old Port',
 }
 

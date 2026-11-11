@@ -889,6 +889,7 @@ p { line-height: 1.5; }
 .join-sheet { justify-items: start; gap: 12px; }
 .join-ic { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: rgba(232,194,122,.15); color: var(--brand); }
 .join-ic.big { width: 64px; height: 64px; border-radius: 20px; }
+.join-ic.danger { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger); }
 .join-screen { display: grid; gap: 16px; justify-items: start; padding-top: 40px; }
 .solo-card, .vibe-card { display: grid; gap: 12px; padding: 16px; border-radius: 20px; background: var(--night); border: 1px solid var(--line); }
 .solo-ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(232,194,122,.15); color: var(--brand); flex: none; }

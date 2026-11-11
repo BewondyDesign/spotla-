@@ -151,12 +151,12 @@ export function Home() {
         </div>
       </header>
 
+      <StoriesBar />
+
       <section className="rail-sec cat-sec" aria-label={t('Explorer par catégorie', 'Browse by category')}>
         <div className="pad sec-head"><h2 className="sec-title">{t('Explorer par catégorie', 'Browse by category')}</h2></div>
         <CategoryChips />
       </section>
-
-      <StoriesBar />
 
       <section className="rail-sec" aria-label={SLOT_TITLE[slot][en ? 3 : 1]}>
         <div className="pad row between sec-head">
