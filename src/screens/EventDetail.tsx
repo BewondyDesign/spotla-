@@ -111,7 +111,7 @@ export function EventDetail() {
         {goers.length > 0 && (
           <section className="stack8">
             <button className="goers-row" onClick={() => setAllGoers(!allGoers)} aria-expanded={allGoers}>
-              <span className="solo-faces">{goers.slice(0, 5).map((u) => <Avatar key={u.id} u={u} size={30} />)}</span>
+              {!allGoers && <span className="goers-faces">{goers.slice(0, 5).map((u) => <Avatar key={u.id} u={u} size={30} />)}</span>}
               <span className="grow"><b>{goingCount(e)} {t('y vont', 'going')}</b>{e.capacity ? <small> · {e.capacity} {t('places', 'spots')}</small> : null}</span>
               <span className="muted small">{allGoers ? t('Masquer', 'Hide') : t('Voir', 'See')}</span>
             </button>

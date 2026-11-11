@@ -955,8 +955,9 @@ p { line-height: 1.5; }
 .ev-cta > .btn-block { flex: 1; }
 .ev-cta > a.btn { display: inline-flex; align-items: center; gap: 6px; }
 .goers-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 4px 0; background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.goers-row .solo-faces > * { margin-right: -8px; border-radius: 50%; box-shadow: 0 0 0 2px var(--ink, #0B0B0D); }
-.goers-row .grow { padding-left: 8px; }
+.goers-faces { display: flex; align-items: center; }
+.goers-faces > .avatar + .avatar { margin-left: -9px; }
+.goers-faces > .avatar { box-shadow: 0 0 0 2px var(--ink, #0B0B0D); }
 .goers-row b { font-size: 15px; font-weight: 600; }
 .goers-row small { color: var(--muted); }
 .solo-compact { padding: 12px 14px; gap: 6px; }
