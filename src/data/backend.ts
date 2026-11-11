@@ -11,7 +11,7 @@ export const sb: SupabaseClient | null = url && key
   : null
 export const isRemote = !!sb
 
-const must = <T,>(r: { data: T; error: { message: string } | null }) => {
+export const must = <T,>(r: { data: T; error: { message: string } | null }) => {
   if (r.error) throw new Error(r.error.message)
   return r.data
 }
@@ -94,7 +94,7 @@ export async function createProfile(p: { id: string; name: string; handle?: stri
 type Row = Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 
 // On charge les événements dans un carré d'environ 110 km autour de la personne.
-export async function loadAll(meId: string, pos: { lat: number; lng: number }) {
+export async function loadAll(meId: string | null, pos: { lat: number; lng: number }) {
   const dLng = 1 / Math.max(0.2, Math.cos((pos.lat * Math.PI) / 180))
   const [profiles, follows, events, addresses, att, stories, views, posts, likes, comments] = await Promise.all([
     sb!.from('profiles').select('*'),
@@ -104,7 +104,7 @@ export async function loadAll(meId: string, pos: { lat: number; lng: number }) {
     sb!.from('event_addresses').select('*'),
     sb!.from('attendances').select('event_id, user_id, status'),
     sb!.from('stories').select('*').gt('expires_at', new Date().toISOString()),
-    sb!.from('story_views').select('story_id, user_id').eq('user_id', meId),
+    meId ? sb!.from('story_views').select('story_id, user_id').eq('user_id', meId) : Promise.resolve({ data: [], error: null }),
     sb!.from('posts').select('*').order('created_at', { ascending: false }).limit(200),
     sb!.from('post_likes').select('post_id, user_id'),
     sb!.from('comments').select('*').order('created_at'),
@@ -134,7 +134,7 @@ export async function loadAll(meId: string, pos: { lat: number; lng: number }) {
   const sts: Story[] = (stories as Row[]).map((s) => ({
     id: s.id, authorId: s.author_id, eventId: s.event_id ?? undefined, caption: s.caption,
     media: { kind: 'video', url: s.video_url, duration: Number(s.duration_s) },
-    createdAt: s.created_at, expiresAt: s.expires_at, seenBy: seen.has(s.id) ? [meId] : [],
+    createdAt: s.created_at, expiresAt: s.expires_at, seenBy: meId && seen.has(s.id) ? [meId] : [],
   }))
 
   const ps: Post[] = (posts as Row[]).map((p) => ({

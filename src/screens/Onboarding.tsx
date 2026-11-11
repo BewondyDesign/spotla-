@@ -3,6 +3,7 @@ import { ArrowLeft, Building2, Camera, Eye, EyeOff, PartyPopper } from 'lucide-r
 import { toast, useStore } from '../data/store'
 import { cleanHandle, createProfile, isRemote, uploadMedia, sendPasswordReset, signIn, signInWithGoogle, signUp, signupInfo, updatePassword } from '../data/backend'
 import { VIBES } from '../data/util'
+import { LangSwitch, useT } from '../data/i18n'
 import type { AccountKind } from '../data/types'
 
 type View = 'welcome' | 'signup' | 'login' | 'forgot' | 'check-email' | 'profile'
@@ -25,22 +26,25 @@ export function Onboarding({ authId }: { authId?: string }) {
 }
 
 function Welcome({ go }: { go: (v: View) => void }) {
+  const t = useT()
   return (
     <div className="scr onboard">
       <div className="onboard-art"><div className="glow g1" /><div className="glow g2" /><div className="glow g3" /></div>
       <div className="pad onboard-body">
-        <div className="brand"><span className="dot" />SpotLa</div>
-        <h1 className="title-xl">Où on sort <em>ce soir</em>&nbsp;?</h1>
-        <p className="lede">Les soirées, concerts, apéros et fêtes près de toi, en temps réel. Même si tu ne connais personne en ville.</p>
+        <div className="row between"><div className="brand"><span className="dot" />SpotLa</div><LangSwitch /></div>
+        <h1 className="title-xl">{t('On fait quoi ', 'What\'s the plan ')}<em>{t('maintenant', 'right now')}</em>{t('\u00a0?', '?')}</h1>
+        <p className="lede">{t('Les sorties, activités et soirées près de toi, à toute heure. Même seul·e, même si tu ne connais personne en ville.', 'Outings, activities and parties near you, any time of day. Even solo, even if you don\'t know anyone in town.')}</p>
         {isRemote ? (
           <div className="stack12">
-            <button className="btn btn-primary btn-block" onClick={() => go('signup')}>Créer un compte</button>
+            <button className="btn btn-primary btn-block" onClick={() => go('signup')}>{t('Créer un compte', 'Create an account')}</button>
             <GoogleButton />
-            <p className="center muted">Tu as déjà un compte ? <button className="link-strong" onClick={() => go('login')}>Se connecter</button></p>
+            <p className="center muted">{t('Tu as déjà un compte ?', 'Already have an account?')} <button className="link-strong" onClick={() => go('login')}>{t('Se connecter', 'Log in')}</button></p>
+            <button className="btn btn-ghost btn-block" onClick={() => useStore.getState().setGuest(true)}>{t('Explorer sans compte', 'Browse without an account')}</button>
           </div>
         ) : (
           <>
-            <button className="btn btn-primary btn-block" onClick={() => go('profile')}>C'est parti</button>
+            <button className="btn btn-primary btn-block" onClick={() => go('profile')}>{t('C\'est parti', 'Let\'s go')}</button>
+            <button className="btn btn-ghost btn-block" onClick={() => useStore.getState().setGuest(true)}>{t('Explorer sans compte', 'Browse without an account')}</button>
             <p className="hint center">Mode démo : tes données restent sur cet appareil.</p>
           </>
         )}
@@ -244,6 +248,8 @@ function ProfileForm({ authId }: { authId?: string }) {
   const [handle, setHandle] = useState('')
   const [addr, setAddr] = useState('')
   const [vibes, setVibes] = useState<string[]>(['danser', 'live'])
+  // Sorties dans des bars et des clubs : l'app est réservée aux 18 ans et plus (âge légal au Québec).
+  const [adult, setAdult] = useState(false)
   // Photo de profil : celle de Google par défaut, ou une photo choisie.
   const [photo, setPhoto] = useState<{ url: string; file?: File } | null>(null)
 
@@ -255,7 +261,7 @@ function ProfileForm({ authId }: { authId?: string }) {
     })
   }, [authId])
 
-  const ok = name.trim().length >= 2 && (!isRemote || handle.length >= 3) && (kind === 'perso' || addr.trim().length > 4)
+  const ok = adult && name.trim().length >= 2 && (!isRemote || handle.length >= 3) && (kind === 'perso' || addr.trim().length > 4)
   const submit = async () => {
     const p = { name: name.trim(), kind, vibes, venueAddress: kind === 'business' ? addr.trim() : undefined }
     if (!isRemote) { onboard(p); if (photo) useStore.getState().updateProfile({ avatarUrl: photo.url }); return }
@@ -310,7 +316,11 @@ function ProfileForm({ authId }: { authId?: string }) {
             ))}
           </div>
         </div>
-        <button className="btn btn-primary btn-block" disabled={!ok || busy} onClick={submit}>{busy ? 'Création…' : 'Voir ce qui se passe ce soir'}</button>
+        <label className="adult-check">
+          <input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} />
+          <span><b>J'ai 18 ans ou plus</b><small>SpotLa propose des sorties dans des bars et des clubs : l'app est réservée aux personnes majeures.</small></span>
+        </label>
+        <button className="btn btn-primary btn-block" disabled={!ok || busy} onClick={submit}>{busy ? 'Création…' : 'Voir ce qui se passe maintenant'}</button>
       </div>
     </div>
   )

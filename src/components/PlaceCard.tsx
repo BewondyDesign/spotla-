@@ -4,7 +4,7 @@ import type { CatalogItem, Category } from '../data/catalog'
 import { toggleLike, useStats } from '../data/places'
 import { placeVideo } from '../data/ambiance'
 import { AutoVideo } from './AutoVideo'
-import { toast, useStore } from '../data/store'
+import { requireAccount, toast, useStore } from '../data/store'
 import { distanceKm, fmtKm } from '../data/util'
 
 export const CAT_ICON: Record<Category, typeof Music> = { club: Music, bar: Martini, soiree: PartyPopper, fetes: Gift, gastro: UtensilsCrossed, jeux: Gamepad2 }
@@ -29,7 +29,7 @@ export function PlaceCard({ p }: { p: CatalogItem }) {
   const vid = placeVideo(p)
   const like = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!meId) return
+    if (!meId) { requireAccount('enregistrer ce lieu'); return }
     try { await toggleLike(p.id, meId) } catch { toast('Impossible d\'enregistrer ton like', 'Réessaie dans un instant.') }
   }
   return (
@@ -37,7 +37,6 @@ export function PlaceCard({ p }: { p: CatalogItem }) {
       {vid ? <AutoVideo className="pcard-bg" src={vid} poster={p.photo} />
         : p.photo ? <img className="pcard-bg" src={p.photo} alt="" loading="lazy" />
         : <Icon className="pcard-icon" size={130} strokeWidth={1} aria-hidden="true" />}
-      <span className="pcard-rank">#{p.rank}</span>
       <button className={`pcard-like ${st.liked ? 'on' : ''}`} onClick={like} aria-label={st.liked ? 'Je n\'aime plus' : 'J\'aime'} aria-pressed={st.liked}><Heart size={20} /></button>
       <div className="pcard-over">
         {p.when && <span className="pcard-when">{p.when}</span>}

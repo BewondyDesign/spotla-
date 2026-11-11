@@ -15,17 +15,20 @@ import { MK } from '../data/ambiance'
 import { Avatar, Verified } from '../components/ui'
 import type { Category } from '../data/catalog'
 import type { SpotEvent } from '../data/types'
+import { LangSwitch, useLang, useT } from '../data/i18n'
 
 // Vidéo d'entête selon la saison : rues enneigées et lumières de Noël en hiver, foule de festival le reste de l'année.
 const HERO_VIDS = (() => { const m = new Date().getMonth(); return m === 10 || m === 11 || m === 0 ? [3323, 29431] : m >= 5 && m <= 7 ? [14088, 13265] : [33901, 4187] })()
 /** Heure de Montréal, pour saluer au bon moment. */
 const hourIn = (d: Date) => Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: 'America/Montreal' }).format(d)) % 24
 const mtlHour = () => hourIn(new Date())
-const greet = () => { const h = mtlHour(); return h >= 5 && h < 12 ? 'Bonjour' : h >= 12 && h < 18 ? 'Bel après-midi' : 'Bonsoir' }
+const greet = (en: boolean) => { const h = mtlHour(); return h >= 5 && h < 12 ? (en ? 'Good morning' : 'Bonjour') : h >= 12 && h < 18 ? (en ? 'Good afternoon' : 'Bel après-midi') : (en ? 'Good evening' : 'Bonsoir') }
+/** « quand » en toutes lettres, FR puis EN. */
+const WHEN: Record<Slot, [string, string]> = { now: ['maintenant', 'now'], aprem: ['cet après-midi', 'this afternoon'], soir: ['ce soir', 'tonight'], weekend: ['ce week-end', 'this weekend'] }
 
 type Slot = 'now' | 'aprem' | 'soir' | 'weekend'
-const SLOTS: { k: Slot; label: string }[] = [
-  { k: 'now', label: 'Maintenant' }, { k: 'aprem', label: 'Cet après-midi' }, { k: 'soir', label: 'Ce soir' }, { k: 'weekend', label: 'Ce week-end' },
+const SLOTS: { k: Slot; label: string; en: string }[] = [
+  { k: 'now', label: 'Maintenant', en: 'Now' }, { k: 'aprem', label: 'Cet après-midi', en: 'This afternoon' }, { k: 'soir', label: 'Ce soir', en: 'Tonight' }, { k: 'weekend', label: 'Ce week-end', en: 'This weekend' },
 ]
 const H = 3600_000
 const ymd = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'America/Montreal' })
@@ -44,9 +47,9 @@ function inSlot(e: SpotEvent, slot: Slot, now = Date.now()) {
 const agendaIn = (a: AgendaItem, slot: Slot) => slot === 'weekend' ? weekendDays().some((d) => a.start <= d && a.end >= d) : isOnNow(a)
 /** Les lieux qui collent au créneau : activités le jour, bars et clubs le soir. */
 const SLOT_CATS: Record<Slot, Category[]> = { now: ['jeux'], aprem: ['jeux'], soir: ['bar', 'club', 'soiree', 'jeux'], weekend: ['jeux', 'fetes', 'gastro', 'soiree'] }
-const SLOT_TITLE: Record<Slot, [string, string]> = {
-  now: ['Dans les 3 prochaines heures', 'Ça commence bientôt'], aprem: ['Cet après-midi', 'Les sorties de l\'après-midi'],
-  soir: ['Ce soir', 'Les soirées près de toi'], weekend: ['Ce week-end', 'Les sorties du week-end'],
+const SLOT_TITLE: Record<Slot, [string, string, string, string]> = {
+  now: ['Dans les 3 prochaines heures', 'Ça commence bientôt', 'In the next 3 hours', 'Starting soon'], aprem: ['Cet après-midi', 'Les sorties de l\'après-midi', 'This afternoon', 'Afternoon plans'],
+  soir: ['Ce soir', 'Les soirées près de toi', 'Tonight', 'Nights out near you'], weekend: ['Ce week-end', 'Les sorties du week-end', 'This weekend', 'Weekend plans'],
 }
 
 export function Home() {
@@ -58,6 +61,8 @@ export function Home() {
   const me = useMe()
   const [slot, setSlot] = useState<Slot>(() => (mtlHour() >= 17 || mtlHour() < 5 ? 'soir' : 'now'))
   const users = useStore((s) => s.users)
+  const t = useT()
+  const en = useLang((s) => s.lang) === 'en'
   const city = useStore((s) => s.city)
   // La communauté : qui sort ce soir d'abord, puis qui a partagé récemment. Pas de classement par abonnés.
   const community = useMemo(() => {
@@ -66,10 +71,10 @@ export function Home() {
     return users.filter((u) => u.id !== me?.id).map((u) => {
       const ev = tonight.find((e) => e.going.includes(u.id) || e.hostId === u.id)
       const last = lastPost(u.id)
-      const status = ev ? `Y va · ${ev.venue}` : last && Date.now() - Date.parse(last) < 3 * 864e5 ? 'A partagé un moment' : u.city ? `De ${u.city}` : 'Membre SpotLa'
+      const status = ev ? `${en ? 'Going' : 'Y va'} · ${ev.venue}` : last && Date.now() - Date.parse(last) < 3 * 864e5 ? (en ? 'Shared a moment' : 'A partagé un moment') : u.city ? `${en ? 'From' : 'De'} ${u.city}` : (en ? 'SpotLa member' : 'Membre SpotLa')
       return { u, ev, status, score: (ev ? 2 : 0) + (last ? 1 : 0) }
     }).sort((a, b) => b.score - a.score).slice(0, 15)
-  }, [users, events, posts, me])
+  }, [users, events, posts, me, en])
 
   const list = useMemo(() => events
     .filter((e) => !isHidden(e, me?.id ?? null))
@@ -105,17 +110,18 @@ export function Home() {
         <div className="hero-top">
           <span className="wordmark light">spotla<i /></span>
           <div className="row gap8">
-            <Link to="/map" className="iconbtn glass sm" aria-label="Rechercher un lieu"><Search size={19} /></Link>
-            <Link to="/notifs" className="iconbtn glass sm bell" aria-label="Activité"><Bell size={19} />{unread > 0 && <i>{unread}</i>}</Link>
+            <LangSwitch className="glass" />
+            <Link to="/map" className="iconbtn glass sm" aria-label={t('Rechercher un lieu', 'Search a place')}><Search size={19} /></Link>
+            <Link to="/notifs" className="iconbtn glass sm bell" aria-label={t('Activité', 'Activity')}><Bell size={19} />{unread > 0 && <i>{unread}</i>}</Link>
           </div>
         </div>
         <div className="hero-copy">
-          <p className="hero-hi">{greet()}{me?.name ? `, ${me.name.split(' ')[0]}` : ''}</p>
-          <h1 className="hero-h">Qu'est-ce qu'on fait <em>{slot === 'now' ? 'maintenant' : slot === 'aprem' ? 'cet après-midi' : slot === 'soir' ? 'ce soir' : 'ce week-end'}</em> ?</h1>
+          <p className="hero-hi">{greet(en)}{me?.name ? `, ${me.name.split(' ')[0]}` : ''}</p>
+          <h1 className="hero-h">{en ? <>What's the plan <em>{WHEN[slot][1]}</em>?</> : <>Qu'est-ce qu'on fait <em>{WHEN[slot][0]}</em> ?</>}</h1>
           <LocationButton pill />
-          <div className="slot-chips" role="tablist" aria-label="Quand ?">
+          <div className="slot-chips" role="tablist" aria-label={t('Quand ?', 'When?')}>
             {SLOTS.filter((x) => x.k !== 'aprem' || mtlHour() < 17).map((x) => (
-              <button key={x.k} role="tab" aria-selected={slot === x.k} className={slot === x.k ? 'on' : ''} onClick={() => setSlot(x.k)}>{x.label}</button>
+              <button key={x.k} role="tab" aria-selected={slot === x.k} className={slot === x.k ? 'on' : ''} onClick={() => setSlot(x.k)}>{en ? x.en : x.label}</button>
             ))}
           </div>
         </div>
@@ -123,18 +129,18 @@ export function Home() {
 
       <StoriesBar />
 
-      <section className="rail-sec" aria-label={SLOT_TITLE[slot][1]}>
+      <section className="rail-sec" aria-label={SLOT_TITLE[slot][en ? 3 : 1]}>
         <div className="pad row between sec-head">
-          <div className="stack4"><span className="kicker">{SLOT_TITLE[slot][0]}</span><h2 className="sec-title">{SLOT_TITLE[slot][1]}</h2></div>
-          <Link className="sec-link" to="/map">Carte</Link>
+          <div className="stack4"><span className="kicker">{SLOT_TITLE[slot][en ? 2 : 0]}</span><h2 className="sec-title">{SLOT_TITLE[slot][en ? 3 : 1]}</h2></div>
+          <Link className="sec-link" to="/map">{t('Carte', 'Map')}</Link>
         </div>
         {list.length > 0
           ? <div className="rail ev-rail">{list.slice(0, 10).map((e) => <EventCard key={e.id} e={e} />)}</div>
           : (
             <div className="pad">
               <Link to="/create" className="empty-slot">
-                <b>Rien d'annoncé {slot === 'now' ? 'dans les 3 prochaines heures' : slot === 'aprem' ? 'cet après-midi' : slot === 'soir' ? 'ce soir' : 'ce week-end'} près de toi.</b>
-                <span>Lance une sortie : d'autres te rejoindront. Ou pioche une activité juste en dessous.</span>
+                <b>{en ? `Nothing posted ${slot === 'now' ? 'in the next 3 hours' : WHEN[slot][1]} near you.` : `Rien d'annoncé ${slot === 'now' ? 'dans les 3 prochaines heures' : WHEN[slot][0]} près de toi.`}</b>
+                <span>{t('Lance une sortie : d\'autres te rejoindront. Ou pioche une activité juste en dessous.', 'Start a plan and others will join. Or pick an activity below.')}</span>
               </Link>
             </div>
           )}
@@ -142,16 +148,16 @@ export function Home() {
 
       <section className="rail-sec" aria-label="Envie de bouger">
         <div className="pad stack4 sec-head">
-          <span className="kicker">Ouvert à toute heure · près de toi</span>
-          <h2 className="sec-title">{slot === 'soir' ? 'Où aller ce soir' : 'Envie de bouger ?'}</h2>
+          <span className="kicker">{t('Ouvert à toute heure · près de toi', 'Open all day · near you')}</span>
+          <h2 className="sec-title">{slot === 'soir' ? t('Où aller ce soir', 'Where to go tonight') : t('Envie de bouger ?', 'Feel like going out?')}</h2>
         </div>
         <div className="rail">{spots.map((p) => <PlaceCard key={p.id} p={p} />)}</div>
       </section>
 
       <section className="rail-sec" aria-label="Activités à faire">
         <div className="pad row between sec-head">
-          <div className="stack4"><span className="kicker">{slot === 'weekend' ? 'Ce week-end' : "Aujourd'hui"} · près de toi</span><h2 className="sec-title">Activités à faire à {city}</h2></div>
-          <Link className="sec-link" to="/agenda">Tout voir</Link>
+          <div className="stack4"><span className="kicker">{slot === 'weekend' ? t('Ce week-end', 'This weekend') : t("Aujourd'hui", 'Today')} · {t('près de toi', 'near you')}</span><h2 className="sec-title">{t('Activités à faire à', 'Things to do in')} {city}</h2></div>
+          <Link className="sec-link" to="/agenda">{t('Tout voir', 'See all')}</Link>
         </div>
         <div className="rail">{soon.map((e) => <AgendaCard key={e.id} e={e} />)}</div>
       </section>
@@ -159,8 +165,8 @@ export function Home() {
       {community.length > 0 && (
         <section className="rail-sec" aria-label="Communauté">
           <div className="pad stack4 sec-head">
-            <span className="kicker">Ta communauté</span>
-            <h2 className="sec-title">Qui sort {slot === 'weekend' ? 'ce week-end' : slot === 'soir' ? 'ce soir' : "aujourd'hui"} ?</h2>
+            <span className="kicker">{t('Ta communauté', 'Your community')}</span>
+            <h2 className="sec-title">{en ? `Who's out ${slot === 'weekend' ? 'this weekend' : slot === 'soir' ? 'tonight' : 'today'}?` : `Qui sort ${slot === 'weekend' ? 'ce week-end' : slot === 'soir' ? 'ce soir' : "aujourd'hui"} ?`}</h2>
           </div>
           <div className="rail people-rail">
             {community.map(({ u, ev, status }) => (
@@ -176,8 +182,8 @@ export function Home() {
 
       <section className="rail-sec" aria-label="Top 10 SpotLa">
         <div className="pad rail-head center">
-          <span className="kicker">Sélection SpotLa</span>
-          <h2 className="sec-title big">Le Top 10 <em>du moment</em></h2>
+          <span className="kicker">{t('Sélection SpotLa', 'SpotLa picks')}</span>
+          <h2 className="sec-title big">{en ? <>Top 10 <em>right now</em></> : <>Le Top 10 <em>du moment</em></>}</h2>
         </div>
         <div className="rail">{top10.map((p, i) => <PlaceCard key={p.id} p={{ ...p, rank: i + 1 }} />)}</div>
       </section>

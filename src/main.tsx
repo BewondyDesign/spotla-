@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { useLang } from './data/i18n'
 import { App } from './App'
 import { sb } from './data/backend'
 import { toast, useStore } from './data/store'
@@ -20,6 +21,7 @@ async function boot() {
   }
   // Comme une app native : pas de zoom au pincement (iOS ignore user-scalable=no).
   document.addEventListener('gesturestart', (e) => e.preventDefault())
+  document.documentElement.lang = useLang.getState().lang
   createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>)
   const err = params.get('error_description')
   if (err) {

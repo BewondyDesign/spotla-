@@ -21,6 +21,11 @@ let watchId: number | null = null
 
 interface State {
   meId: string | null
+  /** Visite sans compte : on parcourt tout, le compte est demandé au premier « J'y vais ». */
+  guest: boolean
+  /** Raison affichée dans la feuille « Crée ton compte » (null = fermée). */
+  joinAsk: string | null
+  setGuest: (on: boolean) => void
   users: User[]
   events: SpotEvent[]
   stories: Story[]
@@ -82,6 +87,9 @@ export const useStore = create<State>()(
   persist(
     (set, get) => ({
       meId: null,
+      guest: false,
+      joinAsk: null,
+      setGuest: (on) => { set({ guest: on, joinAsk: null }); if (on) get().reload() },
       vibes: [],
       // Ville de lancement : Montréal (le mode démo garde ses données de Paris).
       pos: isRemote ? MONTREAL : PARIS,
@@ -136,7 +144,7 @@ export const useStore = create<State>()(
 
       reload: async () => {
         const me = get().meId
-        if (!isRemote || !me) return
+        if (!isRemote || (!me && !get().guest)) return
         try {
           const data = await loadAll(me, get().pos)
           set({ ...data, loading: false })
@@ -146,8 +154,8 @@ export const useStore = create<State>()(
         }
       },
       setSession: async (id) => {
-        set({ meId: id, loading: !!id })
-        if (id) await get().reload()
+        set({ meId: id, loading: !!id || get().guest })
+        if (id || get().guest) await get().reload()
       },
 
       onboard: ({ name, kind, vibes, venueAddress }) => {
@@ -174,6 +182,7 @@ export const useStore = create<State>()(
       setPos: (pos) => set({ pos }),
 
       toggleGoing: (eventId) => {
+        if (!requireAccount('dire que tu y vas')) return
         const me = get().meId!
         const was = get().events.find((e) => e.id === eventId)?.going.includes(me)
         set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, going: toggle(e.going, me) })) }))
@@ -181,6 +190,7 @@ export const useStore = create<State>()(
       },
 
       requestJoin: (eventId) => {
+        if (!requireAccount('demander ta place')) return
         set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, requests: toggle(e.requests, s.meId!) })) }))
         const e = get().events.find((x) => x.id === eventId)
         if (isRemote) { sync(() => remote.setAttendance(eventId, get().meId!, e?.requests.includes(get().meId!) ? 'requested' : null)); return }
@@ -228,6 +238,7 @@ export const useStore = create<State>()(
         sync(() => remote.createStory(st))
       },
       seeStory: (id) => {
+        if (!get().meId) return
         if (get().stories.find((x) => x.id === id)?.seenBy.includes(get().meId!)) return
         sync(() => remote.seeStory(id, get().meId!))
         set((s) => ({ stories: s.stories.map((st) => (st.id === id && !st.seenBy.includes(s.meId!) ? { ...st, seenBy: [...st.seenBy, s.meId!] } : st)) }))
@@ -239,11 +250,13 @@ export const useStore = create<State>()(
         sync(() => remote.createPost(p))
       },
       toggleLike: (postId) => {
+        if (!requireAccount('aimer une publication')) return
         const me = get().meId!
         sync(() => remote.like(postId, me, !get().posts.find((p) => p.id === postId)?.likes.includes(me)))
         set((s) => ({ posts: s.posts.map((p) => (p.id === postId ? { ...p, likes: toggle(p.likes, s.meId!) } : p)) }))
       },
       addComment: (postId, text) => {
+        if (!requireAccount('commenter')) return
         const id = uid('c')
         sync(() => remote.comment(id, postId, get().meId!, text))
         set((s) => ({ posts: s.posts.map((p) => (p.id === postId ? { ...p, comments: [...p.comments, { id, authorId: s.meId!, text, createdAt: new Date().toISOString() }] } : p)) }))
@@ -273,6 +286,7 @@ export const useStore = create<State>()(
         set((s) => ({ users: s.users.map((u) => (u.id === me ? { ...u, ...patch } : u)) }))
       },
       toggleFollow: (userId) => {
+        if (!requireAccount("suivre quelqu'un")) return
         const me = get().meId!
         sync(() => remote.follow(me, userId, !get().users.find((u) => u.id === me)?.following.includes(userId)))
         set((s) => ({
@@ -311,13 +325,13 @@ export const useStore = create<State>()(
     {
       name: isRemote ? 'spotla-live' : 'spotla-v1',
       // En mode Supabase, seules les préférences restent sur l'appareil ; les données viennent de la base.
-      partialize: (s) => (isRemote ? { pos: s.pos, city: s.city, radius: s.radius, vibes: s.vibes } : { ...s, recovery: false, geo: 'idle', manual: false }) as State,
+      partialize: (s) => (isRemote ? { pos: s.pos, city: s.city, radius: s.radius, vibes: s.vibes, guest: s.guest } : { ...s, recovery: false, geo: 'idle', manual: false }) as State,
       // Chaque jour, on régénère les données de démo pour garder des horaires réalistes,
       // sans toucher à ce que l'utilisateur a créé.
       merge: (persisted, current) => {
         const p = persisted as Partial<State> | undefined
         if (!p) return current
-        if (isRemote) return { ...current, pos: p.pos ?? current.pos, city: p.city ?? current.city, radius: p.radius ?? current.radius, vibes: p.vibes ?? current.vibes }
+        if (isRemote) return { ...current, pos: p.pos ?? current.pos, city: p.city ?? current.city, radius: p.radius ?? current.radius, vibes: p.vibes ?? current.vibes, guest: !!p.guest }
         if (p.seedDay === today()) return { ...current, ...p, geo: 'idle' }
         const seed = freshSeed()
         const mine = <T extends { id: string }>(arr: T[] | undefined, seedArr: T[]) => (arr ?? []).filter((x) => !seedArr.some((y) => y.id === x.id))
@@ -341,14 +355,17 @@ export const useMe = () => useStore((s) => s.users.find((u) => u.id === s.meId) 
 /** Les événements signalés 3 fois ou plus sont masqués (sauf pour leur organisateur). */
 export const isHidden = (e: SpotEvent, meId: string | null) => e.reports >= 3 && e.hostId !== meId
 
-/** Adresse exacte visible ? Masquée pour les événements privés tant que la personne n'est pas acceptée. */
+/** Les invités d'une soirée privée voient l'adresse exacte à partir de 2 h avant le début. */
+export const ADDRESS_HOURS_BEFORE = 2
+export const addressWindowOpen = (e: SpotEvent) => Date.now() >= Date.parse(e.start) - ADDRESS_HOURS_BEFORE * 3600_000
+
+/** Adresse exacte visible ? Lieux publics : toujours. Soirées privées : invités acceptés, à partir de 2 h avant. */
 export function canSeeAddress(e: SpotEvent, me: User | null) {
+  if (e.visibility === 'open' || e.visibility === 'limited') return true
   if (!me) return false
   if (e.hostId === me.id) return true
-  if (e.visibility === 'open' || e.visibility === 'limited') return true
-  if (e.accepted.includes(me.id)) return true
-  if (e.visibility === 'circle') return me.following.includes(e.hostId)
-  return false
+  const invited = e.accepted.includes(me.id) || (e.visibility === 'circle' && me.following.includes(e.hostId))
+  return invited && addressWindowOpen(e)
 }
 
 export const goingCount = (e: SpotEvent) => e.baseGoing + e.going.length
@@ -371,3 +388,10 @@ interface ConfirmState { q: { text: string; ok: string; resolve: (v: boolean) =>
 export const useConfirm = create<ConfirmState>(() => ({ q: null }))
 export const askConfirm = (text: string, ok = 'Confirmer') =>
   new Promise<boolean>((resolve) => useConfirm.setState({ q: { text, ok, resolve } }))
+
+/** À appeler avant une action qui demande un compte. Sans compte, ouvre la feuille d'inscription et renvoie false. */
+export function requireAccount(reason: string) {
+  if (useStore.getState().meId) return true
+  useStore.setState({ joinAsk: reason })
+  return false
+}

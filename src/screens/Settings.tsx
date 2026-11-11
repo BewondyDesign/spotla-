@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronRight, LogOut } from 'lucide-react'
 import { askConfirm, toast, useMe, useStore } from '../data/store'
+import { LangSwitch } from '../data/i18n'
 import { accountInfo, cleanHandle, isRemote, updateEmail, updatePassword } from '../data/backend'
 
 /** Réglages du compte : infos de base, e-mail, mot de passe, déconnexion. */
@@ -38,6 +39,10 @@ export function Settings() {
       </header>
 
       <div className="pad stack16">
+        <section className="set-group">
+          <h2>Langue · Language</h2>
+          <div className="set-row"><span>Français / English</span><LangSwitch /></div>
+        </section>
         <section className="set-group">
           <h2>Profil</h2>
           <label className="set-row"><span>Nom affiché</span><input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} /></label>

@@ -4,7 +4,7 @@ import { ArrowLeft, CalendarDays, Heart, MapPin, Navigation, Share2, Star } from
 import { CATALOG, galleryOf } from '../data/catalog'
 import { Gallery } from '../components/Gallery'
 import { listReviews, saveReview, socialReady, toggleLike, useCatalog, useStats, type Review } from '../data/places'
-import { toast, useStore } from '../data/store'
+import { requireAccount, toast, useStore } from '../data/store'
 import { distanceKm, fmtKm, timeAgo } from '../data/util'
 import { directions } from '../data/venues'
 import { CAT_ICON, Stars } from '../components/PlaceCard'
@@ -35,11 +35,12 @@ export function PlaceDetail() {
   const gallery = galleryOf(p)
 
   const like = async () => {
-    if (!meId) return
+    if (!meId) { requireAccount('enregistrer ce lieu'); return }
     try { await toggleLike(p.id, meId) } catch { toast('Impossible d\'enregistrer ton like', 'Réessaie dans un instant.') }
   }
   const send = async () => {
-    if (!meId || !rating) return
+    if (!meId) { requireAccount('laisser un avis'); return }
+    if (!rating) return
     setBusy(true)
     try { await saveReview(p.id, meId, rating, body.trim()); toast(mine ? 'Avis modifié' : 'Merci pour ton avis') } catch (e) { toast('Ton avis n\'a pas pu être envoyé', (e as Error).message) }
     setBusy(false)

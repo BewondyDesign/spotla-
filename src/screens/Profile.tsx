@@ -20,8 +20,8 @@ const COVER_MAX_S = 15
 export function Profile() {
   const { id = 'me' } = useParams()
   const nav = useNavigate()
-  const me = useMe()!
-  const uid = id === 'me' ? me.id : id
+  const me = useMe()
+  const uid = id === 'me' ? me?.id ?? '' : id
   const u = useStore((s) => s.users.find((x) => x.id === uid))
   const posts = useStore(useShallow((s) => s.posts.filter((p) => p.authorId === uid)))
   const events = useStore(useShallow((s) => s.events.filter((e) => e.hostId === uid && momentOf(e) !== 'past')))
@@ -37,8 +37,8 @@ export function Profile() {
   const places = useMemo(() => [...new Set([...pass.reviews.map((r) => r.placeId), ...pass.liked])].map(placeOf).filter((x) => !!x), [pass, placeOf])
 
   if (!u) return <div className="scr"><Empty>Profil introuvable.</Empty></div>
-  const isMe = u.id === me.id
-  const following = me.following.includes(u.id)
+  const isMe = u.id === me?.id
+  const following = (me?.following ?? []).includes(u.id)
   const ratingOf = (pid: string) => pass.reviews.find((r) => r.placeId === pid)
 
   return (
