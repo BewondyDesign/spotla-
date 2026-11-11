@@ -21,6 +21,7 @@ import { ConfirmSheet, Toast } from './components/ui'
 import { JoinScreen, JoinSheet } from './components/Join'
 import { EventChat } from './screens/EventChat'
 import { useOutingReminders } from './data/reminders'
+import { startAutoTranslate, useLang } from './data/i18n'
 
 function Shell() {
   const meId = useStore((s) => s.meId)
@@ -99,5 +100,8 @@ function Shell() {
 
 // HashRouter : l'app marche sur n'importe quel hébergement statique sans config serveur.
 export function App() {
-  return <HashRouter><Shell /></HashRouter>
+  const lang = useLang((s) => s.lang)
+  useEffect(() => { startAutoTranslate(lang) }, [lang])
+  // Changer de langue remonte l'app : le texte d'origine revient, puis il est traduit si besoin.
+  return <HashRouter key={lang}><Shell /></HashRouter>
 }

@@ -76,7 +76,7 @@ export function PlaceDetail() {
 
         <div className="facts">
           {p.when && <div className="fact"><CalendarDays size={20} /><div><b>{p.when}</b>{p.free && <span>Entrée libre</span>}</div></div>}
-          <div className="fact"><MapPin size={20} /><div><b>{p.address ?? p.area}</b><span>À {fmtKm(distanceKm(pos, p))} de toi</span></div></div>
+          <div className="fact"><MapPin size={20} /><div><b>{p.address ?? p.area}</b><span>{document.documentElement.lang === 'en' ? `${fmtKm(distanceKm(pos, p))} from you` : `À ${fmtKm(distanceKm(pos, p))} de toi`}</span></div></div>
         </div>
 
         <section className="stack12">

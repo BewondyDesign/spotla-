@@ -14,6 +14,7 @@ import { Avatar, Verified } from '../components/ui'
 import type { Category } from '../data/catalog'
 import type { SpotEvent } from '../data/types'
 import { LangSwitch, useLang, useT } from '../data/i18n'
+import { likesAgenda, likesEvent, likesPlace, lovedFirst } from '../data/tastes'
 
 // Photo d'entête choisie automatiquement selon la date à Montréal : temps des fêtes, hiver, printemps, été, automne.
 type Season = 'fetes' | 'hiver' | 'printemps' | 'ete' | 'automne'
@@ -75,6 +76,8 @@ export function Home() {
   const me = useMe()
   const [slot, setSlot] = useState<Slot>(() => (mtlHour() >= 17 || mtlHour() < 5 ? 'soir' : 'now'))
   const users = useStore((s) => s.users)
+  const storeTastes = useStore((s) => s.vibes)
+  const tastes = me?.vibes?.length ? me.vibes : storeTastes
   const t = useT()
   const en = useLang((s) => s.lang) === 'en'
   const city = useStore((s) => s.city)
@@ -95,7 +98,10 @@ export function Home() {
     .filter((e) => inSlot(e, slot))
     .filter((e) => distanceKm(pos, e) <= radius)
     // Ce qui commence le plus tôt d'abord : l'app répond à « on fait quoi, là ? ».
-    .sort((a, b) => a.start.localeCompare(b.start) || Number(!!b.boosted) - Number(!!a.boosted)), [events, pos, radius, me?.id, slot])
+    .sort((a, b) => a.start.localeCompare(b.start) || Number(!!b.boosted) - Number(!!a.boosted))
+    , [events, pos, radius, me?.id, slot])
+  // Ce que la personne aime passe devant, le reste suit.
+  const listForYou = useMemo(() => lovedFirst(list, (e) => likesEvent(tastes, e)), [list, tastes])
 
 
   const catalog = useCatalog()
@@ -104,18 +110,21 @@ export function Home() {
   const soon = useMemo(() => {
     const inside = agenda.filter((e) => agendaIn(e, slot)).sort((a, b) => distanceKm(pos, a) - distanceKm(pos, b))
     const later = agenda.filter((e) => !inside.includes(e) && inNextDays(e, 14)).sort((a, b) => distanceKm(pos, a) - distanceKm(pos, b))
-    return [...inside, ...later].slice(0, 12)
-  }, [agenda, pos, slot])
+    // Jamais deux fois la même image dans la rangée.
+    const seen = new Set<string>()
+    return lovedFirst([...inside, ...later], (a) => likesAgenda(tastes, a)).filter((e) => { const k = e.image; if (seen.has(k)) return false; seen.add(k); return true }).slice(0, 12)
+  }, [agenda, pos, slot, tastes])
   // Les lieux du créneau, les plus proches d'abord.
-  const spots = useMemo(() => catalog.filter((c) => SLOT_CATS[slot].includes(c.category)).sort((a, b) => distanceKm(pos, a) - distanceKm(pos, b)).slice(0, 12), [catalog, slot, pos])
   // Un seul Top 10 : on pioche à tour de rôle dans chaque catégorie (clubs, activités, bars, fêtes, soirées, gourmand).
   const top10 = useMemo(() => {
     const order = ['club', 'jeux', 'bar', 'fetes', 'soiree', 'gastro']
     const by = order.map((k) => catalog.filter((x) => x.category === k).sort((a, b) => a.rank - b.rank))
     const out: typeof catalog = []
     for (let i = 0; out.length < 10 && by.some((l) => l[i]); i++) for (const l of by) if (l[i] && out.length < 10) out.push(l[i])
-    return out
-  }, [catalog])
+    return lovedFirst(out, (c) => likesPlace(tastes, c))
+  }, [catalog, tastes])
+  // Un lieu n'apparaît qu'une fois sur l'accueil : s'il est dans le Top 10, il ne revient pas dans cette rangée.
+  const spots = useMemo(() => lovedFirst(catalog.filter((c) => SLOT_CATS[slot].includes(c.category) && !top10.some((x) => x.id === c.id)).sort((a, b) => distanceKm(pos, a) - distanceKm(pos, b)), (c) => likesPlace(tastes, c)).slice(0, 12), [catalog, slot, pos, tastes, top10])
   return (
     <div className="scr home-scr">
       <header className="home-hero">
@@ -149,7 +158,7 @@ export function Home() {
           <Link className="sec-link" to="/map">{t('Carte', 'Map')}</Link>
         </div>
         {list.length > 0
-          ? <div className="rail ev-rail">{list.slice(0, 10).map((e) => <EventCard key={e.id} e={e} />)}</div>
+          ? <div className="rail ev-rail">{listForYou.slice(0, 10).map((e) => <EventCard key={e.id} e={e} />)}</div>
           : (
             <div className="pad">
               <Link to="/create" className="empty-slot">

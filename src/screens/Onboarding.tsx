@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ArrowLeft, Building2, Camera, Eye, EyeOff, PartyPopper } from 'lucide-react'
 import { toast, useStore } from '../data/store'
 import { cleanHandle, createProfile, isRemote, uploadMedia, sendPasswordReset, signIn, signInWithGoogle, signUp, signupInfo, updatePassword } from '../data/backend'
-import { VIBES } from '../data/util'
+import { TASTES } from '../data/tastes'
 import { LangSwitch, useT } from '../data/i18n'
 import type { AccountKind } from '../data/types'
 
@@ -247,7 +247,7 @@ function ProfileForm({ authId }: { authId?: string }) {
   const [name, setName] = useState('')
   const [handle, setHandle] = useState('')
   const [addr, setAddr] = useState('')
-  const [vibes, setVibes] = useState<string[]>(['danser', 'live'])
+  const [vibes, setVibes] = useState<string[]>([])
   // Sorties dans des bars et des clubs : l'app est réservée aux 18 ans et plus (âge légal au Québec).
   const [adult, setAdult] = useState(false)
   // Photo de profil : celle de Google par défaut, ou une photo choisie.
@@ -309,9 +309,10 @@ function ProfileForm({ authId }: { authId?: string }) {
           </div>
         )}
         <div className="field">
-          <span className="lbl">Tes ambiances</span>
+          <span className="lbl">Qu'est-ce que tu aimes faire ?</span>
+          <span className="hint">On te montrera d'abord ça, et tout le reste juste en dessous. Tu peux changer quand tu veux.</span>
           <div className="wrap-chips">
-            {VIBES.map((v) => (
+            {TASTES.map((v) => (
               <button key={v.k} className="chip" aria-pressed={vibes.includes(v.k)} onClick={() => setVibes(vibes.includes(v.k) ? vibes.filter((x) => x !== v.k) : [...vibes, v.k])}>{v.l}</button>
             ))}
           </div>

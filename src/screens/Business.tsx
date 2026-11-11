@@ -34,7 +34,7 @@ export function Business() {
           <div><b>{me.verified ? 'Lieu vérifié' : 'Vérification en cours'}</b><span>{me.verified ? 'Ton badge est visible sur ta page et tes événements.' : 'On contrôle ton NEQ (Registraire des entreprises du Québec) ou un justificatif. Ça prend en général moins de 24 h.'}</span></div>
         </div>
         <div className="stats">
-          {stats.map((s) => <div key={s.l} className="stat">{s.i}<b>{s.v.toLocaleString('fr-FR')}</b><span>{s.l}</span></div>)}
+          {stats.map((s) => <div key={s.l} className="stat">{s.i}<b>{s.v.toLocaleString(document.documentElement.lang === 'en' ? 'en-CA' : 'fr-FR')}</b><span>{s.l}</span></div>)}
         </div>
 
         <div className="row between"><h2 className="sec-title">Agenda</h2><Link className="btn-mini accent" to="/create">+ Événement</Link></div>

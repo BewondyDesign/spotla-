@@ -119,7 +119,7 @@ function EventForm() {
             <div className="wrap-chips">
               <button className="chip" aria-pressed={dayChoice === 0} onClick={() => setDate(addDays(0))}>Ce soir</button>
               <button className="chip" aria-pressed={dayChoice === 1} onClick={() => setDate(addDays(1))}>Demain</button>
-              <label className={`chip date-chip ${dayChoice === 2 ? 'on' : ''}`}><CalendarDays size={15} /> {dayChoice === 2 ? new Date(`${date}T12:00`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Autre date'}
+              <label className={`chip date-chip ${dayChoice === 2 ? 'on' : ''}`}><CalendarDays size={15} /> {dayChoice === 2 ? new Date(`${date}T12:00`).toLocaleDateString(document.documentElement.lang === 'en' ? 'en-CA' : 'fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Autre date'}
                 <input type="date" value={date} min={addDays(0)} onChange={(e) => e.target.value && setDate(e.target.value)} />
               </label>
             </div>
@@ -233,7 +233,7 @@ function StoryForm({ defaultEvent }: { defaultEvent: string }) {
 
   return (
     <div className="stack16">
-      <p className="muted">Une vidéo de {MAX_STORY_SECONDS} secondes maximum pour donner un aperçu de l'ambiance. Filme pendant l'événement : ta story s'affiche « En direct » tant qu'il a lieu.</p>
+      <p className="muted">{`Une vidéo de ${MAX_STORY_SECONDS} secondes maximum pour donner un aperçu de l'ambiance. Filme pendant l'événement : ta story s'affiche « En direct » tant qu'il a lieu.`}</p>
       {preview ? (
         <div className="story-preview">
           <video src={preview} playsInline autoPlay loop muted />
@@ -254,7 +254,7 @@ function StoryForm({ defaultEvent }: { defaultEvent: string }) {
           <option value="" disabled>Choisis ta sortie</option>
           {linkable.map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}
         </select>
-        {linkable.length === 0 && <span className="hint">Une story montre l'ambiance d'une sortie. Touche « J'y vais » sur un événement, ou <a href="#/create?mode=event">crée le tien</a>, puis reviens ici.</span>}
+        {linkable.length === 0 && <span className="hint">Une story montre l'ambiance d'une sortie. Touche « J'y vais » sur un événement, ou <a href="#/create?mode=event">crée le tien</a>{', puis reviens ici.'}</span>}
       </Field>
       <Field label="Légende"><input className="input" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Ex. Il reste de la place, venez !" maxLength={120} /></Field>
       <button className="btn btn-primary btn-block" disabled={!file || !eventId || busy} onClick={publish}>{busy ? 'Publication…' : 'Publier la story'}</button>

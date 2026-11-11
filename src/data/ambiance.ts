@@ -67,10 +67,38 @@ export function videoIfMatch(key: string, ...hints: (string | undefined)[]) {
   return rule ? pick(key, POOL[rule[1]]) : undefined
 }
 
-/** Vidéo d'ambiance d'une soirée, choisie d'après son ambiance et son titre. */
-export const eventVideo = (e: { id: string; vibe?: string; title?: string; venue?: string }) => videoIfMatch(e.id, e.title, e.vibe) ?? videoFor(e.id, e.venue)
+// ---------- Une vidéo = une seule carte ----------
+// Chaque vidéo est réservée à la première carte qui la prend (lieu, sortie ou activité). Les autres cartes
+// prennent une autre vidéo du même thème, et s'il n'en reste plus, elles gardent leur propre photo.
+const owner = new Map<string, string>()
+export function claimVideo(key: string, url: string | undefined) {
+  if (!url) return undefined
+  const o = owner.get(url)
+  if (o && o !== key) return undefined
+  owner.set(url, key)
+  return url
+}
+function claimFrom(key: string, pool: string[] | undefined) {
+  if (!pool?.length) return undefined
+  const start = hashOf(key) % pool.length
+  for (let i = 0; i < pool.length; i++) { const u = claimVideo(key, pool[(start + i) % pool.length]); if (u) return u }
+  return undefined
+}
+const poolFor = (...hints: (string | undefined)[]) => {
+  const text = hints.filter(Boolean).join(' ')
+  const rule = RULES.find(([r]) => r.test(text))
+  return rule ? POOL[rule[1]] : undefined
+}
+/** Vidéo unique pour une carte : d'abord le thème qui correspond, sinon rien (la carte garde sa photo). */
+export function uniqueVideo(key: string, ...hints: (string | undefined)[]) {
+  for (const [url, k] of owner) if (k === key) return url
+  return claimFrom(key, poolFor(...hints)?.map(MK))
+}
+
+/** Vidéo d'ambiance d'une soirée, choisie d'après son ambiance et son titre, jamais la même que sur une autre carte. */
+export const eventVideo = (e: { id: string; vibe?: string; title?: string; venue?: string }) => uniqueVideo(e.id, e.title, e.vibe) ?? uniqueVideo(e.id, e.venue) ?? claimFrom(e.id, POOL.fete.map(MK))
 
 const CAT_HINT: Record<string, string> = { club: 'club', bar: 'cocktail', soiree: 'soirée', fetes: 'fête', gastro: 'cuisine', jeux: '' }
 /** Vidéo du lieu : celle choisie pour lui dans le catalogue, sinon une vidéo qui correspond à sa catégorie. */
 export const placeVideo = (p: { id: string; category: string; video?: string; rank?: number }) =>
-  p.video ?? videoIfMatch(p.id, CAT_HINT[p.category])
+  p.video ?? uniqueVideo(p.id, CAT_HINT[p.category])

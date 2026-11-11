@@ -1,3 +1,4 @@
+import { claimVideo } from './ambiance'
 // Sélection SpotLa pour Montréal : les lieux et rendez-vous que l'app propose d'office.
 // Sources (novembre 2026) : guides The Main et SORTiRMTL (vie nocturne), Tastet (cocktails),
 // Tourisme Montréal (marchés de Noël 2026, quoi faire ce week-end), igloofest.ca, montrealenlumiere.com.
@@ -93,14 +94,14 @@ export const CATALOG: CatalogItem[] = [
   { id: 'act:north-star', category: 'jeux', rank: 4, photo: U('1640301133815-4bec64fca33f'), name: "North Star Machines à piastres", kind: "Bar à flippers", area: "Plateau", address: "3908 boulevard Saint-Laurent", lat: 45.51631, lng: -73.57825, blurb: "Bar de la Main rempli de flippers et de jeux d'arcade classiques." },
   { id: 'act:arcade-mtl', category: 'jeux', rank: 5, photo: U('1558271697-dd9f331ca8b3'), name: "Arcade MTL", kind: "Bar arcade", area: "Quartier latin", address: "2031 rue Saint-Denis", lat: 45.51636, lng: -73.56584, blurb: "Entrée unique, jeux illimités et pop-corn à volonté, en plein Quartier latin." },
   { id: 'act:randolph-quartier-latin', category: 'jeux', rank: 6, photo: U('1677188010559-0667a1ed33a0'), name: "Randolph Pub Ludique", kind: "Pub de jeux de société", area: "Quartier latin", address: "2041 rue Saint-Denis", lat: 45.5164, lng: -73.56595, blurb: "Des centaines de jeux de société et des animateurs pour expliquer les règles." },
-  { id: 'act:cafe-yvonne', category: 'jeux', rank: 7, photo: U('1677188010559-0667a1ed33a0'), name: "Café Yvonne", kind: "Café jeux de société", area: "Plateau", address: "3778A rue Saint-Denis", lat: 45.51905, lng: -73.57252, blurb: "Petit café du Plateau pour jouer entre amis autour d'un latte." },
+  { id: 'act:cafe-yvonne', category: 'jeux', rank: 7, photo: U('1787990589926-f41b73e6be7b'), name: "Café Yvonne", kind: "Café jeux de société", area: "Plateau", address: "3778A rue Saint-Denis", lat: 45.51905, lng: -73.57252, blurb: "Petit café du Plateau pour jouer entre amis autour d'un latte." },
   { id: 'act:colonel-moutarde', category: 'jeux', rank: 8, photo: U('1514863775978-c611132e6691'), name: "Le Colonel Moutarde", kind: "Café-resto ludique", area: "Plateau", address: "4418 rue Saint-Denis", lat: 45.52331, lng: -73.58185, blurb: "Bouffe, bières et une grande ludothèque, en plein Plateau." },
   { id: 'act:cafe-bloc', category: 'jeux', rank: 9, photo: U('1564769662533-4f00a87b4056'), name: "Café Bloc", kind: "Escalade de bloc", area: "Quartier chinois", address: "1209 boulevard Saint-Laurent", lat: 45.50969, lng: -73.56311, blurb: "Salle de bloc avec café, au pied du Quartier latin. Location de chaussons sur place." },
   { id: 'act:allez-up', category: 'jeux', rank: 10, photo: U('1696105538782-7815474f28e0'), name: "Allez Up", kind: "Escalade", area: "Pointe-Saint-Charles", address: "1555 rue Saint-Patrick", lat: 45.48688, lng: -73.56102, blurb: "Grande salle d'escalade dans d'anciens silos, au bord du canal de Lachine." },
   { id: 'act:bloc-shop-hochelaga', category: 'jeux', rank: 11, photo: U('1696105538708-6be6c90707a1'), name: "Bloc Shop Hochelaga", kind: "Escalade de bloc", area: "Hochelaga", address: "2985 rue Sainte-Catherine Est", lat: 45.53633, lng: -73.54322, blurb: "Bloc pour tous les niveaux, ambiance détendue et cours d'initiation." },
   { id: 'act:ezkapaz', category: 'jeux', rank: 12, photo: U('1782472312824-cc8c39a26bbd'), name: "EZKAPAZ", kind: "Escape game", area: "Plateau", address: "3955 boulevard Saint-Laurent", lat: 45.5165, lng: -73.57809, blurb: "Jeux d'évasion immersifs, à faire à 2 comme à 8." },
-  { id: 'act:question-escape', category: 'jeux', rank: 13, photo: U('1569002925653-ed18f55d7292'), name: "QUESTION Escape Games", kind: "Escape game", area: "Plateau", address: "4119 boulevard Saint-Laurent", lat: 45.51772, lng: -73.5806, blurb: "Salles d'évasion à énigmes sur la Main." },
-  { id: 'act:trapped-mtl', category: 'jeux', rank: 14, photo: U('1782472312824-cc8c39a26bbd'), name: "TRAPPED Montréal", kind: "Escape game", area: "Quartier des spectacles", address: "1405 boulevard Saint-Laurent, 3e étage", lat: 45.51014, lng: -73.5641, blurb: "Salles à thème au cœur du Quartier des spectacles." },
+  { id: 'act:question-escape', category: 'jeux', rank: 13, photo: U('1529990989741-fe1c5b001e4b'), name: "QUESTION Escape Games", kind: "Escape game", area: "Plateau", address: "4119 boulevard Saint-Laurent", lat: 45.51772, lng: -73.5806, blurb: "Salles d'évasion à énigmes sur la Main." },
+  { id: 'act:trapped-mtl', category: 'jeux', rank: 14, photo: U('1777661272271-7439300e7364'), name: "TRAPPED Montréal", kind: "Escape game", area: "Quartier des spectacles", address: "1405 boulevard Saint-Laurent, 3e étage", lat: 45.51014, lng: -73.5641, blurb: "Salles à thème au cœur du Quartier des spectacles." },
   { id: 'act:rage-academie', category: 'jeux', rank: 15, photo: U('1776951129406-d844d86ebccd'), name: "Rage Académie", kind: "Lancer de hache", area: "Village", address: "1436 rue Atateken", lat: 45.51765, lng: -73.55768, blurb: "Lancer de hache encadré par des moniteurs, parfait en groupe." },
   { id: 'act:combat-archers', category: 'jeux', rank: 16, photo: U('1776847651583-1d804b5cc339'), name: "Combat d'Archers", kind: "Tir à l'arc en équipe", area: "Hochelaga", address: "3955 rue de Rouen", lat: 45.5504, lng: -73.54569, blurb: "Le ballon chasseur version tir à l'arc, avec flèches à embout mousse." },
   { id: 'act:zero-latency', category: 'jeux', rank: 17, photo: U('1576633587382-13ddf37b1fc1'), name: "Zero Latency VR", kind: "Réalité virtuelle", area: "Villeray", address: "910 rue Jean-Talon Est", lat: 45.54126, lng: -73.61268, blurb: "Grande arène de réalité virtuelle en libre déplacement, jusqu'à 8 joueurs." },
@@ -117,14 +118,6 @@ export function activeCatalog(now = new Date()) {
 
 // Vidéos d'ambiance Mixkit (licence gratuite Mixkit, usage commercial libre).
 const MK = (id: number) => `https://assets.mixkit.co/videos/${id}/${id}-720.mp4`
-const CAT_VIDEOS: Record<Category, string[]> = {
-  club: [MK(9586), MK(341), MK(832)],
-  bar: [MK(4043), MK(4295), MK(22441)],
-  soiree: [MK(14088), MK(4043), MK(341)],
-  fetes: [MK(46591), MK(29479), MK(34702), MK(41949)],
-  gastro: [MK(32558), MK(22441), MK(4295)],
-  jeux: [MK(41913), MK(49588), MK(50929), MK(5333)],
-}
 /** Vidéo choisie pour chaque lieu selon ce qu'on y fait (Noël, jazz, cocktails, vinyles…). Mixkit, licence gratuite. */
 const VIDEO_OF: Record<string, number> = {
   'act:funhub-centre-ville': 41913,
@@ -180,7 +173,11 @@ const VIDEO_OF: Record<string, number> = {
   'cat:noel-vegane-2026': 13258,
   'cat:mtl-en-lumiere-2027': 15875,
 }
-for (const c of CATALOG) if (!c.video && VIDEO_OF[c.id]) c.video = MK(VIDEO_OF[c.id])
+// Une vidéo n'appartient qu'à un seul lieu : si elle est déjà prise, le lieu garde sa propre photo.
+for (const c of CATALOG) {
+  if (!c.video && VIDEO_OF[c.id]) c.video = MK(VIDEO_OF[c.id])
+  if (c.video && !claimVideo(c.id, c.video)) c.video = undefined
+}
 
 export const isVideo = (url: string) => /\.(mp4|webm|mov)(\?|$)/i.test(url)
 /** Miniature d'une vidéo Mixkit (affichée avant la lecture). */
@@ -189,9 +186,6 @@ export const posterOf = (url: string) => url.match(/assets\.mixkit\.co\/videos\/
 /** Galerie de la fiche : la photo du lieu, une vidéo d'ambiance, puis deux autres photos de la même catégorie. */
 export function galleryOf(p: CatalogItem): string[] {
   if (p.gallery?.length) return p.gallery
-  const same = CATALOG.filter((c) => c.category === p.category && c.id !== p.id && c.photo)
-  const i = Math.max(0, CATALOG.findIndex((c) => c.id === p.id))
-  const vids = CAT_VIDEOS[p.category]
-  const extra = [same[(i + 1) % Math.max(1, same.length)]?.photo, same[(i + 3) % Math.max(1, same.length)]?.photo]
-  return [...new Set([p.video, p.photo, vids[i % vids.length], ...extra].filter((x): x is string => !!x))]
+  // Seulement les médias propres au lieu : jamais la photo ou la vidéo d'un autre.
+  return [...new Set([p.video, p.photo].filter((x): x is string => !!x))]
 }

@@ -37,7 +37,7 @@ export function AgendaDetail() {
         <div className="facts">
           <div className="fact"><CalendarDays size={20} /><div><b>{fmtRange(e.start, e.end)}</b>{e.tbc && <span>Dates à confirmer par l'organisateur</span>}</div></div>
           <div className="fact"><Ticket size={20} /><div><b>{e.free ? 'Gratuit' : 'Payant'}</b>{e.cost && e.cost !== 'Gratuit' && e.cost !== 'Payant' && <span>{e.cost}</span>}</div></div>
-          <div className="fact"><MapPin size={20} /><div><b>{e.venue || e.area}</b>{e.address && <span>{e.address}</span>}<span>À {fmtKm(distanceKm(pos, e))} de toi</span></div></div>
+          <div className="fact"><MapPin size={20} /><div><b>{e.venue || e.area}</b>{e.address && <span>{e.address}</span>}<span>{document.documentElement.lang === 'en' ? `${fmtKm(distanceKm(pos, e))} from you` : `À ${fmtKm(distanceKm(pos, e))} de toi`}</span></div></div>
         </div>
         <p className="hint">Source : {e.source === 'Ville de Montréal' ? 'Ville de Montréal, calendrier montreal.ca (données ouvertes, licence CC BY 4.0)' : 'Bonjour Québec (Gouvernement du Québec) et le site officiel de l\'événement'}. Vérifie les détails sur le site officiel avant de te déplacer.</p>
       </div>

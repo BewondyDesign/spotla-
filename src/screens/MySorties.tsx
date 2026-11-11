@@ -41,8 +41,8 @@ export function MySorties() {
           </Link>
         )}
         <nav className="tabs2 pill" role="tablist">
-          <button role="tab" aria-selected={tab === 'soon'} className={tab === 'soon' ? 'on' : ''} onClick={() => setTab('soon')}>À venir ({soon.length})</button>
-          <button role="tab" aria-selected={tab === 'saved'} className={tab === 'saved' ? 'on' : ''} onClick={() => setTab('saved')}>Enregistrés ({saved.length})</button>
+          <button role="tab" aria-selected={tab === 'soon'} className={tab === 'soon' ? 'on' : ''} onClick={() => setTab('soon')}>{`À venir (${soon.length})`}</button>
+          <button role="tab" aria-selected={tab === 'saved'} className={tab === 'saved' ? 'on' : ''} onClick={() => setTab('saved')}>{`Enregistrés (${saved.length})`}</button>
           <button role="tab" aria-selected={tab === 'past'} className={tab === 'past' ? 'on' : ''} onClick={() => setTab('past')}>Passées</button>
         </nav>
       </div>

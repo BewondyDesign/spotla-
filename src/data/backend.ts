@@ -162,8 +162,9 @@ export const remote = {
     if (status === null) { must(await sb!.from('attendances').delete().match({ event_id: eventId, user_id: userId })); return }
     must(await sb!.from('attendances').upsert({ event_id: eventId, user_id: userId, status }))
   },
-  async updateProfile(me: string, patch: { name?: string; handle?: string; city?: string; bio?: string; avatarUrl?: string | null; coverUrl?: string | null; coverKind?: 'image' | 'video' | null }) {
+  async updateProfile(me: string, patch: { name?: string; handle?: string; city?: string; bio?: string; avatarUrl?: string | null; coverUrl?: string | null; coverKind?: 'image' | 'video' | null; vibes?: string[] }) {
     const row: Record<string, unknown> = {}
+    if (patch.vibes !== undefined) row.vibes = patch.vibes
     if (patch.bio !== undefined) row.bio = patch.bio
     if (patch.name !== undefined) row.name = patch.name
     if (patch.handle !== undefined) row.handle = patch.handle

@@ -1,5 +1,8 @@
 import { isRemote } from './backend'
 import type { Moment, SpotEvent } from './types'
+import { useLang } from './i18n'
+
+const EN = () => useLang.getState().lang === 'en'
 
 export const PARIS = { lat: 48.8670, lng: 2.3740 }
 export const MONTREAL = { lat: 45.5088, lng: -73.5617 }
@@ -12,7 +15,7 @@ export function distanceKm(a: { lat: number; lng: number }, b: { lat: number; ln
   return 2 * R * Math.asin(Math.sqrt(s))
 }
 
-export const fmtKm = (d: number) => (d < 1 ? `${Math.round(d * 1000)} m` : `${d.toFixed(1).replace('.', ',')} km`)
+export const fmtKm = (d: number) => (d < 1 ? `${Math.round(d * 1000)} m` : `${EN() ? d.toFixed(1) : d.toFixed(1).replace('.', ',')} km`)
 
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
 
@@ -34,15 +37,16 @@ export function momentOf(e: SpotEvent, now = new Date()): Moment {
 
 export const isLive = (e: SpotEvent, now = new Date()) => new Date(e.start) <= now && new Date(e.end) > now
 
-export const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+export const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString(EN() ? 'en-CA' : 'fr-FR', { hour: EN() ? 'numeric' : '2-digit', minute: '2-digit' })
 
 export function fmtDay(iso: string) {
   const d = new Date(iso)
   const now = new Date()
-  if (sameDay(d, now)) return d.getHours() >= 17 ? 'Ce soir' : 'Aujourd\'hui'
+  const en = EN()
+  if (sameDay(d, now)) return d.getHours() >= 17 ? (en ? 'Tonight' : 'Ce soir') : (en ? 'Today' : 'Aujourd\'hui')
   const t = new Date(now); t.setDate(now.getDate() + 1)
-  if (sameDay(d, t)) return 'Demain'
-  return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+  if (sameDay(d, t)) return en ? 'Tomorrow' : 'Demain'
+  return d.toLocaleDateString(en ? 'en-CA' : 'fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
 export function startsIn(e: SpotEvent, now = new Date()) {
@@ -50,21 +54,24 @@ export function startsIn(e: SpotEvent, now = new Date()) {
   const diff = Math.round((s - now.getTime()) / 60_000)
   if (isLive(e, now)) {
     const since = -diff
+    if (EN()) return since < 60 ? `Started ${since} min ago` : `Started ${Math.floor(since / 60)} h ago`
     return since < 60 ? `En cours depuis ${since} min` : `En cours depuis ${Math.floor(since / 60)} h`
   }
-  if (diff < 0) return 'Terminé'
-  if (diff < 60) return `Commence dans ${diff} min`
-  if (diff < 24 * 60) return `Commence dans ${Math.floor(diff / 60)} h ${String(diff % 60).padStart(2, '0')}`
+  const en = EN()
+  if (diff < 0) return en ? 'Ended' : 'Terminé'
+  if (diff < 60) return en ? `Starts in ${diff} min` : `Commence dans ${diff} min`
+  if (diff < 24 * 60) return en ? `Starts in ${Math.floor(diff / 60)} h ${String(diff % 60).padStart(2, '0')}` : `Commence dans ${Math.floor(diff / 60)} h ${String(diff % 60).padStart(2, '0')}`
   return fmtDay(e.start)
 }
 
 export function timeAgo(iso: string) {
   const m = Math.round((Date.now() - new Date(iso).getTime()) / 60_000)
-  if (m < 1) return 'à l\'instant'
-  if (m < 60) return `il y a ${m} min`
+  const en = EN()
+  if (m < 1) return en ? 'just now' : 'à l\'instant'
+  if (m < 60) return en ? `${m} min ago` : `il y a ${m} min`
   const h = Math.floor(m / 60)
-  if (h < 24) return `il y a ${h} h`
-  return `il y a ${Math.floor(h / 24)} j`
+  if (h < 24) return en ? `${h} h ago` : `il y a ${h} h`
+  return en ? `${Math.floor(h / 24)} d ago` : `il y a ${Math.floor(h / 24)} j`
 }
 
 export const uid = (p: string) => `${p}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
@@ -125,4 +132,4 @@ export async function geocode(q: string, near?: { lat: number; lng: number }, ci
 
 // Devise : dollar canadien pour le lancement à Montréal, euro pour la démo parisienne.
 export const CUR = isRemote ? '$' : '€'
-export const money = (n: number) => `${String(n).replace('.', ',')} ${CUR}`
+export const money = (n: number) => (EN() && isRemote ? `$${n}` : `${String(n).replace('.', ',')} ${CUR}`)

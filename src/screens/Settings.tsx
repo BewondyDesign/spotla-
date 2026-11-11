@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronRight, LogOut } from 'lucide-react'
 import { askConfirm, toast, useMe, useStore } from '../data/store'
 import { LangSwitch } from '../data/i18n'
+import { TASTES } from '../data/tastes'
 import { accountInfo, cleanHandle, isRemote, updateEmail, updatePassword } from '../data/backend'
 
 /** Réglages du compte : infos de base, e-mail, mot de passe, déconnexion. */
@@ -76,6 +77,17 @@ export function Settings() {
               {google && <p className="hint">Tu te connectes avec Google.</p>}
             </>
           )}
+        </section>
+
+        <section className="set-group">
+          <h2>Ce que tu aimes</h2>
+          <p className="hint">L'accueil te montre d'abord ces sorties, puis tout le reste.</p>
+          <div className="wrap-chips set-tastes">
+            {TASTES.map((v) => {
+              const on = (me.vibes ?? []).includes(v.k)
+              return <button key={v.k} className="chip" aria-pressed={on} onClick={() => updateProfile({ vibes: on ? (me.vibes ?? []).filter((x) => x !== v.k) : [...(me.vibes ?? []), v.k] }).catch(() => toast('Ça n\'a pas marché', 'Réessaie dans un instant.'))}>{v.l}</button>
+            })}
+          </div>
         </section>
 
         <section className="set-group">

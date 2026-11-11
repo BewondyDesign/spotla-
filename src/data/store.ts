@@ -68,7 +68,7 @@ interface State {
   deleteStory: (storyId: string) => void
   deleteEvent: (eventId: string) => void
   toggleFollow: (userId: string) => void
-  updateProfile: (patch: { name?: string; handle?: string; city?: string; bio?: string; avatarUrl?: string; coverUrl?: string; coverKind?: 'image' | 'video' }) => Promise<void>
+  updateProfile: (patch: { name?: string; handle?: string; city?: string; bio?: string; avatarUrl?: string; coverUrl?: string; coverKind?: 'image' | 'video'; vibes?: string[] }) => Promise<void>
   report: (eventId: string) => void
   boost: (eventId: string) => void
   bump: (eventId: string, field: 'views' | 'shares') => void
@@ -161,7 +161,7 @@ export const useStore = create<State>()(
       onboard: ({ name, kind, vibes, venueAddress }) => {
         const id = 'me'
         const me: User = {
-          id, name, kind, venueAddress,
+          id, name, kind, venueAddress, vibes,
           handle: name.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '') || 'moi',
           verified: false, color: kind === 'business' ? '#3A3A40' : '#F2557A',
           bio: kind === 'business' ? 'Compte business en cours de vérification.' : '', city: 'Paris', followers: 0, following: [],
@@ -283,7 +283,7 @@ export const useStore = create<State>()(
       updateProfile: async (patch) => {
         const me = get().meId!
         if (isRemote) await remote.updateProfile(me, patch)
-        set((s) => ({ users: s.users.map((u) => (u.id === me ? { ...u, ...patch } : u)) }))
+        set((s) => ({ users: s.users.map((u) => (u.id === me ? { ...u, ...patch } : u)), ...(patch.vibes ? { vibes: patch.vibes } : {}) }))
       },
       toggleFollow: (userId) => {
         if (!requireAccount("suivre quelqu'un")) return
