@@ -140,7 +140,7 @@ export function Home() {
         </div>
         <div className="hero-copy">
           <p className="hero-hi">{greet(en)}{me?.name ? `, ${me.name.split(' ')[0]}` : ''}</p>
-          <h1 className="hero-h">{en ? <>What's the plan <em>{WHEN[slot][1]}</em>?</> : <>Qu'est-ce qu'on fait <em>{WHEN[slot][0]}</em> ?</>}</h1>
+          <h1 className="hero-h">{en ? <>Where are we going <em>{WHEN[slot][1]}</em>?</> : <>On va où <em>{WHEN[slot][0]}</em> ?</>}</h1>
           <LocationButton pill />
           <div className="slot-chips" role="tablist" aria-label={t('Quand ?', 'When?')}>
             {SLOTS.filter((x) => x.k !== 'aprem' || mtlHour() < 17).map((x) => (

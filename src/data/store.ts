@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import type { AccountKind, Notif, Post, SpotEvent, Story, StoryMedia, User } from './types'
 import { SEED_USERS, seedEvents, seedNotifs, seedPosts, seedStories } from './seed'
 import { distanceKm, MONTREAL, PARIS, RADII, reverseCity, uid as localUid } from './util'
+import { isForKids } from './adult'
 import { isRemote, loadAll, remote, signOut } from './backend'
 
 // En mode Supabase, les ids sont des UUID partagés avec la base.
@@ -23,6 +24,8 @@ interface State {
   meId: string | null
   /** Visite sans compte : on parcourt tout, le compte est demandé au premier « J'y vais ». */
   guest: boolean
+  /** A confirmé avoir 18 ans ou plus (inscription ou écran d'âge). */
+  adultOk: boolean
   /** Raison affichée dans la feuille « Crée ton compte » (null = fermée). */
   joinAsk: string | null
   setGuest: (on: boolean) => void
@@ -88,6 +91,7 @@ export const useStore = create<State>()(
     (set, get) => ({
       meId: null,
       guest: false,
+      adultOk: false,
       joinAsk: null,
       setGuest: (on) => { set({ guest: on, joinAsk: null }); if (on) get().reload() },
       vibes: [],
@@ -325,13 +329,13 @@ export const useStore = create<State>()(
     {
       name: isRemote ? 'spotla-live' : 'spotla-v1',
       // En mode Supabase, seules les préférences restent sur l'appareil ; les données viennent de la base.
-      partialize: (s) => (isRemote ? { pos: s.pos, city: s.city, radius: s.radius, vibes: s.vibes, guest: s.guest } : { ...s, recovery: false, geo: 'idle', manual: false }) as State,
+      partialize: (s) => (isRemote ? { pos: s.pos, city: s.city, radius: s.radius, vibes: s.vibes, guest: s.guest, adultOk: s.adultOk } : { ...s, recovery: false, geo: 'idle', manual: false }) as State,
       // Chaque jour, on régénère les données de démo pour garder des horaires réalistes,
       // sans toucher à ce que l'utilisateur a créé.
       merge: (persisted, current) => {
         const p = persisted as Partial<State> | undefined
         if (!p) return current
-        if (isRemote) return { ...current, pos: p.pos ?? current.pos, city: p.city ?? current.city, radius: p.radius ?? current.radius, vibes: p.vibes ?? current.vibes, guest: !!p.guest }
+        if (isRemote) return { ...current, pos: p.pos ?? current.pos, city: p.city ?? current.city, radius: p.radius ?? current.radius, vibes: p.vibes ?? current.vibes, guest: !!p.guest, adultOk: !!p.adultOk }
         if (p.seedDay === today()) return { ...current, ...p, geo: 'idle' }
         const seed = freshSeed()
         const mine = <T extends { id: string }>(arr: T[] | undefined, seedArr: T[]) => (arr ?? []).filter((x) => !seedArr.some((y) => y.id === x.id))
@@ -353,7 +357,8 @@ export const useStore = create<State>()(
 export const useMe = () => useStore((s) => s.users.find((u) => u.id === s.meId) ?? null)
 
 /** Les événements signalés 3 fois ou plus sont masqués (sauf pour leur organisateur). */
-export const isHidden = (e: SpotEvent, meId: string | null) => e.reports >= 3 && e.hostId !== meId
+// Masqué : signalé 3 fois, ou visant des enfants / familles (SpotLa est réservé aux 18 ans et plus).
+export const isHidden = (e: SpotEvent, meId: string | null) => (e.reports >= 3 && e.hostId !== meId) || isForKids(e.title, e.desc, e.vibe)
 
 /** Les invités d'une soirée privée voient l'adresse exacte à partir de 2 h avant le début. */
 export const ADDRESS_HOURS_BEFORE = 2

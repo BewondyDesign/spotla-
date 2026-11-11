@@ -21,6 +21,7 @@ import { ConfirmSheet, Toast } from './components/ui'
 import { JoinScreen, JoinSheet } from './components/Join'
 import { EventChat } from './screens/EventChat'
 import { useOutingReminders } from './data/reminders'
+import { AgeGate } from './components/AgeGate'
 import { startAutoTranslate, useLang } from './data/i18n'
 
 function Shell() {
@@ -28,6 +29,7 @@ function Shell() {
   const loading = useStore((s) => s.loading)
   const recovery = useStore((s) => s.recovery)
   const guest = useStore((s) => s.guest)
+  const adultOk = useStore((s) => s.adultOk)
   const me = useMe()
   const loc = useLocation()
   useOutingReminders()
@@ -68,6 +70,8 @@ function Shell() {
   if (recovery) return <div className="app"><NewPassword /><Toast /></div>
   if (!meId && !guest) return <div className="app"><Onboarding /><Toast /></div>
   if (meId && !me) return <div className="app"><Onboarding authId={meId} /><Toast /></div>
+  // Règle d'âge : personne n'entre dans l'app sans avoir confirmé ses 18 ans (avec ou sans compte).
+  if (!adultOk) return <div className="app"><AgeGate /><Toast /></div>
   const need = (el: React.ReactElement, what: string) => (me ? el : <JoinScreen what={what} />)
   const fullscreen = loc.pathname.startsWith('/event/') || loc.pathname.startsWith('/place/') || loc.pathname.startsWith('/stories/') || loc.pathname === '/settings' || loc.pathname.startsWith('/agenda')
   return (

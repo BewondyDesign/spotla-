@@ -239,6 +239,11 @@ export const EN: Record<string, string> = {
   'Restos et gourmand': 'Food and restaurants', 'Culture et spectacles': 'Culture and shows', 'Festivals et marchés': 'Festivals and markets', 'Sport et plein air': 'Sports and outdoors',
   'Qu\'est-ce que tu aimes faire ?': 'What do you like to do?', 'On te montrera d\'abord ça, et tout le reste juste en dessous. Tu peux changer quand tu veux.': 'We\'ll show you this first, with everything else right below. You can change it anytime.',
   'Ce que tu aimes': 'What you like', 'L\'accueil te montre d\'abord ces sorties, puis tout le reste.': 'Home shows you these first, then everything else.',
+  'SpotLa est réservé aux 18 ans et plus': 'SpotLa is for people 18 and over',
+  'L\'app propose des sorties dans des bars, des clubs et des soirées pour adultes. Reviens nous voir à tes 18 ans !': 'The app lists outings in bars, clubs and adult parties. Come back when you turn 18!',
+  'As-tu 18 ans ou plus ?': 'Are you 18 or older?', 'SpotLa propose des sorties dans des bars, des clubs et des soirées : l\'app est réservée aux personnes majeures.': 'SpotLa lists outings in bars, clubs and parties: the app is for adults only.',
+  'Oui, j\'ai 18 ans ou plus': 'Yes, I\'m 18 or older', 'Non': 'No', 'Publication refusée': 'Post refused',
+  'SpotLa est réservé aux 18 ans et plus : les activités pour enfants ou familles ne sont pas acceptées.': 'SpotLa is for people 18 and over: activities for children or families are not allowed.',
   'Centre-ville': 'Downtown', 'Vieux-Montréal': 'Old Montréal', 'Quartier latin': 'Latin Quarter', 'Quartier chinois': 'Chinatown', 'Petite Italie': 'Little Italy', 'Vieux-Port': 'Old Port',
 }
 

@@ -1,5 +1,6 @@
 import { claimVideo, MK, uniqueVideo } from './ambiance'
 import { useLang } from './i18n'
+import { isForKids } from './adult'
 import { useEffect, useState } from 'react'
 
 // Agenda culturel de Montréal : sorties officielles, gratuites ou payantes.
@@ -92,7 +93,7 @@ async function loadAgenda(): Promise<AgendaItem[]> {
       }))
     }
   } catch { /* hors ligne ou démo locale : on garde les festivals */ }
-  return [...FESTIVALS, ...city].filter((e) => e.end >= t).sort((a, b) => a.start.localeCompare(b.start))
+  return [...FESTIVALS, ...city].filter((e) => e.end >= t && !isForKids(e.title, e.description, e.type)).sort((a, b) => a.start.localeCompare(b.start))
 }
 
 export function useAgenda() {
