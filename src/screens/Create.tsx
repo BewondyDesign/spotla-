@@ -1,11 +1,11 @@
 import { CUR } from '../data/util'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Camera, Clapperboard, ImagePlus, PartyPopper, PenLine } from 'lucide-react'
+import { CalendarDays, Camera, Clapperboard, Globe, Hand, ImagePlus, Lock, MapPin, Minus, PartyPopper, PenLine, Plus, Users } from 'lucide-react'
 import { toast, useMe, useStore } from '../data/store'
 import { MAX_STORY_SECONDS, putBlob, videoDuration } from '../data/media'
 import { isRemote, uploadMedia } from '../data/backend'
-import { geocode, momentOf, PALETTES, uid, VIBES, VIS_LABEL } from '../data/util'
+import { geocode, momentOf, PALETTES, uid, VIBES, VIS_LABEL, type Place } from '../data/util'
 import type { Visibility } from '../data/types'
 
 type Mode = 'event' | 'story' | 'post'
@@ -17,11 +17,10 @@ export function Create() {
   return (
     <div className="scr">
       <div className="pad stack16">
-        <h1 className="h2">Publier</h1>
-        <div className="seg three" role="group" aria-label="Type de publication">
-          <button aria-pressed={mode === 'event'} onClick={() => setMode('event')}><PartyPopper size={16} /> Événement</button>
-          <button aria-pressed={mode === 'story'} onClick={() => setMode('story')}><Clapperboard size={16} /> Story</button>
-          <button aria-pressed={mode === 'post'} onClick={() => setMode('post')}><PenLine size={16} /> Post</button>
+        <div className="tabs2 create-tabs" role="tablist" aria-label="Type de publication">
+          <button role="tab" aria-selected={mode === 'event'} onClick={() => setMode('event')}><PartyPopper size={16} /> Événement</button>
+          <button role="tab" aria-selected={mode === 'story'} onClick={() => setMode('story')}><Clapperboard size={16} /> Story</button>
+          <button role="tab" aria-selected={mode === 'post'} onClick={() => setMode('post')}><PenLine size={16} /> Post</button>
         </div>
         {mode === 'event' && <EventForm />}
         {mode === 'story' && <StoryForm defaultEvent={params.get('event') ?? ''} />}
@@ -34,33 +33,51 @@ export function Create() {
 const pad = (n: number) => String(n).padStart(2, '0')
 const localDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 
+const addDays = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n); return localDate(d) }
+const ACCESS: { v: Visibility; icon: typeof Globe; hint: string }[] = [
+  { v: 'open', icon: Globe, hint: 'Tout le monde voit l\'adresse et peut venir.' },
+  { v: 'limited', icon: Users, hint: 'Premiers arrivés, premiers servis.' },
+  { v: 'request', icon: Hand, hint: 'Tu acceptes chaque personne. L\'adresse reste cachée.' },
+  { v: 'circle', icon: Lock, hint: 'Seulement tes abonnés. L\'adresse reste cachée aux autres.' },
+]
+
 function EventForm() {
   const me = useMe()!
   const pos = useStore((s) => s.pos)
   const createEvent = useStore((s) => s.createEvent)
   const nav = useNavigate()
   const biz = me.kind === 'business'
+  const [step, setStep] = useState(0)
   const [title, setTitle] = useState('')
   const [tag, setTag] = useState('danser')
+  const [desc, setDesc] = useState('')
   const [date, setDate] = useState(localDate(new Date()))
   const [start, setStart] = useState('21:00')
   const [end, setEnd] = useState('02:00')
   const [venue, setVenue] = useState(biz ? me.name : '')
-  const [area, setArea] = useState('')
   const [address, setAddress] = useState(me.venueAddress ?? '')
+  const [spot, setSpot] = useState<Place | null>(null)
+  const [sugg, setSugg] = useState<Place[]>([])
   const [paid, setPaid] = useState(false)
   const [price, setPrice] = useState(10)
   const [ticketUrl, setTicketUrl] = useState('')
   const [vis, setVis] = useState<Visibility>(biz ? 'open' : 'request')
   const [cap, setCap] = useState(25)
-  const [desc, setDesc] = useState('')
-
-  const ok = title.trim().length >= 3 && venue.trim() && address.trim()
   const [busy, setBusy] = useState(false)
+
+  // Suggestions d'adresse pendant la saisie, autour de toi.
+  useEffect(() => {
+    if (spot || address.trim().length < 4) { setSugg([]); return }
+    const t = setTimeout(() => geocode(address.trim(), pos).then(setSugg), 450)
+    return () => clearTimeout(t)
+  }, [address, spot]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const okStep = [title.trim().length >= 3, !!venue.trim() && !!address.trim(), true][step]
+  const dayChoice = date === addDays(0) ? 0 : date === addDays(1) ? 1 : 2
+
   const submit = async () => {
     setBusy(true)
-    // Géocodage de l'adresse (OpenStreetMap). Si elle est introuvable, on place l'événement près de toi.
-    const found = (await geocode(`${address.trim()}${area.trim() ? `, ${area.trim()}` : ''}`, pos))[0]
+    const found = spot ?? (await geocode(address.trim(), pos))[0]
     if (!found) toast('Adresse non trouvée sur la carte', 'L\'événement est placé près de ta position. Vérifie l\'adresse si besoin.')
     const at = found ?? { lat: pos.lat + (Math.random() - 0.5) * 0.01, lng: pos.lng + (Math.random() - 0.5) * 0.01 }
     const s = new Date(`${date}T${start}`)
@@ -68,60 +85,97 @@ function EventForm() {
     if (e <= s) e.setDate(e.getDate() + 1) // finit après minuit
     const id = createEvent({
       title: title.trim(), vibe: VIBES.find((v) => v.k === tag)!.l.split(' ')[0], tags: [tag],
-      start: s.toISOString(), end: e.toISOString(), venue: venue.trim(), area: area.trim() || useStore.getState().city, address: address.trim(),
+      start: s.toISOString(), end: e.toISOString(), venue: venue.trim(), area: found?.area || useStore.getState().city, address: address.trim(),
       lat: at.lat, lng: at.lng,
       price: paid ? price : 0, ticketUrl: paid && ticketUrl ? ticketUrl : undefined,
       visibility: vis, capacity: vis === 'open' ? undefined : cap, desc: desc.trim(), colors: PALETTES[Math.floor(Math.random() * PALETTES.length)],
     })
     const ev = useStore.getState().events.find((x) => x.id === id)!
-    toast('Événement publié 🎉', momentOf(ev) === 'tonight' ? 'Il apparaît dans « Ce soir » pour les gens autour.' : 'Il est visible sur ton mur et sur la carte.')
+    toast('Événement publié', momentOf(ev) === 'tonight' ? 'Il apparaît dans « Ce soir » pour les gens autour.' : 'Il est visible sur ton mur et sur la carte.')
     nav(`/event/${id}`, { replace: true })
   }
 
   return (
-    <div className="stack16">
-      <Field label="Titre"><input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex. Soirée karaoké chez moi" maxLength={80} /></Field>
-      <Field label="Ambiance">
-        <div className="wrap-chips">{VIBES.map((v) => <button key={v.k} className="chip" aria-pressed={tag === v.k} onClick={() => setTag(v.k)}>{v.l}</button>)}</div>
-      </Field>
-      <div className="grid3">
-        <Field label="Date"><input className="input" type="date" value={date} min={localDate(new Date())} onChange={(e) => setDate(e.target.value)} /></Field>
-        <Field label="Début"><input className="input" type="time" value={start} onChange={(e) => setStart(e.target.value)} /></Field>
-        <Field label="Fin"><input className="input" type="time" value={end} onChange={(e) => setEnd(e.target.value)} /></Field>
-      </div>
-      <Field label="Lieu"><input className="input" value={venue} onChange={(e) => setVenue(e.target.value)} placeholder="Ex. Chez moi, Le Comptoir…" /></Field>
-      <div className="grid2">
-        <Field label="Quartier"><input className="input" value={area} onChange={(e) => setArea(e.target.value)} placeholder="Ex. Plateau-Mont-Royal" /></Field>
-        <Field label="Adresse exacte"><input className="input" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Rue, étage, code" /></Field>
-      </div>
+    <div className="wizard">
+      <div className="wiz-steps" aria-label={`Étape ${step + 1} sur 3`}>{[0, 1, 2].map((i) => <i key={i} className={i <= step ? 'on' : ''} />)}</div>
 
-      <Field label="Prix">
-        <div className="seg two">
-          <button aria-pressed={!paid} onClick={() => setPaid(false)}>Gratuit</button>
-          <button aria-pressed={paid} onClick={() => setPaid(true)}>Payant</button>
-        </div>
-      </Field>
-      {paid && (
-        <div className="grid2">
-          <Field label={`Prix (${CUR})`}><input className="input" type="number" min={1} value={price} onChange={(e) => setPrice(Math.max(1, Number(e.target.value)))} /></Field>
-          <Field label="Lien billetterie (option)"><input className="input" type="url" value={ticketUrl} onChange={(e) => setTicketUrl(e.target.value)} placeholder="https://…" /></Field>
+      {step === 0 && (
+        <div className="stack18">
+          <h2 className="wiz-q">C'est quoi, ta soirée ?</h2>
+          <input className="input big" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Donne-lui un nom" maxLength={80} autoFocus aria-label="Nom de l'événement" />
+          <div className="field"><span className="lbl">Ambiance</span>
+            <div className="wrap-chips">{VIBES.map((v) => <button key={v.k} className="chip" aria-pressed={tag === v.k} onClick={() => setTag(v.k)}>{v.l}</button>)}</div>
+          </div>
+          <div className="field"><span className="lbl">Quelques mots (facultatif)</span>
+            <textarea className="input area" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ce qui t'attend, quoi apporter…" rows={3} maxLength={600} />
+          </div>
         </div>
       )}
 
-      <Field label="Qui peut venir ?">
-        <div className="vis-pick" role="radiogroup">
-          {(['open', 'limited', 'request', 'circle'] as Visibility[]).map((v) => (
-            <button key={v} role="radio" aria-checked={vis === v} onClick={() => setVis(v)}>
-              <b>{VIS_LABEL[v]}</b>
-              <span>{{ open: 'Tout le monde voit l\'adresse et peut venir.', limited: 'Premiers arrivés, premiers servis.', request: 'Tu valides chaque personne. Adresse masquée.', circle: 'Tes abonnés seulement. Adresse masquée aux autres.' }[v]}</span>
-            </button>
-          ))}
+      {step === 1 && (
+        <div className="stack18">
+          <h2 className="wiz-q">Quand et où ?</h2>
+          <div className="field"><span className="lbl">Jour</span>
+            <div className="wrap-chips">
+              <button className="chip" aria-pressed={dayChoice === 0} onClick={() => setDate(addDays(0))}>Ce soir</button>
+              <button className="chip" aria-pressed={dayChoice === 1} onClick={() => setDate(addDays(1))}>Demain</button>
+              <label className={`chip date-chip ${dayChoice === 2 ? 'on' : ''}`}><CalendarDays size={15} /> {dayChoice === 2 ? new Date(`${date}T12:00`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Autre date'}
+                <input type="date" value={date} min={addDays(0)} onChange={(e) => e.target.value && setDate(e.target.value)} />
+              </label>
+            </div>
+          </div>
+          <div className="grid2">
+            <div className="field"><span className="lbl">Début</span><input className="input" type="time" value={start} onChange={(e) => setStart(e.target.value)} /></div>
+            <div className="field"><span className="lbl">Fin</span><input className="input" type="time" value={end} onChange={(e) => setEnd(e.target.value)} /></div>
+          </div>
+          <div className="field"><span className="lbl">Nom du lieu</span><input className="input" value={venue} onChange={(e) => setVenue(e.target.value)} placeholder="Chez moi, Le Comptoir…" /></div>
+          <div className="field addr"><span className="lbl">Adresse</span>
+            <input className="input" value={address} onChange={(e) => { setAddress(e.target.value); setSpot(null) }} placeholder="Numéro et rue" autoComplete="street-address" />
+            {spot && <span className="hint"><MapPin size={12} /> Trouvée sur la carte{spot.area ? ` · ${spot.area}` : ''}</span>}
+            {sugg.length > 0 && (
+              <div className="sugg">{sugg.slice(0, 4).map((p) => (
+                <button key={p.name} onClick={() => { setSpot(p); setAddress(p.short || p.name); setSugg([]) }}><MapPin size={14} /><span>{p.short || p.name}{p.area ? <small> · {p.area}</small> : null}</span></button>
+              ))}</div>
+            )}
+          </div>
         </div>
-      </Field>
-      {vis !== 'open' && <Field label={`Nombre de places : ${cap}`}><input type="range" min={2} max={biz ? 1000 : 200} value={cap} onChange={(e) => setCap(Number(e.target.value))} /></Field>}
+      )}
 
-      <Field label="Description"><textarea className="input area" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ce qui t'attend, quoi ramener, dress code…" rows={4} maxLength={600} /></Field>
-      <button className="btn btn-primary btn-block" disabled={!ok || busy} onClick={submit}>{busy ? 'Publication…' : 'Publier l\'événement'}</button>
+      {step === 2 && (
+        <div className="stack18">
+          <h2 className="wiz-q">Qui peut venir ?</h2>
+          <div className="access" role="radiogroup" aria-label="Accès">
+            {ACCESS.map(({ v, icon: Icon }) => (
+              <button key={v} role="radio" aria-checked={vis === v} onClick={() => setVis(v)}><Icon size={20} /><span>{VIS_LABEL[v]}</span></button>
+            ))}
+          </div>
+          <p className="hint access-hint">{ACCESS.find((x) => x.v === vis)!.hint}</p>
+          {vis !== 'open' && (
+            <div className="row between stepper-row"><span>Nombre de places</span>
+              <div className="stepper"><button aria-label="Moins" onClick={() => setCap(Math.max(2, cap - 5))}><Minus size={16} /></button><b>{cap}</b><button aria-label="Plus" onClick={() => setCap(Math.min(biz ? 1000 : 300, cap + 5))}><Plus size={16} /></button></div>
+            </div>
+          )}
+          <div className="field"><span className="lbl">Entrée</span>
+            <div className="wrap-chips">
+              <button className="chip" aria-pressed={!paid} onClick={() => setPaid(false)}>Gratuit</button>
+              <button className="chip" aria-pressed={paid} onClick={() => setPaid(true)}>Payant</button>
+            </div>
+          </div>
+          {paid && (
+            <div className="grid2">
+              <div className="field"><span className="lbl">Prix ({CUR})</span><input className="input" type="number" inputMode="decimal" min={1} value={price} onChange={(e) => setPrice(Math.max(1, Number(e.target.value)))} /></div>
+              <div className="field"><span className="lbl">Billetterie (lien)</span><input className="input" type="url" value={ticketUrl} onChange={(e) => setTicketUrl(e.target.value)} placeholder="Facultatif" /></div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="wiz-foot">
+        {step > 0 ? <button className="btn btn-ghost" onClick={() => setStep(step - 1)}>Retour</button> : <span />}
+        {step < 2
+          ? <button className="btn btn-primary" disabled={!okStep} onClick={() => setStep(step + 1)}>Suivant</button>
+          : <button className="btn btn-primary" disabled={busy} onClick={submit}>{busy ? 'Publication…' : 'Publier'}</button>}
+      </div>
     </div>
   )
 }

@@ -104,17 +104,22 @@ export async function reverseCity(lat: number, lng: number): Promise<string | nu
   } catch { return null }
 }
 
-export interface Place { name: string; lat: number; lng: number }
+export interface Place { name: string; lat: number; lng: number; area?: string; short?: string }
 
 /** Recherche d'une ville ou d'une adresse, n'importe où dans le monde. */
 export async function geocode(q: string, near?: { lat: number; lng: number }, citiesOnly = false): Promise<Place[]> {
   try {
-    let url = `${NOMINATIM}/search?format=jsonv2&limit=5&accept-language=fr&q=${encodeURIComponent(q)}`
+    let url = `${NOMINATIM}/search?format=jsonv2&limit=5&addressdetails=1&accept-language=fr&q=${encodeURIComponent(q)}`
     if (citiesOnly) url += '&featureType=settlement'
     if (near) url += `&viewbox=${near.lng - 1},${near.lat + 1},${near.lng + 1},${near.lat - 1}`
     const r = await fetch(url)
-    const j = (await r.json()) as { display_name: string; lat: string; lon: string }[]
-    return j.map((p) => ({ name: p.display_name, lat: Number(p.lat), lng: Number(p.lon) }))
+    const j = (await r.json()) as { display_name: string; lat: string; lon: string; address?: Record<string, string> }[]
+    return j.map((p) => {
+      const a = p.address ?? {}
+      const street = [a.house_number, a.road].filter(Boolean).join(' ')
+      const area = a.neighbourhood || a.quarter || a.suburb || a.city_district || a.city || a.town || a.village
+      return { name: p.display_name, lat: Number(p.lat), lng: Number(p.lon), area, short: [street, a.city || a.town || a.village].filter(Boolean).join(', ') || p.display_name }
+    })
   } catch { return [] }
 }
 

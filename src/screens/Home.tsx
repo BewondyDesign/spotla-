@@ -7,8 +7,9 @@ import type { Moment } from '../data/types'
 import { EventCard, HeroCard } from '../components/EventCard'
 import { StoriesBar } from '../components/Stories'
 import { LocationButton } from '../components/Location'
-import { VenueCard } from '../components/VenueCard'
-import { useVenues } from '../data/venues'
+import { PlaceCard } from '../components/PlaceCard'
+import { useCatalog } from '../data/places'
+import { CATEGORIES } from '../data/catalog'
 import { PostCard } from '../components/PostCard'
 import { Empty } from '../components/ui'
 
@@ -46,7 +47,7 @@ export function Home() {
     return [...posts].sort((a, b) => Number(f.has(b.authorId)) - Number(f.has(a.authorId)) || b.createdAt.localeCompare(a.createdAt))
   }, [posts, me])
 
-  const { venues, loading: vLoading, error: vError, retry: vRetry } = useVenues(pos, radius)
+  const catalog = useCatalog()
   const [hero, ...rest] = list
   return (
     <div className="scr">
@@ -69,6 +70,16 @@ export function Home() {
 
       {tab === 'events' ? (
         <>
+          {CATEGORIES.map((c) => {
+            const items = catalog.filter((x) => x.category === c.k).sort((a, b) => a.rank - b.rank)
+            if (!items.length) return null
+            return (
+              <section key={c.k} className="rail-sec" aria-label={c.title}>
+                <div className="pad rail-head"><h2 className="sec-title">{c.title}</h2><p className="hint">{c.sub}</p></div>
+                <div className="rail">{items.map((p) => <PlaceCard key={p.id} p={p} />)}</div>
+              </section>
+            )
+          })}
           <div className="chips" role="group" aria-label="Filtres">
             {SEGS.map((x) => <button key={x.k} className="chip" aria-pressed={seg === x.k} onClick={() => setSeg(x.k)}>{x.l}</button>)}
             <span className="chips-sep" aria-hidden="true" />
@@ -90,15 +101,6 @@ export function Home() {
               {geo === 'denied' && <><b>Active ta localisation</b> pour voir ce qui se passe autour de toi, ou touche le nom de la ville en haut pour en choisir une.<br /><br /></>}
               Rien à moins de {radius} km de {city} pour l'instant. Agrandis le rayon en touchant la ville en haut, ou <Link to="/create">publie ta propre soirée</Link>.
             </Empty>
-          )}
-          {(venues.length > 0 || vLoading || vError) && (
-            <section className="stack12 mt16">
-              <div className="pad"><h2 className="sec-title">Lieux pour sortir autour de toi</h2><p className="sec-sub nolink">Bars, clubs et pubs à moins de {radius} km, les plus proches d'abord</p></div>
-              {venues.length === 0 && vLoading && <p className="hint pad">Recherche des lieux autour de toi…</p>}
-              {venues.length === 0 && vError && <p className="hint pad">Impossible de charger les lieux pour l'instant. <button className="linkbtn" onClick={vRetry}>Réessayer</button></p>}
-              <div className="list">{venues.slice(0, 12).map((v) => <VenueCard key={v.id} v={v} />)}</div>
-              <div className="pad"><Link className="sec-sub" to="/map">Voir les {venues.length} lieux sur la carte</Link></div>
-            </section>
           )}
         </>
       ) : (

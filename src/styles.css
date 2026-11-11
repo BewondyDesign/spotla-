@@ -511,3 +511,81 @@ input[type="range"] { width: 100%; accent-color: var(--neon); }
 .avatar { background: #2A2A2E; color: var(--text); }
 .vrow .grow { color: var(--text); }
 .vrow .grow > span { color: var(--muted); }
+
+/* Publier : assistant en 3 étapes */
+.create-tabs { margin-top: 0; }
+.create-tabs button { display: inline-flex; align-items: center; gap: 6px; }
+.lbl { text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+.wizard { display: grid; gap: 22px; padding-bottom: 90px; }
+.wiz-steps { display: flex; gap: 6px; }
+.wiz-steps i { flex: 1; height: 3px; border-radius: 3px; background: var(--line); }
+.wiz-steps i.on { background: var(--text); }
+.wiz-q { font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+.input.big { font-size: 20px; font-weight: 600; min-height: 58px; }
+.wrap-chips .chip { min-height: 40px; }
+.date-chip { position: relative; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.date-chip.on { background: var(--text); color: var(--ink); border-color: var(--text); }
+.date-chip input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+.addr { position: relative; }
+.addr .hint { display: inline-flex; align-items: center; gap: 4px; }
+.sugg { display: grid; background: var(--night); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.sugg button { display: flex; gap: 10px; align-items: center; text-align: left; padding: 12px 14px; font-size: 14px; }
+.sugg button + button { border-top: 1px solid var(--line); }
+.sugg small { color: var(--muted); }
+.access { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.access button { display: grid; gap: 8px; justify-items: start; padding: 14px; border-radius: 16px; border: 1px solid var(--line); font-weight: 600; font-size: 14px; color: #D4D4D8; min-height: 84px; }
+.access button[aria-checked="true"] { background: var(--text); color: var(--ink); border-color: var(--text); }
+.access-hint { margin-top: -8px; font-size: 13px; }
+.stepper-row span { font-weight: 500; }
+.stepper { display: flex; align-items: center; gap: 14px; }
+.stepper button { width: 40px; height: 40px; border-radius: 20px; border: 1px solid var(--line); display: grid; place-items: center; }
+.stepper b { min-width: 34px; text-align: center; font-size: 17px; }
+.wiz-foot { position: absolute; left: 0; right: 0; bottom: calc(60px + var(--safe-b)); padding: 12px 16px; background: var(--ink); border-top: 1px solid #1F1F22; display: flex; justify-content: space-between; gap: 10px; z-index: 15; }
+.wiz-foot .btn { min-width: 120px; }
+.wiz-foot .btn-primary { flex: 1; max-width: 220px; margin-left: auto; }
+
+/* Lieux proposés : rails de cartes à faire glisser */
+.rail-sec { margin-top: 18px; }
+.rail-head { display: grid; gap: 2px; margin-bottom: 10px; }
+.rail { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 16px 4px; scroll-padding: 0 16px; scrollbar-width: none; overscroll-behavior-x: contain; }
+.rail::-webkit-scrollbar { display: none; }
+.pcard { flex: 0 0 78%; max-width: 320px; scroll-snap-align: start; border-radius: 22px; overflow: hidden; background: var(--night); border: 1px solid #1F1F22; cursor: pointer; display: grid; }
+.pcard-media { position: relative; height: 210px; display: grid; place-items: center; overflow: hidden; }
+.pcard-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pcard-icon { color: rgba(255, 255, 255, .12); }
+.c-club .pcard-media, .place-hero.c-club { background: #241B2B; }
+.c-bar .pcard-media, .place-hero.c-bar { background: #2A2120; }
+.c-soiree .pcard-media, .place-hero.c-soiree { background: #1D2230; }
+.c-fetes .pcard-media, .place-hero.c-fetes { background: #1E2A24; }
+.c-gastro .pcard-media, .place-hero.c-gastro { background: #2B2619; }
+.pcard-rank { position: absolute; top: 12px; left: 12px; font-family: var(--f-display); font-weight: 800; font-size: 15px; padding: 4px 10px; border-radius: 10px; background: rgba(11, 11, 13, .7); backdrop-filter: blur(6px); }
+
+.pcard-like { position: absolute; top: 10px; right: 10px; width: 42px; height: 42px; border-radius: 21px; display: grid; place-items: center; background: rgba(11, 11, 13, .7); backdrop-filter: blur(6px); }
+.pcard-like.on svg { fill: #FF3B5C; stroke: #FF3B5C; }
+.pcard-when { position: absolute; left: 12px; bottom: 12px; right: 12px; font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 10px; background: rgba(11, 11, 13, .75); backdrop-filter: blur(6px); width: fit-content; max-width: calc(100% - 24px); }
+.pcard-body { padding: 12px 14px 14px; display: grid; gap: 4px; }
+.pcard-body h3 { font-family: var(--f-body); font-size: 17px; font-weight: 700; letter-spacing: 0; }
+.pcard-body h3 a { color: inherit; }
+.pcard-meta { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pcard-stats { display: flex; gap: 14px; align-items: center; font-size: 13px; color: #D4D4D8; margin-top: 4px; flex-wrap: wrap; }
+.pcard-stats span { display: inline-flex; align-items: center; gap: 4px; }
+.pcard-stats.big { font-size: 14px; margin-top: 8px; }
+.stars { font-weight: 700; color: var(--text); }
+.stars svg { fill: #FFC53D; stroke: #FFC53D; }
+.pcard-free { margin-left: auto; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 8px; background: var(--text); color: var(--ink); }
+
+/* Fiche d'un lieu */
+.place-scr { padding-top: 0; }
+.place-hero { position: relative; height: 280px; display: grid; place-items: center; overflow: hidden; }
+.place-hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.place-hero .ev-top { position: absolute; top: calc(12px + var(--safe-t)); left: 16px; right: 16px; }
+.place-body { margin-top: 18px; }
+.place-title { font-size: 30px; font-weight: 800; letter-spacing: -.02em; margin-top: 2px; }
+.place-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.place-actions .btn { min-height: 46px; }
+.review-form { display: grid; gap: 10px; }
+.rate { display: flex; gap: 6px; }
+.rate button { width: 44px; height: 44px; display: grid; place-items: center; color: #3A3A40; }
+.rate button.on { color: #FFC53D; }
+.rate button.on svg { fill: #FFC53D; }
+.review { display: grid; gap: 4px; padding: 12px 0; border-bottom: 1px solid #1F1F22; font-size: 14px; }

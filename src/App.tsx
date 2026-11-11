@@ -5,6 +5,7 @@ import { isRemote, sb, subscribe } from './data/backend'
 import { NewPassword, Onboarding } from './screens/Onboarding'
 import { Home } from './screens/Home'
 import { MapScreen } from './screens/MapScreen'
+import { PlaceDetail } from './screens/PlaceDetail'
 import { EventDetail } from './screens/EventDetail'
 import { Create } from './screens/Create'
 import { Profile } from './screens/Profile'
@@ -52,13 +53,14 @@ function Shell() {
   if (recovery) return <div className="app"><NewPassword /><Toast /></div>
   if (!meId) return <div className="app"><Onboarding /><Toast /></div>
   if (!me) return <div className="app"><Onboarding authId={meId} /><Toast /></div>
-  const fullscreen = loc.pathname.startsWith('/event/') || loc.pathname.startsWith('/stories/')
+  const fullscreen = loc.pathname.startsWith('/event/') || loc.pathname.startsWith('/place/') || loc.pathname.startsWith('/stories/')
   return (
     <div className="app">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/map" element={<MapScreen />} />
         <Route path="/event/:id" element={<EventDetail />} />
+        <Route path="/place/:id" element={<PlaceDetail />} />
         <Route path="/stories/:authorId" element={<StoryViewer />} />
         <Route path="/create" element={<Create />} />
         <Route path="/u/:id" element={<Profile />} />
