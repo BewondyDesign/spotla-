@@ -4,7 +4,6 @@ import { MessageCircle, UserRound, Users } from 'lucide-react'
 import type { SpotEvent } from '../data/types'
 import { requireAccount, toast, useStore } from '../data/store'
 import { chatOpen, setSolo, setVibe, soloMembers, vibeOf, VIBE_LABEL, type VibeLevel } from '../data/social'
-import { Avatar } from './ui'
 import { useLang, useT } from '../data/i18n'
 
 const VIBE_EN: Record<VibeLevel, string> = { 1: 'Quiet', 2: 'Lively', 3: 'Packed' }
@@ -14,7 +13,6 @@ export function SoloCard({ e }: { e: SpotEvent }) {
   const meId = useStore((s) => s.meId)
   const t = useT()
   const en = useLang((s) => s.lang) === 'en'
-  const users = useStore((s) => s.users)
   const toggleGoing = useStore((s) => s.toggleGoing)
   const [members, setMembers] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
@@ -31,27 +29,24 @@ export function SoloCard({ e }: { e: SpotEvent }) {
       // Rejoindre le groupe, c'est aussi dire « J'y vais » (sauf événement sur demande : l'hôte valide d'abord).
       if (!inGroup && !needsApproval && !e.going.includes(meId!)) toggleGoing(e.id)
       setMembers(await soloMembers(e.id))
-      if (!inGroup) toast('Tu fais partie du groupe', 'Dis bonjour dans la discussion : vous pourrez vous retrouver sur place.')
+      if (!inGroup) toast('Tu fais partie du groupe', 'Dis bonjour dans la discussion. Retrouvez-vous dans un lieu public.')
     } catch (err) { toast('Ça n\'a pas marché', (err as Error).message) }
     setBusy(false)
   }
 
-  const faces = members.map((id) => users.find((u) => u.id === id)).filter((u) => !!u).slice(0, 6)
   return (
-    <section className="solo-card">
+    <section className="solo-card solo-compact">
       <div className="row gap10">
-        <span className="solo-ic"><UserRound size={20} /></span>
+        <span className="solo-ic"><UserRound size={18} /></span>
         <div className="grow stack4">
           <b>{t('Tu y vas seul·e ?', 'Going solo?')}</b>
-          <span className="muted small">{members.length === 0 ? t('Sois la première personne du groupe : d\'autres viendront.', 'Be the first in the group, others will join.') : en ? `${members.length} going solo. Meet up there.` : `${members.length} ${members.length > 1 ? 'personnes y vont' : 'personne y va'} seule${members.length > 1 ? 's' : ''}. Retrouvez-vous sur place.`}</span>
+          <span className="muted small">{members.length === 0 ? t('Rejoins le groupe des gens qui viennent seuls.', 'Join the people going solo.') : en ? `${members.length} going solo` : `${members.length} ${members.length > 1 ? 'personnes y vont seules' : 'personne y va seule'}`}</span>
         </div>
+        {inGroup && open
+          ? <Link className="btn-mini accent" to={`/event/${e.id}/chat`}><MessageCircle size={15} /> {t('Discussion', 'Chat')}</Link>
+          : <button className="btn-mini accent" disabled={busy || !open} onClick={join}><Users size={15} /> {t('Rejoindre', 'Join')}</button>}
       </div>
-      {faces.length > 0 && <div className="solo-faces">{faces.map((u) => <Link key={u!.id} to={`/u/${u!.id}`}><Avatar u={u} size={34} /></Link>)}{members.length > 6 && <span>+{members.length - 6}</span>}</div>}
-      <div className="row gap8">
-        <button className={`btn grow ${inGroup ? 'btn-ghost' : 'btn-primary'}`} disabled={busy || !open} onClick={join}>{inGroup ? t('Quitter le groupe', 'Leave the group') : <><Users size={17} /> {t('J\'y vais seul·e', 'I\'m going solo')}</>}</button>
-        {inGroup && open && <Link className="btn btn-primary grow" to={`/event/${e.id}/chat`}><MessageCircle size={17} /> {t('Discussion', 'Chat')}</Link>}
-      </div>
-      <p className="hint">{t('Petit groupe, discussion ouverte jusqu\'à 12 h après la fin. Retrouvez-vous dans un lieu public.', 'Small group, chat open until 12 h after the end. Meet in a public place.')}</p>
+      {inGroup && <button className="textlink small" disabled={busy} onClick={join}>{t('Quitter le groupe', 'Leave the group')}</button>}
     </section>
   )
 }

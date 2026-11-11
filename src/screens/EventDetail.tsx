@@ -1,11 +1,10 @@
-import { money } from '../data/util'
 import { useEffect, useState } from 'react'
 import { ConfirmDelete } from '../components/Confirm'
 import { SoloCard, VibeGauge } from '../components/Solo'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Calendar, Check, Clapperboard, ExternalLink, Flag, Lock, MapPin, Share2, Ticket, Users, X } from 'lucide-react'
+import { ArrowLeft, Calendar, Check, Clapperboard, ExternalLink, Flag, Lock, MapPin, Share2, X } from 'lucide-react'
 import { askConfirm, canSeeAddress, goingCount, toast, useMe, useStore } from '../data/store'
-import { distanceKm, fmtDay, fmtKm, fmtTime, isLive, startsIn, VIS_LABEL } from '../data/util'
+import { distanceKm, fmtDay, fmtKm, fmtTime, isLive, startsIn } from '../data/util'
 import { eventVideo } from '../data/ambiance'
 import { Art, Avatar, LiveBadge, PriceBadge, Verified, VisBadge } from '../components/ui'
 import { share } from '../components/share'
@@ -21,6 +20,7 @@ export function EventDetail() {
   const stories = useStore((s) => s.stories)
   const { toggleGoing, requestJoin, answerRequest, report, bump, toggleFollow, deleteEvent } = useStore.getState()
   const [askDel, setAskDel] = useState(false)
+  const [allGoers, setAllGoers] = useState(false)
   const me = useMe()
   const groups = useStoryGroups()
   const t = useT()
@@ -31,7 +31,7 @@ export function EventDetail() {
 
   const host = users.find((u) => u.id === e.hostId)
   const myId = me?.id ?? ''
-  const goers = e.going.map((uid) => users.find((u) => u.id === uid)).filter((u): u is NonNullable<typeof u> => !!u)
+  const goers = e.going.filter((uid) => uid !== e.hostId).map((uid) => users.find((u) => u.id === uid)).filter((u): u is NonNullable<typeof u> => !!u)
   const mine = e.hostId === myId
   const going = e.going.includes(myId)
   const requested = e.requests.includes(myId)
@@ -59,28 +59,18 @@ export function EventDetail() {
           <button className="iconbtn glass" onClick={async () => { if (await share(e.title, `#/event/${e.id}`)) bump(e.id, 'shares') }} aria-label="Partager"><Share2 size={20} /></button>
         </div>
         <div className="stack8">
-          <div className="row gap6 wrapf"><PriceBadge e={e} /><VisBadge e={e} />{live ? <LiveBadge /> : <span className="badge b-soon">{startsIn(e)}</span>}</div>
+          <div className="row gap6 wrapf"><PriceBadge e={e} /><VisBadge e={e} />{live && <LiveBadge />}</div>
           <h1>{e.title}</h1>
         </div>
       </div>
 
       <div className="pad stack16 mt16">
-        {evStories.length > 0 && (
-          <button className="ev-stories" onClick={() => nav(`/stories/${evStories[0].authorId}`)}>
-            <Clapperboard size={20} />
-            <div><b>{live ? 'Regarde ce qui se passe en ce moment' : 'Aperçu en vidéo'}</b><span>{evStories.length} story{evStories.length > 1 ? 's' : ''} de 30 s max</span></div>
-            {live && <LiveBadge label="Live" />}
-          </button>
-        )}
-
-        {(live || Date.parse(e.start) - Date.now() < 3600_000) && Date.parse(e.end) > Date.now() && <VibeGauge e={e} />}
-
         <div className="facts">
           <div className="fact"><Calendar size={20} /><div><b>{fmtDay(e.start)} · {fmtTime(e.start)} – {fmtTime(e.end)}</b><span>{startsIn(e)}</span></div></div>
           <div className="fact"><MapPin size={20} /><div><b>{e.venue} · {e.area}</b><span>{showAddr ? e.address : t('Adresse exacte visible 2 h avant, une fois ta place confirmée', 'Exact address shown 2 h before, once your spot is confirmed')} · {fmtKm(distanceKm(pos, e))}</span></div></div>
-          <div className="fact"><Ticket size={20} /><div><b>{e.price === 0 ? t('Gratuit', 'Free') : `${money(e.price)} ${t('l\'entrée', 'entry')}`}</b><span>{e.ticketUrl ? t('Billetterie du lieu', 'Venue tickets') : e.price === 0 ? t('Entrée libre', 'Free entry') : t('Paiement sur place', 'Pay at the door')}</span></div>{e.ticketUrl && <a className="btn-mini" href={e.ticketUrl} target="_blank" rel="noreferrer">{t('Billets', 'Tickets')} <ExternalLink size={14} /></a>}</div>
-          <div className="fact"><Users size={20} /><div><b>{goingCount(e)} {t('y vont', 'going')}{e.capacity ? ` · ${e.capacity} ${t('places', 'spots')}` : ''}</b><span>{VIS_LABEL[e.visibility]}</span></div></div>
         </div>
+
+        {e.desc && <p className="desc">{e.desc}</p>}
 
         {!mine && (
           <div className="ev-cta">
@@ -95,6 +85,7 @@ export function EventDetail() {
                 {going ? <><Check size={18} /> {t('J\'y vais', 'I\'m going')}</> : t('J\'y vais', 'I\'m going')}
               </button>
             )}
+            {e.ticketUrl && <a className="btn btn-ghost" href={e.ticketUrl} target="_blank" rel="noreferrer">{t('Billets', 'Tickets')} <ExternalLink size={16} /></a>}
           </div>
         )}
 
@@ -102,9 +93,15 @@ export function EventDetail() {
           <div className="privacy"><Lock size={18} /><span>{accepted || (e.visibility === 'circle' && following) ? `Tu es invité·e. Pour la sécurité de tous, l'adresse exacte apparaît 2 h avant le début (${fmtTime(new Date(Date.parse(e.start) - 2 * 3600_000).toISOString())}).` : 'Événement privé : l\'organisateur valide chaque demande. Une fois accepté·e, tu verras l\'adresse exacte 2 h avant le début.'}</span></div>
         )}
 
-        <p className="desc">{e.desc}</p>
+        {evStories.length > 0 && (
+          <button className="ev-stories" onClick={() => nav(`/stories/${evStories[0].authorId}`)}>
+            <Clapperboard size={20} />
+            <div><b>{live ? 'Regarde ce qui se passe en ce moment' : 'Aperçu en vidéo'}</b><span>{evStories.length} story{evStories.length > 1 ? 's' : ''} de 30 s max</span></div>
+            {live && <LiveBadge label="Live" />}
+          </button>
+        )}
 
-        {Date.parse(e.end) > Date.now() && !mine && <SoloCard e={e} />}
+        {(live || Date.parse(e.start) - Date.now() < 3600_000) && Date.parse(e.end) > Date.now() && <VibeGauge e={e} />}
 
         <div className="host">
           <Link to={`/u/${host?.id}`}><Avatar u={host} size={44} /></Link>
@@ -114,14 +111,22 @@ export function EventDetail() {
 
         {goers.length > 0 && (
           <section className="stack8">
-            <h3 className="sec-title">{t('Qui y va', 'Who\'s going')}</h3>
-            <div className="goers">
-              {goers.map((u) => (
-                <Link key={u.id} to={`/u/${u.id}`} className="goer"><Avatar u={u} size={48} /><span>{u.id === myId ? t('Toi', 'You') : u.name.split(' ')[0]}</span></Link>
-              ))}
-            </div>
+            <button className="goers-row" onClick={() => setAllGoers(!allGoers)} aria-expanded={allGoers}>
+              <span className="solo-faces">{goers.slice(0, 5).map((u) => <Avatar key={u.id} u={u} size={30} />)}</span>
+              <span className="grow"><b>{goingCount(e)} {t('y vont', 'going')}</b>{e.capacity ? <small> · {e.capacity} {t('places', 'spots')}</small> : null}</span>
+              <span className="muted small">{allGoers ? t('Masquer', 'Hide') : t('Voir', 'See')}</span>
+            </button>
+            {allGoers && (
+              <div className="goers">
+                {goers.map((u) => (
+                  <Link key={u.id} to={`/u/${u.id}`} className="goer"><Avatar u={u} size={44} /><span>{u.id === myId ? t('Toi', 'You') : u.name.split(' ')[0]}</span></Link>
+                ))}
+              </div>
+            )}
           </section>
         )}
+
+        {Date.parse(e.end) > Date.now() && !mine && <SoloCard e={e} />}
 
         {mine && <button className="textlink danger" onClick={() => setAskDel(true)}>Supprimer cette soirée</button>}
         {askDel && <ConfirmDelete title="Supprimer cette soirée ?" text="Elle disparaîtra de l'app pour tout le monde, avec les inscriptions." onConfirm={() => { deleteEvent(e.id); nav('/', { replace: true }) }} onClose={() => setAskDel(false)} />}

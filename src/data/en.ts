@@ -84,7 +84,7 @@ export const EN: Record<string, string> = {
   'Activer le son': 'Unmute', 'Couper le son': 'Mute', 'Supprimer ma story': 'Delete my story', 'Supprimer ta story ?': 'Delete your story?',
   'Elle disparaîtra pour tout le monde.': 'It will disappear for everyone.', 'Story précédente': 'Previous story', 'Story suivante': 'Next story',
   // ---------- J'y vais seul·e / ambiance / chat ----------
-  'Tu fais partie du groupe': 'You\'re in the group', 'Dis bonjour dans la discussion : vous pourrez vous retrouver sur place.': 'Say hi in the chat so you can meet up there.',
+  'Tu fais partie du groupe': 'You\'re in the group', 'Dis bonjour dans la discussion : vous pourrez vous retrouver sur place.': 'Say hi in the chat so you can meet up there.', 'Dis bonjour dans la discussion. Retrouvez-vous dans un lieu public.': 'Say hi in the chat. Meet in a public place.', 'Rejoindre': 'Join', 'Masquer': 'Hide', 'Rejoins le groupe des gens qui viennent seuls.': 'Join the people going solo.',
   'Ton avis sur l\'ambiance': 'Your take on the vibe', 'Cette sortie n\'existe plus.': 'This outing no longer exists.',
   'Rejoins le groupe depuis la page de la sortie pour lire et écrire ici.': 'Join the group from the outing page to read and write here.',
   'Personne n\'a encore écrit. Dis bonjour et propose un point de rendez-vous (dans un lieu public).': 'Nobody has written yet. Say hi and suggest a meeting point (in a public place).',
