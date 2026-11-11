@@ -103,6 +103,7 @@ export async function loadAll(meId: string, pos: { lat: number; lng: number }) {
   const users: User[] = (profiles as Row[]).map((p) => ({
     id: p.id, name: p.name, handle: p.handle, kind: p.kind, verified: p.verified, color: p.color, bio: p.bio, city: p.city,
     venueAddress: p.venue_address ?? undefined, vibes: p.vibes,
+    avatarUrl: p.avatar_url ?? undefined, coverUrl: p.cover_url ?? undefined, coverKind: p.cover_kind ?? undefined,
     followers: fol.filter((f) => f.followee === p.id).length,
     following: fol.filter((f) => f.follower === p.id).map((f) => f.followee),
   }))
@@ -150,6 +151,16 @@ export const remote = {
     if (status === null) { must(await sb!.from('attendances').delete().match({ event_id: eventId, user_id: userId })); return }
     must(await sb!.from('attendances').upsert({ event_id: eventId, user_id: userId, status }))
   },
+  async updateProfile(me: string, patch: { bio?: string; avatarUrl?: string | null; coverUrl?: string | null; coverKind?: 'image' | 'video' | null }) {
+    const row: Record<string, unknown> = {}
+    if (patch.bio !== undefined) row.bio = patch.bio
+    if (patch.avatarUrl !== undefined) row.avatar_url = patch.avatarUrl
+    if (patch.coverUrl !== undefined) row.cover_url = patch.coverUrl
+    if (patch.coverKind !== undefined) row.cover_kind = patch.coverKind
+    const r = await sb!.from('profiles').update(row).eq('id', me)
+    if (r.error && /avatar_url|cover_url|cover_kind|schema cache|column/i.test(r.error.message)) throw new Error('Il manque une petite mise à jour de la base : exécute supabase/profile-media.sql dans Supabase.')
+    must(r)
+  },
   async follow(me: string, other: string, on: boolean) {
     if (on) must(await sb!.from('follows').insert({ follower: me, followee: other }))
     else must(await sb!.from('follows').delete().match({ follower: me, followee: other }))
@@ -183,7 +194,7 @@ export const remote = {
 }
 
 /** Envoie une vidéo ou une photo dans le bucket « media » et renvoie son URL publique. */
-export async function uploadMedia(me: string, file: File, folder: 'stories' | 'posts') {
+export async function uploadMedia(me: string, file: File, folder: 'stories' | 'posts' | 'profile') {
   const ext = (file.name.split('.').pop() || (file.type.startsWith('video') ? 'mp4' : 'jpg')).toLowerCase()
   const path = `${me}/${folder}/${crypto.randomUUID()}.${ext}`
   must(await sb!.storage.from('media').upload(path, file, { contentType: file.type, upsert: false }))

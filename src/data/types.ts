@@ -23,6 +23,10 @@ export interface User {
   vibes?: string[]
   /** Business : adresse du lieu */
   venueAddress?: string
+  /** Photo de profil et couverture (image ou courte vidéo) */
+  avatarUrl?: string
+  coverUrl?: string
+  coverKind?: 'image' | 'video'
 }
 
 export interface SpotEvent {

@@ -59,6 +59,7 @@ interface State {
   toggleLike: (postId: string) => void
   addComment: (postId: string, text: string) => void
   toggleFollow: (userId: string) => void
+  updateProfile: (patch: { bio?: string; avatarUrl?: string; coverUrl?: string; coverKind?: 'image' | 'video' }) => Promise<void>
   report: (eventId: string) => void
   boost: (eventId: string) => void
   bump: (eventId: string, field: 'views' | 'shares') => void
@@ -244,6 +245,11 @@ export const useStore = create<State>()(
         set((s) => ({ posts: s.posts.map((p) => (p.id === postId ? { ...p, comments: [...p.comments, { id, authorId: s.meId!, text, createdAt: new Date().toISOString() }] } : p)) }))
       },
 
+      updateProfile: async (patch) => {
+        const me = get().meId!
+        if (isRemote) await remote.updateProfile(me, patch)
+        set((s) => ({ users: s.users.map((u) => (u.id === me ? { ...u, ...patch } : u)) }))
+      },
       toggleFollow: (userId) => {
         const me = get().meId!
         sync(() => remote.follow(me, userId, !get().users.find((u) => u.id === me)?.following.includes(userId)))

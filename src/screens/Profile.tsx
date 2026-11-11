@@ -1,9 +1,10 @@
 import { useShallow } from 'zustand/react/shallow'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, BarChart3, LogOut, Share2 } from 'lucide-react'
+import { ArrowLeft, BarChart3, Camera, LogOut, Pencil, Share2, X } from 'lucide-react'
 import { share } from '../components/share'
-import { askConfirm, useMe, useStore } from '../data/store'
+import { askConfirm, toast, useMe, useStore } from '../data/store'
+import { isRemote, uploadMedia } from '../data/backend'
 import { momentOf } from '../data/util'
 import { useStoryGroups } from '../components/Stories'
 import { PostCard } from '../components/PostCard'
@@ -12,6 +13,9 @@ import { Avatar, Empty, Verified } from '../components/ui'
 import { CAT_ICON, Stars } from '../components/PlaceCard'
 import { useCatalog, userPassport, type Review } from '../data/places'
 import { CATALOG } from '../data/catalog'
+import type { User } from '../data/types'
+
+const COVER_MAX_S = 15
 
 export function Profile() {
   const { id = 'me' } = useParams()
@@ -24,101 +28,147 @@ export function Profile() {
   const toggleFollow = useStore((s) => s.toggleFollow)
   const logout = useStore((s) => s.logout)
   const group = useStoryGroups().find((g) => g.authorId === uid)
-  const [tab, setTab] = useState<'pass' | 'wall' | 'events'>('pass')
+  const [tab, setTab] = useState<'places' | 'events' | 'posts'>('places')
+  const [editing, setEditing] = useState(false)
   const [pass, setPass] = useState<{ liked: string[]; reviews: Review[] }>({ liked: [], reviews: [] })
   const catalog = useCatalog()
-  const hosted = useStore((s) => s.events.filter((e) => e.hostId === uid).length)
   useEffect(() => { userPassport(uid).then(setPass) }, [uid])
   const placeOf = useMemo(() => (pid: string) => catalog.find((c) => c.id === pid) ?? CATALOG.find((c) => c.id === pid), [catalog])
-  // Tampons : chaque lieu aimé ou noté, une seule fois.
-  const stamps = useMemo(() => [...new Set([...pass.reviews.map((r) => r.placeId), ...pass.liked])].map(placeOf).filter((x) => !!x), [pass, placeOf])
+  // Les lieux de la personne : ceux qu'elle a aimés ou notés, une seule fois chacun.
+  const places = useMemo(() => [...new Set([...pass.reviews.map((r) => r.placeId), ...pass.liked])].map(placeOf).filter((x) => !!x), [pass, placeOf])
 
   if (!u) return <div className="scr"><Empty>Profil introuvable.</Empty></div>
   const isMe = u.id === me.id
   const following = me.following.includes(u.id)
+  const ratingOf = (pid: string) => pass.reviews.find((r) => r.placeId === pid)
 
   return (
-    <div className="scr">
-      <header className="pad prof-top">
-        {isMe ? <span /> : <button className="iconbtn soft" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft size={20} /></button>}
-        <span className="h-handle">@{u.handle}</span>
-        {isMe ? <button className="iconbtn soft" onClick={async () => { if (await askConfirm('Se déconnecter et réinitialiser la démo ?', 'Se déconnecter')) logout() }} aria-label="Se déconnecter"><LogOut size={18} /></button> : <span />}
-      </header>
+    <div className="scr prof">
+      <div className="prof-cover">
+        {u.coverUrl && u.coverKind === 'video'
+          ? <video src={u.coverUrl} autoPlay muted loop playsInline aria-hidden="true" />
+          : u.coverUrl ? <img src={u.coverUrl} alt="" /> : <div className="cover-empty" aria-hidden="true" />}
+        <div className="prof-cover-bar">
+          {isMe ? <span /> : <button className="iconbtn glass sm" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft size={18} /></button>}
+          <div className="row gap6">
+            {isMe && u.kind === 'business' && <Link className="iconbtn glass sm" to="/business" aria-label="Espace business"><BarChart3 size={17} /></Link>}
+            <button className="iconbtn glass sm" onClick={() => share(`${u.name} sur SpotLa`, `#/u/${u.id}`)} aria-label="Partager le profil"><Share2 size={17} /></button>
+            {isMe && <button className="iconbtn glass sm" onClick={() => setEditing(true)} aria-label="Modifier le profil"><Pencil size={17} /></button>}
+            {isMe && <button className="iconbtn glass sm" onClick={async () => { if (await askConfirm('Se déconnecter ?', 'Se déconnecter')) logout() }} aria-label="Se déconnecter"><LogOut size={17} /></button>}
+          </div>
+        </div>
+      </div>
 
-      <div className="pad prof-head">
+      <div className="pad prof-id">
         <button className="prof-av" onClick={() => group ? nav(`/stories/${u.id}`) : isMe && nav('/create?mode=story')} aria-label={group ? 'Voir la story' : 'Ajouter une story'}>
-          <Avatar u={u} size={96} ring={group ? (group.live ? 'live' : group.unseen ? 'new' : 'seen') : 'seen'} />
+          <Avatar u={u} size={88} ring={group ? (group.live ? 'live' : group.unseen ? 'new' : 'seen') : 'seen'} />
         </button>
         <h1 className="prof-name">{u.name} <Verified u={u} /></h1>
-        {u.kind === 'business' && <span className="badge b-ver">{u.verified ? 'Lieu vérifié' : 'Vérification en cours'}</span>}
-        {u.bio && <p className="muted">{u.bio}</p>}
-        {u.venueAddress && <p className="small muted">📍 {u.venueAddress}</p>}
-        <p className="prof-follow"><b>{u.followers.toLocaleString('fr-FR')}</b> abonnés · <b>{u.following.length}</b> abonnements</p>
-        <div className="row gap8 prof-btns">
-          {isMe ? (
-            <>
-              <Link className="btn btn-primary grow small-btn" to="/create">Partager une soirée</Link>
-              {u.kind === 'business' && <Link className="btn btn-ghost grow small-btn" to="/business"><BarChart3 size={16} /> Espace business</Link>}
-            </>
-          ) : (
-            <button className={`btn grow small-btn ${following ? 'btn-ghost' : 'btn-primary'}`} onClick={() => toggleFollow(u.id)}>{following ? 'Abonné' : 'Suivre'}</button>
-          )}
-          <button className="btn btn-ghost small-btn" onClick={() => share(`Le passeport de ${u.name} sur SpotLa`, `#/u/${u.id}`)} aria-label="Partager le profil"><Share2 size={16} /></button>
-        </div>
+        <p className="prof-sub">@{u.handle}{u.city ? ` · ${u.city}` : ''}</p>
+        {u.bio && <p className="prof-bio">{u.bio}</p>}
+        <p className="prof-line">
+          <span><b>{places.length}</b> lieux</span>
+          <span><b>{u.followers.toLocaleString('fr-FR')}</b> abonnés</span>
+          <span><b>{u.following.length}</b> suivis</span>
+        </p>
+        {!isMe && <button className={`pill-btn ${following ? '' : 'on'}`} onClick={() => toggleFollow(u.id)}>{following ? 'Abonné' : 'Suivre'}</button>}
       </div>
 
-      <div className="pad passport-sum">
-        <div><b>{stamps.length}</b><span>lieux</span></div>
-        <div><b>{hosted}</b><span>soirées</span></div>
-        <div><b>{pass.reviews.length}</b><span>avis</span></div>
-        <div><b>{posts.length}</b><span>posts</span></div>
-      </div>
+      <nav className="prof-nav" role="tablist">
+        <button role="tab" aria-selected={tab === 'places'} onClick={() => setTab('places')}>Lieux</button>
+        <button role="tab" aria-selected={tab === 'events'} onClick={() => setTab('events')}>Soirées</button>
+        <button role="tab" aria-selected={tab === 'posts'} onClick={() => setTab('posts')}>Partages</button>
+      </nav>
 
-      <div className="pad">
-        <div className="tabs2 pill" role="tablist">
-          <button role="tab" aria-selected={tab === 'pass'} onClick={() => setTab('pass')}>Passeport</button>
-          <button role="tab" aria-selected={tab === 'wall'} onClick={() => setTab('wall')}>Partages</button>
-          <button role="tab" aria-selected={tab === 'events'} onClick={() => setTab('events')}>Soirées</button>
-        </div>
-      </div>
-
-      {tab === 'pass' && (
-        <div className="pad stack16">
-          {stamps.length === 0 ? (
-            <Empty>{isMe ? <>Ton passeport est vide. Aime ou note un lieu du <Link to="/">Top 10</Link> pour gagner ton premier tampon.</> : 'Aucun tampon pour le moment.'}</Empty>
-          ) : (
-            <div className="stamps">
-              {stamps.map((p) => { const Icon = CAT_ICON[p!.category]; return (
-                <Link key={p!.id} to={`/place/${encodeURIComponent(p!.id)}`} className={`stamp c-${p!.category}`}>
-                  <Icon size={22} aria-hidden="true" />
-                  <b>{p!.name}</b>
-                  <span>{p!.area}</span>
+      {tab === 'places' && (
+        places.length === 0 ? (
+          <Empty>{isMe ? <>Aime ou note un lieu du <Link to="/">Top 10</Link> et il apparaîtra ici.</> : 'Aucun lieu partagé pour le moment.'}</Empty>
+        ) : (
+          <div className="pad prof-places">
+            {places.map((p) => {
+              const Icon = CAT_ICON[p!.category]
+              const r = ratingOf(p!.id)
+              return (
+                <Link key={p!.id} to={`/place/${encodeURIComponent(p!.id)}`} className={`pplace c-${p!.category}`}>
+                  {p!.photo ? <img src={p!.photo} alt="" /> : <Icon className="pplace-ic" size={40} strokeWidth={1.2} aria-hidden="true" />}
+                  <div className="pplace-txt">
+                    <b>{p!.name}</b>
+                    <span>{p!.area}</span>
+                    {r && <Stars rating={r.rating} size={11} />}
+                  </div>
                 </Link>
-              ) })}
-            </div>
-          )}
-          {pass.reviews.length > 0 && (
-            <section className="stack12">
-              <h2 className="sec-title">Avis</h2>
-              {pass.reviews.map((r) => (
-                <Link key={r.id} to={`/place/${encodeURIComponent(r.placeId)}`} className="review">
-                  <b>{placeOf(r.placeId)?.name ?? 'Lieu'}</b>
-                  <Stars rating={r.rating} />
-                  {r.body && <p>{r.body}</p>}
-                </Link>
-              ))}
-            </section>
-          )}
-        </div>
-      )}
-      {tab === 'wall' && (
-        <div className="feed">
-          {posts.length === 0 ? <Empty>{isMe ? <>Ton mur est vide. <Link to="/create?mode=post">Écris ton premier post</Link>.</> : 'Aucune publication pour le moment.'}</Empty> : posts.map((p) => <PostCard key={p.id} p={p} />)}
-        </div>
+              )
+            })}
+          </div>
+        )
       )}
       {tab === 'events' && (
-        <div className="list mt12">{events.length === 0 ? <Empty>Aucun événement à venir.</Empty> : events.map((e) => <EventCard key={e.id} e={e} />)}</div>
+        <div className="list mt12">{events.length === 0 ? <Empty>{isMe ? <>Aucune soirée à venir. <Link to="/create">Partage une soirée</Link>.</> : 'Aucune soirée à venir.'}</Empty> : events.map((e) => <EventCard key={e.id} e={e} />)}</div>
       )}
+      {tab === 'posts' && (
+        <div className="feed">
+          {posts.length === 0 ? <Empty>{isMe ? <>Rien de partagé pour l'instant. <Link to="/create?mode=post">Partage un moment</Link>.</> : 'Aucune publication pour le moment.'}</Empty> : posts.map((p) => <PostCard key={p.id} p={p} />)}
+        </div>
+      )}
+
+      {editing && <EditProfile u={u} onClose={() => setEditing(false)} />}
+    </div>
+  )
+}
+
+/** Durée d'une vidéo choisie, pour refuser les couvertures trop longues. */
+const videoSeconds = (f: File) => new Promise<number>((res) => {
+  const v = document.createElement('video')
+  v.preload = 'metadata'
+  v.onloadedmetadata = () => { res(v.duration); URL.revokeObjectURL(v.src) }
+  v.onerror = () => res(0)
+  v.src = URL.createObjectURL(f)
+})
+
+function EditProfile({ u, onClose }: { u: User; onClose: () => void }) {
+  const updateProfile = useStore((s) => s.updateProfile)
+  const [bio, setBio] = useState(u.bio)
+  const [busy, setBusy] = useState<string | null>(null)
+
+  const upload = async (f: File) => (isRemote ? uploadMedia(u.id, f, 'profile') : URL.createObjectURL(f))
+
+  const pickCover = async (f?: File) => {
+    if (!f) return
+    const video = f.type.startsWith('video')
+    if (video && (await videoSeconds(f)) > COVER_MAX_S + 0.5) { toast('Vidéo trop longue', `La couverture peut durer ${COVER_MAX_S} secondes au maximum.`); return }
+    setBusy('cover')
+    try { await updateProfile({ coverUrl: await upload(f), coverKind: video ? 'video' : 'image' }) } catch (e) { toast('La couverture n\'a pas pu être changée', (e as Error).message) }
+    setBusy(null)
+  }
+  const pickAvatar = async (f?: File) => {
+    if (!f) return
+    setBusy('avatar')
+    try { await updateProfile({ avatarUrl: await upload(f) }) } catch (e) { toast('La photo n\'a pas pu être changée', (e as Error).message) }
+    setBusy(null)
+  }
+  const save = async () => {
+    setBusy('bio')
+    try { await updateProfile({ bio: bio.trim() }); onClose() } catch (e) { toast('Ça n\'a pas marché', (e as Error).message) }
+    setBusy(null)
+  }
+
+  return (
+    <div className="backdrop" onClick={onClose}>
+      <div className="confirm edit-sheet" role="dialog" aria-modal="true" aria-label="Modifier le profil" onClick={(e) => e.stopPropagation()}>
+        <div className="row between"><b className="sec-title">Modifier le profil</b><button className="iconbtn" onClick={onClose} aria-label="Fermer"><X size={18} /></button></div>
+        <label className="edit-cover">
+          {u.coverUrl && u.coverKind === 'video' ? <video src={u.coverUrl} autoPlay muted loop playsInline /> : u.coverUrl ? <img src={u.coverUrl} alt="" /> : null}
+          <span><Camera size={18} /> {busy === 'cover' ? 'Envoi…' : 'Couverture : photo ou vidéo (15 s max)'}</span>
+          <input type="file" accept="image/*,video/*" hidden onChange={(e) => pickCover(e.target.files?.[0])} />
+        </label>
+        <label className="edit-av">
+          <Avatar u={u} size={56} />
+          <span>{busy === 'avatar' ? 'Envoi…' : 'Changer la photo de profil'}</span>
+          <input type="file" accept="image/*" hidden onChange={(e) => pickAvatar(e.target.files?.[0])} />
+        </label>
+        <textarea className="input area" rows={3} maxLength={160} value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Une phrase sur toi : tes spots, ton style de soirée…" aria-label="Bio" />
+        <button className="btn btn-primary btn-block" disabled={!!busy} onClick={save}>Enregistrer</button>
+      </div>
     </div>
   )
 }
