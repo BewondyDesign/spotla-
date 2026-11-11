@@ -67,6 +67,7 @@ export function EventDetail() {
       <div className="pad stack16 mt16">
         <div className="facts">
           <div className="fact"><Calendar size={20} /><div><b>{fmtDay(e.start)} · {fmtTime(e.start)} – {fmtTime(e.end)}</b><span>{startsIn(e)}</span></div></div>
+          {(live || Date.parse(e.start) - Date.now() < 3600_000) && Date.parse(e.end) > Date.now() && <VibeGauge e={e} />}
           <div className="fact"><MapPin size={20} /><div><b>{e.venue} · {e.area}</b><span>{showAddr ? e.address : t('Adresse exacte visible 2 h avant, une fois ta place confirmée', 'Exact address shown 2 h before, once your spot is confirmed')} · {fmtKm(distanceKm(pos, e))}</span></div></div>
         </div>
 
@@ -100,8 +101,6 @@ export function EventDetail() {
             {live && <LiveBadge label="Live" />}
           </button>
         )}
-
-        {(live || Date.parse(e.start) - Date.now() < 3600_000) && Date.parse(e.end) > Date.now() && <VibeGauge e={e} />}
 
         <div className="host">
           <Link to={`/u/${host?.id}`}><Avatar u={host} size={44} /></Link>

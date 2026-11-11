@@ -962,3 +962,11 @@ p { line-height: 1.5; }
 .solo-compact { padding: 12px 14px; gap: 6px; }
 .solo-compact .btn-mini { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; flex: none; }
 .solo-compact .textlink { justify-self: start; }
+/* Jauge d'ambiance discrète (une ligne sous l'heure) */
+.vibe-line { display: grid; gap: 8px; padding: 0 0 12px 32px; border-bottom: 1px solid #1F1F22; }
+.vibe-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.vibe-dot.l1 { background: #5B8DEF; } .vibe-dot.l2 { background: var(--brand); } .vibe-dot.l3 { background: #E5484D; }
+.vibe-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.vibe-chips button { padding: 6px 12px; border-radius: 999px; background: var(--night-2); border: 1px solid var(--line); color: inherit; font-size: 13px; }
+.vibe-chips button.on { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
+.fact:has(+ .vibe-line) { border-bottom: 0; padding-bottom: 6px; }

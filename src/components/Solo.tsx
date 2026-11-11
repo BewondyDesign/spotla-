@@ -57,6 +57,7 @@ export function VibeGauge({ e }: { e: SpotEvent }) {
   const t = useT()
   const en = useLang((s) => s.lang) === 'en'
   const label = (l: VibeLevel) => (en ? VIBE_EN[l] : VIBE_LABEL[l])
+  const [open, setOpen] = useState(false)
   const [v, setV] = useState<{ counts: Record<VibeLevel, number>; mine: VibeLevel | null; total: number } | null>(null)
   const load = () => vibeOf(e.id, meId).then(setV)
   useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t) }, [e.id, meId]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -66,18 +67,19 @@ export function VibeGauge({ e }: { e: SpotEvent }) {
     if (!requireAccount('dire comment est l\'ambiance')) return
     try { await setVibe(e.id, meId!, l); load() } catch (err) { toast('Ça n\'a pas marché', (err as Error).message) }
   }
+  const lvl = v.total ? (Number(top[0]) as VibeLevel) : null
   return (
-    <section className="vibe-card">
-      <div className="row between">
-        <b>{t('Ça bouge ?', 'How busy is it?')}</b>
-        <span className="muted small">{v.total === 0 ? t('Personne n\'a encore voté', 'No votes yet') : `${label(Number(top[0]) as VibeLevel)} · ${v.total} ${t('avis sur place', 'on site')}`}</span>
+    <div className="vibe-line">
+      <div className="row gap10">
+        <i className={`vibe-dot${lvl ? ` l${lvl}` : ''}`} aria-hidden="true" />
+        <span className="grow small">{lvl ? <><b>{label(lvl)}</b> · {v.total} {t('avis sur place', 'on site')}</> : <span className="muted">{t('Ambiance : pas encore d\'avis', 'Vibe: no votes yet')}</span>}</span>
+        <button className="textlink small" onClick={() => setOpen(!open)}>{open ? t('Fermer', 'Close') : v.mine ? t('Changer mon avis', 'Change my vote') : t('Donner mon avis', 'Rate the vibe')}</button>
       </div>
-      <div className="vibe-bar" aria-hidden="true">
-        {([1, 2, 3] as VibeLevel[]).map((l) => <i key={l} className={`l${l}`} style={{ flexGrow: v.total ? v.counts[l] || 0.0001 : 1, opacity: v.total ? 1 : 0.25 }} />)}
-      </div>
-      <div className="vibe-btns" role="group" aria-label="Ton avis sur l'ambiance">
-        {([1, 2, 3] as VibeLevel[]).map((l) => <button key={l} className={v.mine === l ? 'on' : ''} onClick={() => vote(l)}>{label(l)}</button>)}
-      </div>
-    </section>
+      {open && (
+        <div className="vibe-chips" role="group" aria-label="Ton avis sur l'ambiance">
+          {([1, 2, 3] as VibeLevel[]).map((l) => <button key={l} className={v.mine === l ? 'on' : ''} onClick={() => { vote(l); setOpen(false) }}>{label(l)}</button>)}
+        </div>
+      )}
+    </div>
   )
 }

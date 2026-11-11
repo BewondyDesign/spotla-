@@ -2,7 +2,7 @@
 // Les textes avec des parties variables sont dans PATTERNS plus bas.
 export const EN: Record<string, string> = {
   // ---------- Général ----------
-  'Retour': 'Back', 'Fermer': 'Close', 'Annuler': 'Cancel', 'Supprimer': 'Delete', 'Confirmer': 'Confirm', 'Envoyer': 'Send',
+  'Retour': 'Back', 'Fermer': 'Close', 'Ambiance : pas encore d\'avis': 'Vibe: no votes yet', 'Donner mon avis': 'Rate the vibe', 'Changer mon avis': 'Change my vote', 'Annuler': 'Cancel', 'Supprimer': 'Delete', 'Confirmer': 'Confirm', 'Envoyer': 'Send',
   'Enregistrer': 'Save', 'Enregistrement…': 'Saving…', 'Envoi…': 'Sending…', 'Suivant': 'Next', 'Voir': 'View', 'Partager': 'Share',
   'Réessayer': 'Try again', 'Réessaie dans un instant.': 'Try again in a moment.', 'Ça n\'a pas marché': 'That didn\'t work',
   'Chargement…': 'Loading…', 'Recherche…': 'Searching…', 'Facultatif': 'Optional', 'Moins': 'Less', 'Plus': 'More', 'Aucun': 'None',
