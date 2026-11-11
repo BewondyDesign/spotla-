@@ -1,13 +1,17 @@
 import { useShallow } from 'zustand/react/shallow'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, BarChart3, Grid3x3, LogOut, PartyPopper, Rows3 } from 'lucide-react'
+import { ArrowLeft, BarChart3, LogOut, Share2 } from 'lucide-react'
+import { share } from '../components/share'
 import { askConfirm, useMe, useStore } from '../data/store'
 import { momentOf } from '../data/util'
 import { useStoryGroups } from '../components/Stories'
 import { PostCard } from '../components/PostCard'
 import { EventCard } from '../components/EventCard'
-import { Art, Avatar, Empty, Verified } from '../components/ui'
+import { Avatar, Empty, Verified } from '../components/ui'
+import { CAT_ICON, Stars } from '../components/PlaceCard'
+import { useCatalog, userPassport, type Review } from '../data/places'
+import { CATALOG } from '../data/catalog'
 
 export function Profile() {
   const { id = 'me' } = useParams()
@@ -20,7 +24,14 @@ export function Profile() {
   const toggleFollow = useStore((s) => s.toggleFollow)
   const logout = useStore((s) => s.logout)
   const group = useStoryGroups().find((g) => g.authorId === uid)
-  const [tab, setTab] = useState<'wall' | 'grid' | 'events'>('wall')
+  const [tab, setTab] = useState<'pass' | 'wall' | 'events'>('pass')
+  const [pass, setPass] = useState<{ liked: string[]; reviews: Review[] }>({ liked: [], reviews: [] })
+  const catalog = useCatalog()
+  const hosted = useStore((s) => s.events.filter((e) => e.hostId === uid).length)
+  useEffect(() => { userPassport(uid).then(setPass) }, [uid])
+  const placeOf = useMemo(() => (pid: string) => catalog.find((c) => c.id === pid) ?? CATALOG.find((c) => c.id === pid), [catalog])
+  // Tampons : chaque lieu aimé ou noté, une seule fois.
+  const stamps = useMemo(() => [...new Set([...pass.reviews.map((r) => r.placeId), ...pass.liked])].map(placeOf).filter((x) => !!x), [pass, placeOf])
 
   if (!u) return <div className="scr"><Empty>Profil introuvable.</Empty></div>
   const isMe = u.id === me.id
@@ -28,54 +39,81 @@ export function Profile() {
 
   return (
     <div className="scr">
-      <header className="pad row between">
-        {isMe ? <span className="h-handle">@{u.handle}</span> : <button className="iconbtn" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft size={20} /></button>}
-        {isMe && <button className="iconbtn" onClick={async () => { if (await askConfirm('Se déconnecter et réinitialiser la démo ?', 'Se déconnecter')) logout() }} aria-label="Se déconnecter"><LogOut size={18} /></button>}
+      <header className="pad prof-top">
+        {isMe ? <span /> : <button className="iconbtn soft" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft size={20} /></button>}
+        <span className="h-handle">@{u.handle}</span>
+        {isMe ? <button className="iconbtn soft" onClick={async () => { if (await askConfirm('Se déconnecter et réinitialiser la démo ?', 'Se déconnecter')) logout() }} aria-label="Se déconnecter"><LogOut size={18} /></button> : <span />}
       </header>
 
       <div className="pad prof-head">
         <button className="prof-av" onClick={() => group ? nav(`/stories/${u.id}`) : isMe && nav('/create?mode=story')} aria-label={group ? 'Voir la story' : 'Ajouter une story'}>
-          <Avatar u={u} size={84} ring={group ? (group.live ? 'live' : group.unseen ? 'new' : 'seen') : undefined} />
+          <Avatar u={u} size={96} ring={group ? (group.live ? 'live' : group.unseen ? 'new' : 'seen') : 'seen'} />
         </button>
-        <div className="prof-stats">
-          <div><b>{posts.length + events.length}</b><span>publications</span></div>
-          <div><b>{u.followers.toLocaleString('fr-FR')}</b><span>abonnés</span></div>
-          <div><b>{u.following.length}</b><span>abonnements</span></div>
-        </div>
-      </div>
-      <div className="pad stack8 mt12">
         <h1 className="prof-name">{u.name} <Verified u={u} /></h1>
         {u.kind === 'business' && <span className="badge b-ver">{u.verified ? 'Lieu vérifié' : 'Vérification en cours'}</span>}
         {u.bio && <p className="muted">{u.bio}</p>}
         {u.venueAddress && <p className="small muted">📍 {u.venueAddress}</p>}
-        <div className="row gap8">
+        <p className="prof-follow"><b>{u.followers.toLocaleString('fr-FR')}</b> abonnés · <b>{u.following.length}</b> abonnements</p>
+        <div className="row gap8 prof-btns">
           {isMe ? (
             <>
-              <Link className="btn btn-ghost grow small-btn" to="/create">Publier</Link>
+              <Link className="btn btn-primary grow small-btn" to="/create">Partager une soirée</Link>
               {u.kind === 'business' && <Link className="btn btn-ghost grow small-btn" to="/business"><BarChart3 size={16} /> Espace business</Link>}
             </>
           ) : (
             <button className={`btn grow small-btn ${following ? 'btn-ghost' : 'btn-primary'}`} onClick={() => toggleFollow(u.id)}>{following ? 'Abonné' : 'Suivre'}</button>
           )}
+          <button className="btn btn-ghost small-btn" onClick={() => share(`Le passeport de ${u.name} sur SpotLa`, `#/u/${u.id}`)} aria-label="Partager le profil"><Share2 size={16} /></button>
         </div>
       </div>
 
-      <div className="prof-tabs" role="tablist">
-        <button role="tab" aria-selected={tab === 'wall'} onClick={() => setTab('wall')} aria-label="Mur"><Rows3 size={20} /></button>
-        <button role="tab" aria-selected={tab === 'grid'} onClick={() => setTab('grid')} aria-label="Grille"><Grid3x3 size={20} /></button>
-        <button role="tab" aria-selected={tab === 'events'} onClick={() => setTab('events')} aria-label="Événements"><PartyPopper size={20} /></button>
+      <div className="pad passport-sum">
+        <div><b>{stamps.length}</b><span>lieux</span></div>
+        <div><b>{hosted}</b><span>soirées</span></div>
+        <div><b>{pass.reviews.length}</b><span>avis</span></div>
+        <div><b>{posts.length}</b><span>posts</span></div>
       </div>
 
+      <div className="pad">
+        <div className="tabs2 pill" role="tablist">
+          <button role="tab" aria-selected={tab === 'pass'} onClick={() => setTab('pass')}>Passeport</button>
+          <button role="tab" aria-selected={tab === 'wall'} onClick={() => setTab('wall')}>Partages</button>
+          <button role="tab" aria-selected={tab === 'events'} onClick={() => setTab('events')}>Soirées</button>
+        </div>
+      </div>
+
+      {tab === 'pass' && (
+        <div className="pad stack16">
+          {stamps.length === 0 ? (
+            <Empty>{isMe ? <>Ton passeport est vide. Aime ou note un lieu du <Link to="/">Top 10</Link> pour gagner ton premier tampon.</> : 'Aucun tampon pour le moment.'}</Empty>
+          ) : (
+            <div className="stamps">
+              {stamps.map((p) => { const Icon = CAT_ICON[p!.category]; return (
+                <Link key={p!.id} to={`/place/${encodeURIComponent(p!.id)}`} className={`stamp c-${p!.category}`}>
+                  <Icon size={22} aria-hidden="true" />
+                  <b>{p!.name}</b>
+                  <span>{p!.area}</span>
+                </Link>
+              ) })}
+            </div>
+          )}
+          {pass.reviews.length > 0 && (
+            <section className="stack12">
+              <h2 className="sec-title">Avis</h2>
+              {pass.reviews.map((r) => (
+                <Link key={r.id} to={`/place/${encodeURIComponent(r.placeId)}`} className="review">
+                  <b>{placeOf(r.placeId)?.name ?? 'Lieu'}</b>
+                  <Stars rating={r.rating} />
+                  {r.body && <p>{r.body}</p>}
+                </Link>
+              ))}
+            </section>
+          )}
+        </div>
+      )}
       {tab === 'wall' && (
         <div className="feed">
           {posts.length === 0 ? <Empty>{isMe ? <>Ton mur est vide. <Link to="/create?mode=post">Écris ton premier post</Link>.</> : 'Aucune publication pour le moment.'}</Empty> : posts.map((p) => <PostCard key={p.id} p={p} />)}
-        </div>
-      )}
-      {tab === 'grid' && (
-        <div className="grid-ig">
-          {events.map((e) => <Link key={e.id} to={`/event/${e.id}`} className="cover tile"><Art colors={e.colors} word={e.vibe} /><span className="tile-t">{e.title}</span></Link>)}
-          {posts.filter((p) => p.colors || p.imageKey || p.imageUrl).map((p) => <div key={p.id} className="cover tile"><Art colors={p.colors ?? ['#2C2640', '#15121F']} /><span className="tile-t">{p.text.slice(0, 40)}</span></div>)}
-          {events.length + posts.length === 0 && <Empty>Rien à afficher.</Empty>}
         </div>
       )}
       {tab === 'events' && (

@@ -36,7 +36,8 @@ export function Avatar({ u, size = 40, ring }: { u: User | undefined; size?: num
     </span>
   )
   if (!ring) return pic
-  return <span className={`ring ring-${ring}`} style={{ borderRadius: u.kind === 'business' ? size * 0.36 : '50%' }}>{pic}</span>
+  // Les stories sont des « spots » : carrés arrondis, pas des cercles.
+  return <span className={`ring ring-${ring}`} style={{ borderRadius: size * 0.38 }}><span className="avatar" style={{ width: size, height: size, fontSize: size * 0.36, borderRadius: size * 0.3 }}>{initials}</span></span>
 }
 
 export function Verified({ u }: { u?: User }) {

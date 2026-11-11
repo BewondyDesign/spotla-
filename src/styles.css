@@ -589,3 +589,67 @@ input[type="range"] { width: 100%; accent-color: var(--neon); }
 .rate button.on { color: #FFC53D; }
 .rate button.on svg { fill: #FFC53D; }
 .review { display: grid; gap: 4px; padding: 12px 0; border-bottom: 1px solid #1F1F22; font-size: 14px; }
+
+/* ===== Identité SpotLa v3 : couleur lime, entête centrée, spots, passeport ===== */
+:root { --brand: #D4FF3A; --on-brand: #0B0B0D; --neon: var(--brand); --on-accent: var(--on-brand); --trend: var(--brand); }
+.title-xl em, .sec-title em, .onboard em { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: var(--brand); }
+.story-live, .b-live { background: var(--brand); color: var(--on-brand); }
+.pin.paid span, .b-live { color: var(--on-brand); }
+.bell i { background: var(--brand); color: var(--on-brand); }
+.kicker { font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--brand); }
+
+/* Entête centrée */
+.home-head { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; padding-top: 10px; padding-bottom: 6px; }
+.iconbtn.soft { background: var(--night-2); border: 1px solid #26262A; border-radius: 15px; width: 44px; height: 44px; }
+.home-head .loc { justify-items: center; text-align: center; gap: 1px; }
+.home-head .loc b { font-size: 22px; }
+.wordmark { font-family: var(--f-display); font-weight: 800; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+.wordmark i { width: 6px; height: 6px; border-radius: 2px; background: var(--brand); }
+.home-head .loc small { justify-content: center; }
+
+/* Onglets en pilule */
+.tabs2.pill { display: flex; gap: 4px; padding: 4px; border: 1px solid #26262A; border-radius: 16px; background: var(--night); margin: 10px 0 6px; }
+.tabs2.pill button { flex: 1; padding: 9px 0; border: 0; margin: 0; border-radius: 12px; font-size: 14px; }
+.tabs2.pill button[aria-selected="true"] { background: var(--brand); color: var(--on-brand); }
+
+/* Stories = spots carrés arrondis */
+.ring { padding: 3px; }
+.ring-seen { background: #2A2A2E; }
+.story-add { border-radius: 20px; color: var(--brand); border-color: #3A3A40; width: 64px; height: 64px; }
+.stories { gap: 12px; }
+
+/* Top 10 centré */
+.rail-head.center { justify-items: center; text-align: center; }
+.pcard-rank { background: var(--brand) !important; color: var(--on-brand) !important; }
+.ev-rail .card { flex: 0 0 260px; scroll-snap-align: start; background: var(--night); border: 1px solid #1F1F22; border-radius: 18px; padding: 8px; }
+
+/* Barre du bas : libellés + bouton central */
+.tabbar a:not(.fab-wrap) > span:last-child, .tabbar .fab-wrap > span:last-child { position: static; width: auto; height: auto; overflow: visible; clip: auto; font-size: 10px; font-weight: 600; }
+.tabbar svg { width: 23px; height: 23px; }
+.tabbar a.active { color: var(--brand); }
+.tabbar a.active svg { stroke: var(--brand); }
+.fab-wrap { color: #8A8A93; }
+.fab { width: 48px; height: 36px; border-radius: 13px; background: var(--brand); }
+.fab svg { stroke: var(--on-brand) !important; stroke-width: 2.6; }
+.tabbar .fab-wrap.active .fab { box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 30%, transparent); }
+
+/* Profil : centré + passeport */
+.prof-top { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; text-align: center; padding-top: 10px; }
+.h-handle { font-size: 16px; color: var(--muted); }
+.prof-head { display: grid; justify-items: center; text-align: center; gap: 8px; margin-top: 6px; }
+.prof-name { font-size: 24px; letter-spacing: -.02em; }
+.prof-follow { font-size: 13px; color: var(--muted); }
+.prof-follow b { color: var(--text); }
+.prof-btns { width: 100%; max-width: 320px; }
+.passport-sum { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 18px; }
+.passport-sum div { display: grid; justify-items: center; padding: 12px 4px; border: 1px solid #26262A; border-radius: 16px; background: var(--night); }
+.passport-sum b { font-family: var(--f-display); font-size: 22px; font-weight: 800; }
+.passport-sum div:first-child b { color: var(--brand); }
+.passport-sum span { font-size: 11px; color: var(--muted); }
+.stamps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.stamp { display: grid; gap: 4px; padding: 14px; border-radius: 18px; border: 1.5px dashed #3A3A40; min-height: 110px; align-content: end; position: relative; }
+.stamp svg { position: absolute; top: 12px; right: 12px; color: var(--brand); }
+.stamp b { font-size: 15px; line-height: 1.2; }
+.stamp span { font-size: 12px; color: var(--muted); }
+a.review { display: grid; gap: 4px; }
+.stamp.c-club { background: #241B2B; } .stamp.c-bar { background: #2A2120; } .stamp.c-soiree { background: #1D2230; } .stamp.c-fetes { background: #1E2A24; } .stamp.c-gastro { background: #2B2619; }

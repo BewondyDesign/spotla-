@@ -118,3 +118,21 @@ export function useCatalog() {
   }, [meId])
   return items
 }
+
+/** Passeport de sorties : lieux aimés et avis donnés par une personne. */
+export async function userPassport(uid: string): Promise<{ liked: string[]; reviews: Review[] }> {
+  if (!isRemote) {
+    const d = readLocal()
+    const me = useStore.getState().meId
+    return { liked: uid === me ? d.likes : [], reviews: d.reviews.filter((r) => r.userId === uid) }
+  }
+  if (tablesMissing) return { liked: [], reviews: [] }
+  const [l, r] = await Promise.all([
+    sb!.from('place_likes').select('place_id').eq('user_id', uid).order('created_at', { ascending: false }),
+    sb!.from('place_reviews').select('id, place_id, user_id, rating, body, created_at').eq('user_id', uid).order('created_at', { ascending: false }),
+  ])
+  return {
+    liked: (l.data ?? []).map((x: { place_id: string }) => x.place_id),
+    reviews: ((r.data ?? []) as { id: string; place_id: string; user_id: string; rating: number; body: string; created_at: string }[]).map((x) => ({ id: x.id, placeId: x.place_id, userId: x.user_id, rating: x.rating, body: x.body, createdAt: x.created_at, author: '' })),
+  }
+}

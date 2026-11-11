@@ -12,6 +12,7 @@ export function LocationButton() {
   return (
     <>
       <button className="loc" onClick={() => setOpen(true)} aria-label="Changer de ville ou de rayon">
+        <span className="wordmark">spotla<i /></span>
         <b>{city} <span className="loc-caret">▾</span></b>
         <small>{geo === 'locating' ? 'Localisation…' : geo === 'ok' ? <><i className="live-dot" /> Position en direct · {radius} km</> : `Rayon de ${radius} km`}</small>
       </button>
