@@ -191,10 +191,12 @@ function StoryForm({ defaultEvent }: { defaultEvent: string }) {
   const [err, setErr] = useState('')
   const [caption, setCaption] = useState('')
   const [eventId, setEventId] = useState(defaultEvent)
+  // Une story montre l'ambiance d'une sortie : elle est toujours rattachée à un événement.
   const [busy, setBusy] = useState(false)
 
   // Événements auxquels on peut rattacher la story : les miens, ou ceux où je vais.
   const linkable = useMemo(() => events.filter((e) => momentOf(e) !== 'past' && (e.hostId === me.id || e.going.includes(me.id))), [events, me.id])
+  useEffect(() => { if (!eventId && linkable.length === 1) setEventId(linkable[0].id) }, [linkable, eventId])
 
   const pick = async (f: File | undefined) => {
     setErr('')
@@ -215,11 +217,11 @@ function StoryForm({ defaultEvent }: { defaultEvent: string }) {
     try {
       if (isRemote) {
         const url = await uploadMedia(me.id, file, 'stories')
-        createStory({ eventId: eventId || undefined, caption: caption.trim(), media: { kind: 'video', url, duration: dur } })
+        createStory({ eventId, caption: caption.trim(), media: { kind: 'video', url, duration: dur } })
       } else {
         const key = uid('vid')
         await putBlob(key, file)
-        createStory({ eventId: eventId || undefined, caption: caption.trim(), media: { kind: 'video', blobKey: key, duration: dur } })
+        createStory({ eventId, caption: caption.trim(), media: { kind: 'video', blobKey: key, duration: dur } })
       }
     } catch (e) {
       setBusy(false)
@@ -249,13 +251,13 @@ function StoryForm({ defaultEvent }: { defaultEvent: string }) {
       {err && <p className="error" role="alert">{err}</p>}
       <Field label="Événement lié">
         <select className="input" value={eventId} onChange={(e) => setEventId(e.target.value)}>
-          <option value="">Aucun</option>
+          <option value="" disabled>Choisis ta sortie</option>
           {linkable.map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}
         </select>
-        {linkable.length === 0 && <span className="hint">Clique « J'y vais » sur un événement ou crée le tien pour le lier.</span>}
+        {linkable.length === 0 && <span className="hint">Une story montre l'ambiance d'une sortie. Touche « J'y vais » sur un événement, ou <a href="#/create?mode=event">crée le tien</a>, puis reviens ici.</span>}
       </Field>
       <Field label="Légende"><input className="input" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Ex. Il reste de la place, venez !" maxLength={120} /></Field>
-      <button className="btn btn-primary btn-block" disabled={!file || busy} onClick={publish}>{busy ? 'Publication…' : 'Publier la story'}</button>
+      <button className="btn btn-primary btn-block" disabled={!file || !eventId || busy} onClick={publish}>{busy ? 'Publication…' : 'Publier la story'}</button>
     </div>
   )
 }

@@ -160,7 +160,7 @@ export const useStore = create<State>()(
         }
         set((s) => ({ meId: id, vibes, users: [...s.users.filter((u) => u.id !== id), me] }))
         if (kind === 'business') {
-          // Simulation de la vérification (en vrai : contrôle SIRET + modération humaine).
+          // Simulation de la vérification (en vrai : contrôle du NEQ + modération humaine).
           setTimeout(() => {
             set((s) => ({ users: s.users.map((u) => (u.id === 'me' ? { ...u, verified: true, bio: 'Lieu vérifié par SpotLa.' } : u)) }))
             get().pushNotif({ kind: 'accepted', title: 'Compte business vérifié', body: 'Ton badge vérifié est actif. Tes événements sont mis en avant.', link: '/business' })

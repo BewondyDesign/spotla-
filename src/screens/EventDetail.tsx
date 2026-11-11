@@ -84,7 +84,7 @@ export function EventDetail() {
 
         <div className="host">
           <Link to={`/u/${host?.id}`}><Avatar u={host} size={44} /></Link>
-          <div className="grow"><Link to={`/u/${host?.id}`}><b>{host?.name} <Verified u={host} /></b></Link><span>{host?.kind === 'business' ? 'Lieu vérifié' : 'Organisé par un membre'} · {host?.followers.toLocaleString('fr-FR')} abonnés</span></div>
+          <div className="grow"><Link to={`/u/${host?.id}`}><b>{host?.name} <Verified u={host} /></b></Link><span>{host?.kind === 'business' ? (host.verified ? 'Lieu vérifié' : 'Lieu') : host?.verified ? 'Organisateur vérifié' : 'Organisé par un membre'}</span></div>
           {!mine && <button className={`btn-mini ${following ? '' : 'accent'}`} onClick={() => toggleFollow(e.hostId)}>{following ? 'Suivi' : 'Suivre'}</button>}
         </div>
 

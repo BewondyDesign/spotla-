@@ -67,8 +67,7 @@ export function Profile() {
         {u.bio && <p className="prof-bio">{u.bio}</p>}
         <p className="prof-line">
           <span><b>{places.length}</b> lieux</span>
-          <span><b>{u.followers.toLocaleString('fr-FR')}</b> abonnés</span>
-          <span><b>{u.following.length}</b> suivis</span>
+          <span><b>{events.length}</b> {events.length > 1 ? 'sorties à venir' : 'sortie à venir'}</span>
         </p>
         {!isMe && <button className={`pill-btn ${following ? '' : 'on'}`} onClick={() => toggleFollow(u.id)}>{following ? 'Abonné' : 'Suivre'}</button>}
       </div>

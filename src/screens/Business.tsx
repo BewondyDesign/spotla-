@@ -31,7 +31,7 @@ export function Business() {
         </div>
         <div className={`verif ${me.verified ? 'ok' : ''}`}>
           <BadgeCheck size={22} />
-          <div><b>{me.verified ? 'Lieu vérifié' : 'Vérification en cours'}</b><span>{me.verified ? 'Ton badge est visible sur ta page et tes événements.' : 'On contrôle ton SIRET ou un justificatif. Ça prend en général moins de 24 h.'}</span></div>
+          <div><b>{me.verified ? 'Lieu vérifié' : 'Vérification en cours'}</b><span>{me.verified ? 'Ton badge est visible sur ta page et tes événements.' : 'On contrôle ton NEQ (Registraire des entreprises du Québec) ou un justificatif. Ça prend en général moins de 24 h.'}</span></div>
         </div>
         <div className="stats">
           {stats.map((s) => <div key={s.l} className="stat">{s.i}<b>{s.v.toLocaleString('fr-FR')}</b><span>{s.l}</span></div>)}

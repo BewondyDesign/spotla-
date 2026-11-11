@@ -299,7 +299,7 @@ function ProfileForm({ authId }: { authId?: string }) {
           <div className="field">
             <label className="lbl" htmlFor="ad">Adresse du lieu</label>
             <input id="ad" className="input" value={addr} onChange={(e) => setAddr(e.target.value)} placeholder="Numéro, rue, code postal" autoComplete="street-address" />
-            <span className="hint">On vérifie chaque lieu avant d'afficher le badge (SIRET ou justificatif).</span>
+            <span className="hint">On vérifie chaque lieu avant d'afficher le badge (NEQ ou justificatif).</span>
           </div>
         )}
         <div className="field">

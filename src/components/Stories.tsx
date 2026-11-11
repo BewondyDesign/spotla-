@@ -39,7 +39,7 @@ export function StoriesBar() {
   if (groups.length === 0) return (
     <button className="story-cta" onClick={() => nav('/create?mode=story')}>
       <span className="story-add"><Plus size={20} /></span>
-      <span className="grow"><b>Ta soirée en story</b><small>30 s max · visible par tes abonnés</small></span>
+      <span className="grow"><b>Montre l'ambiance de ta sortie</b><small>Une story de 30 s, liée à ta sortie</small></span>
     </button>
   )
   return (

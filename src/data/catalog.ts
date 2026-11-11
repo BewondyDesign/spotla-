@@ -3,7 +3,7 @@
 // Tourisme Montréal (marchés de Noël 2026, quoi faire ce week-end), igloofest.ca, montrealenlumiere.com.
 // Coordonnées : OpenStreetMap. Les dates sont celles annoncées par les organisateurs : à revérifier chaque saison.
 
-export type Category = 'club' | 'bar' | 'soiree' | 'fetes' | 'gastro'
+export type Category = 'club' | 'bar' | 'soiree' | 'fetes' | 'gastro' | 'jeux'
 
 export interface CatalogItem {
   id: string
@@ -35,6 +35,7 @@ export const CATEGORIES: { k: Category; title: string; sub: string }[] = [
   { k: 'soiree', title: 'Soirées récurrentes', sub: 'Les rendez-vous qui reviennent' },
   { k: 'fetes', title: 'Temps des fêtes', sub: 'Marchés et sorties d\'hiver en ville' },
   { k: 'gastro', title: 'Gourmand', sub: 'Festivals et marchés pour bien manger' },
+  { k: 'jeux', title: 'Activités', sub: 'Arcades, escalade, escape games : du fun à toute heure' },
 ]
 
 // Photos d'ambiance Unsplash (licence Unsplash : usage commercial libre, sans attribution obligatoire).
@@ -85,6 +86,27 @@ export const CATALOG: CatalogItem[] = [
   { id: 'cat:timeout-fetes-2026', category: 'gastro', rank: 2, photo: U('1703692331013-84894ff8cdab'), name: 'Marché des Fêtes du Time Out Market', kind: 'Marché gourmand', area: 'Centre-ville', address: '705 rue Sainte-Catherine Ouest', lat: 45.5024818, lng: -73.5706406, when: '18 – 20 déc. 2026', from: '2026-11-01', to: '2026-12-20', blurb: 'Marché des fêtes dans l\'aire gourmande du Centre Eaton.' },
   { id: 'cat:noel-vegane-2026', category: 'gastro', rank: 3, photo: U('1769690094015-d68518b79d6f'), name: 'Marché de Noël Végane', kind: 'Marché gourmand', area: 'Quartier des spectacles', address: 'Salle Agora, 175 av. du Président-Kennedy', lat: 45.5093537, lng: -73.5692907, when: '5 – 6 déc. 2026', from: '2026-11-01', to: '2026-12-06', blurb: 'Gourmandises et cadeaux 100 % véganes.' },
   { id: 'cat:mtl-en-lumiere-2027', category: 'gastro', rank: 4, photo: U('1766348248661-f4888351ad94'), name: 'MONTRÉAL EN LUMIÈRE', kind: 'Festival gourmand', area: 'Quartier des spectacles', address: 'Place des Festivals', lat: 45.5074387, lng: -73.5673739, when: '18 – 28 févr. 2027', from: '2026-11-01', to: '2027-02-28', blurb: 'Le grand festival d\'hiver : chefs invités, gastronomie et activités extérieures.' },
+  // Activités à toute heure (adresses : fiches Maps des établissements, novembre 2026). Horaires à vérifier auprès de chaque lieu.
+  { id: 'act:funhub-centre-ville', category: 'jeux', rank: 1, photo: U('1511512578047-dfb367046420'), name: "FUNHUB Centre-ville", kind: "Arcade et réalité virtuelle", area: "Centre-ville", address: "733 rue Cathcart", lat: 45.50221, lng: -73.56969, blurb: "Arcades haut de gamme, réalité virtuelle en équipe, billard, fléchettes et un resto-bar." },
+  { id: 'act:prison-island', category: 'jeux', rank: 2, photo: U('1569002925653-ed18f55d7292'), name: "Prison Island Montréal", kind: "Défis en équipe", area: "Centre-ville", address: "1231 rue Sainte-Catherine Ouest, local 202", lat: 45.49847, lng: -73.57488, blurb: "Des dizaines de cellules à défis physiques et casse-têtes, à faire en petite équipe." },
+  { id: 'act:sandbox-vr', category: 'jeux', rank: 3, photo: U('1535223289827-42f1e9919769'), name: "Sandbox VR Centre-ville", kind: "Réalité virtuelle", area: "Centre-ville", address: "1231 rue Sainte-Catherine Ouest", lat: 45.49843, lng: -73.57466, blurb: "Aventures en réalité virtuelle à plusieurs, en corps entier." },
+  { id: 'act:north-star', category: 'jeux', rank: 4, photo: U('1640301133815-4bec64fca33f'), name: "North Star Machines à piastres", kind: "Bar à flippers", area: "Plateau", address: "3908 boulevard Saint-Laurent", lat: 45.51631, lng: -73.57825, blurb: "Bar de la Main rempli de flippers et de jeux d'arcade classiques." },
+  { id: 'act:arcade-mtl', category: 'jeux', rank: 5, photo: U('1558271697-dd9f331ca8b3'), name: "Arcade MTL", kind: "Bar arcade", area: "Quartier latin", address: "2031 rue Saint-Denis", lat: 45.51636, lng: -73.56584, blurb: "Entrée unique, jeux illimités et pop-corn à volonté, en plein Quartier latin." },
+  { id: 'act:randolph-quartier-latin', category: 'jeux', rank: 6, photo: U('1677188010559-0667a1ed33a0'), name: "Randolph Pub Ludique", kind: "Pub de jeux de société", area: "Quartier latin", address: "2041 rue Saint-Denis", lat: 45.5164, lng: -73.56595, blurb: "Des centaines de jeux de société et des animateurs pour expliquer les règles." },
+  { id: 'act:cafe-yvonne', category: 'jeux', rank: 7, photo: U('1677188010559-0667a1ed33a0'), name: "Café Yvonne", kind: "Café jeux de société", area: "Plateau", address: "3778A rue Saint-Denis", lat: 45.51905, lng: -73.57252, blurb: "Petit café du Plateau pour jouer entre amis autour d'un latte." },
+  { id: 'act:colonel-moutarde', category: 'jeux', rank: 8, photo: U('1514863775978-c611132e6691'), name: "Le Colonel Moutarde", kind: "Café-resto ludique", area: "Plateau", address: "4418 rue Saint-Denis", lat: 45.52331, lng: -73.58185, blurb: "Bouffe, bières et une grande ludothèque, en plein Plateau." },
+  { id: 'act:cafe-bloc', category: 'jeux', rank: 9, photo: U('1564769662533-4f00a87b4056'), name: "Café Bloc", kind: "Escalade de bloc", area: "Quartier chinois", address: "1209 boulevard Saint-Laurent", lat: 45.50969, lng: -73.56311, blurb: "Salle de bloc avec café, au pied du Quartier latin. Location de chaussons sur place." },
+  { id: 'act:allez-up', category: 'jeux', rank: 10, photo: U('1696105538782-7815474f28e0'), name: "Allez Up", kind: "Escalade", area: "Pointe-Saint-Charles", address: "1555 rue Saint-Patrick", lat: 45.48688, lng: -73.56102, blurb: "Grande salle d'escalade dans d'anciens silos, au bord du canal de Lachine." },
+  { id: 'act:bloc-shop-hochelaga', category: 'jeux', rank: 11, photo: U('1696105538708-6be6c90707a1'), name: "Bloc Shop Hochelaga", kind: "Escalade de bloc", area: "Hochelaga", address: "2985 rue Sainte-Catherine Est", lat: 45.53633, lng: -73.54322, blurb: "Bloc pour tous les niveaux, ambiance détendue et cours d'initiation." },
+  { id: 'act:ezkapaz', category: 'jeux', rank: 12, photo: U('1782472312824-cc8c39a26bbd'), name: "EZKAPAZ", kind: "Escape game", area: "Plateau", address: "3955 boulevard Saint-Laurent", lat: 45.5165, lng: -73.57809, blurb: "Jeux d'évasion immersifs, à faire à 2 comme à 8." },
+  { id: 'act:question-escape', category: 'jeux', rank: 13, photo: U('1569002925653-ed18f55d7292'), name: "QUESTION Escape Games", kind: "Escape game", area: "Plateau", address: "4119 boulevard Saint-Laurent", lat: 45.51772, lng: -73.5806, blurb: "Salles d'évasion à énigmes sur la Main." },
+  { id: 'act:trapped-mtl', category: 'jeux', rank: 14, photo: U('1782472312824-cc8c39a26bbd'), name: "TRAPPED Montréal", kind: "Escape game", area: "Quartier des spectacles", address: "1405 boulevard Saint-Laurent, 3e étage", lat: 45.51014, lng: -73.5641, blurb: "Salles à thème au cœur du Quartier des spectacles." },
+  { id: 'act:rage-academie', category: 'jeux', rank: 15, photo: U('1776951129406-d844d86ebccd'), name: "Rage Académie", kind: "Lancer de hache", area: "Village", address: "1436 rue Atateken", lat: 45.51765, lng: -73.55768, blurb: "Lancer de hache encadré par des moniteurs, parfait en groupe." },
+  { id: 'act:combat-archers', category: 'jeux', rank: 16, photo: U('1776847651583-1d804b5cc339'), name: "Combat d'Archers", kind: "Tir à l'arc en équipe", area: "Hochelaga", address: "3955 rue de Rouen", lat: 45.5504, lng: -73.54569, blurb: "Le ballon chasseur version tir à l'arc, avec flèches à embout mousse." },
+  { id: 'act:zero-latency', category: 'jeux', rank: 17, photo: U('1576633587382-13ddf37b1fc1'), name: "Zero Latency VR", kind: "Réalité virtuelle", area: "Villeray", address: "910 rue Jean-Talon Est", lat: 45.54126, lng: -73.61268, blurb: "Grande arène de réalité virtuelle en libre déplacement, jusqu'à 8 joueurs." },
+  { id: 'act:le-mic', category: 'jeux', rank: 18, photo: U('1531463368359-151247409561'), name: "Le Mic Karaoke Lounge", kind: "Karaoké privé", area: "Centre-ville", address: "1695 boulevard De Maisonneuve Ouest", lat: 45.49474, lng: -73.58057, blurb: "Salles de karaoké privées pour chanter entre amis." },
+  { id: 'act:quilles-darling', category: 'jeux', rank: 19, photo: U('1763819527452-f01bfb155013'), name: "Salon de quilles Darling", kind: "Quilles", area: "Hochelaga", address: "3350 rue Ontario Est", lat: 45.54278, lng: -73.54611, blurb: "Salon de quilles de quartier, ambiance rétro." },
+  { id: 'act:montreal-bowling', category: 'jeux', rank: 20, photo: U('1538511059256-46e76f13f071'), name: "Montreal Bowling", kind: "Quilles", area: "Centre-ville", address: "2313 rue Sainte-Catherine Ouest, 4e étage", lat: 45.48987, lng: -73.58414, blurb: "Quilles au Forum de Montréal, en plein centre-ville." },
 ]
 
 /** Cartes pas encore terminées (les événements à venir restent visibles pour donner envie). */
@@ -101,9 +123,28 @@ const CAT_VIDEOS: Record<Category, string[]> = {
   soiree: [MK(14088), MK(4043), MK(341)],
   fetes: [MK(46591), MK(29479), MK(34702), MK(41949)],
   gastro: [MK(32558), MK(22441), MK(4295)],
+  jeux: [MK(41913), MK(49588), MK(50929), MK(5333)],
 }
 /** Vidéo choisie pour chaque lieu selon ce qu'on y fait (Noël, jazz, cocktails, vinyles…). Mixkit, licence gratuite. */
 const VIDEO_OF: Record<string, number> = {
+  'act:funhub-centre-ville': 41913,
+  'act:prison-island': 50922,
+  'act:sandbox-vr': 43597,
+  'act:north-star': 41913,
+  'act:arcade-mtl': 41924,
+  'act:randolph-quartier-latin': 5333,
+  'act:cafe-yvonne': 5333,
+  'act:colonel-moutarde': 5333,
+  'act:cafe-bloc': 50929,
+  'act:allez-up': 50922,
+  'act:bloc-shop-hochelaga': 50929,
+  'act:ezkapaz': 42185,
+  'act:question-escape': 42185,
+  'act:trapped-mtl': 42185,
+  'act:zero-latency': 52068,
+  'act:le-mic': 4632,
+  'act:quilles-darling': 49588,
+  'act:montreal-bowling': 49587,
   'osm:node/4486771295': 832,
   'osm:node/6005804263': 45439,
   'osm:node/11888760955': 4187,

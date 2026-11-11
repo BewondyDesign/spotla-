@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Gift, Heart, Martini, MessageCircle, Music, PartyPopper, Star, UtensilsCrossed } from 'lucide-react'
+import { Gamepad2, Gift, Heart, Martini, MessageCircle, Music, PartyPopper, Star, UtensilsCrossed } from 'lucide-react'
 import type { CatalogItem, Category } from '../data/catalog'
 import { toggleLike, useStats } from '../data/places'
 import { placeVideo } from '../data/ambiance'
@@ -7,7 +7,7 @@ import { AutoVideo } from './AutoVideo'
 import { toast, useStore } from '../data/store'
 import { distanceKm, fmtKm } from '../data/util'
 
-export const CAT_ICON: Record<Category, typeof Music> = { club: Music, bar: Martini, soiree: PartyPopper, fetes: Gift, gastro: UtensilsCrossed }
+export const CAT_ICON: Record<Category, typeof Music> = { club: Music, bar: Martini, soiree: PartyPopper, fetes: Gift, gastro: UtensilsCrossed, jeux: Gamepad2 }
 
 export function Stars({ rating, size = 13 }: { rating: number | null; size?: number }) {
   const full = Math.round(rating ?? 0)

@@ -70,7 +70,7 @@ export function videoIfMatch(key: string, ...hints: (string | undefined)[]) {
 /** Vidéo d'ambiance d'une soirée, choisie d'après son ambiance et son titre. */
 export const eventVideo = (e: { id: string; vibe?: string; title?: string; venue?: string }) => videoIfMatch(e.id, e.title, e.vibe) ?? videoFor(e.id, e.venue)
 
-const CAT_HINT: Record<string, string> = { club: 'club', bar: 'cocktail', soiree: 'soirée', fetes: 'fête', gastro: 'cuisine' }
+const CAT_HINT: Record<string, string> = { club: 'club', bar: 'cocktail', soiree: 'soirée', fetes: 'fête', gastro: 'cuisine', jeux: '' }
 /** Vidéo du lieu : celle choisie pour lui dans le catalogue, sinon une vidéo qui correspond à sa catégorie. */
 export const placeVideo = (p: { id: string; category: string; video?: string; rank?: number }) =>
   p.video ?? videoIfMatch(p.id, CAT_HINT[p.category])

@@ -1,6 +1,7 @@
 import { Agenda } from './screens/Agenda'
 import { AgendaDetail } from './screens/AgendaDetail'
 import { Settings } from './screens/Settings'
+import { MySorties } from './screens/MySorties'
 import { useEffect } from 'react'
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useMe, useStore } from './data/store'
@@ -72,6 +73,7 @@ function Shell() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/business" element={<Business />} />
         <Route path="/notifs" element={<Notifs />} />
+        <Route path="/sorties" element={<MySorties />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       {!fullscreen && <TabBar />}
