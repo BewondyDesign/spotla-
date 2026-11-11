@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLang } from '../data/i18n'
+import { Tour, tourDone } from './Tour'
 
 /**
  * Animation d'ouverture : un plan de ville apparaît, un repère « spot » tombe et rebondit,
@@ -14,15 +15,18 @@ const PARTICLES = Array.from({ length: 18 }, (_, i) => {
 
 export function Intro() {
   const en = useLang((s) => s.lang) === 'en'
-  const [phase, setPhase] = useState<'play' | 'out' | 'done'>('play')
+  const [phase, setPhase] = useState<'play' | 'out' | 'tour' | 'done'>('play')
+  // Première ouverture : après l'animation, 2 écrans de présentation.
+  const [firstTime] = useState(() => !tourDone())
   useEffect(() => {
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    const a = setTimeout(() => setPhase('out'), reduce ? 700 : 2600)
-    const b = setTimeout(() => setPhase('done'), reduce ? 1000 : 3100)
+    const a = setTimeout(() => setPhase(firstTime ? 'tour' : 'out'), reduce ? 700 : 2600)
+    const b = firstTime ? 0 : setTimeout(() => setPhase('done'), reduce ? 1000 : 3100)
     return () => { clearTimeout(a); clearTimeout(b) }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   if (phase === 'done') return null
-  const skip = () => { setPhase('out'); setTimeout(() => setPhase('done'), 450) }
+  if (phase === 'tour') return <Tour onDone={() => setPhase('done')} />
+  const skip = () => { if (firstTime) { setPhase('tour'); return } setPhase('out'); setTimeout(() => setPhase('done'), 450) }
 
   return (
     <div className={`intro${phase === 'out' ? ' out' : ''}`} onClick={skip} role="presentation" aria-hidden="true">
