@@ -9,6 +9,8 @@ import { eventVideo } from '../data/ambiance'
 import { Art, Avatar, LiveBadge, PriceBadge, Verified, VisBadge } from '../components/ui'
 import { share } from '../components/share'
 import { useStoryGroups } from '../components/Stories'
+import { shareStory } from '../components/storyShare'
+import { Instagram } from 'lucide-react'
 import { useT } from '../data/i18n'
 
 export function EventDetail() {
@@ -56,7 +58,7 @@ export function EventDetail() {
         <div className="shade" />
         <div className="ev-top">
           <button className="iconbtn glass" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft size={20} /></button>
-          <button className="iconbtn glass" onClick={async () => { if (await share(e.title, `#/event/${e.id}`)) bump(e.id, 'shares') }} aria-label="Partager"><Share2 size={20} /></button>
+          <span className="row gap8"><button className="story-btn" onClick={() => shareStory({ title: e.title, badge: `${fmtDay(e.start)} · ${fmtTime(e.start)}`.toUpperCase(), line: `${e.venue} · ${e.area}`, hash: `#/event/${e.id}` }).then((ok) => ok && bump(e.id, 'shares'))} aria-label="Partager en story"><Instagram size={17} /> Story</button><button className="iconbtn glass" onClick={async () => { if (await share(e.title, `#/event/${e.id}`)) bump(e.id, 'shares') }} aria-label="Partager"><Share2 size={20} /></button></span>
         </div>
         <div className="stack8">
           <div className="row gap6 wrapf"><PriceBadge e={e} /><VisBadge e={e} />{live && <LiveBadge />}</div>

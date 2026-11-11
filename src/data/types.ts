@@ -21,6 +21,8 @@ export interface User {
   /** ids des comptes suivis */
   following: string[]
   vibes?: string[]
+  /** Nom d'utilisateur Instagram (sans @), affiché sur le profil */
+  instagram?: string
   /** Business : adresse du lieu */
   venueAddress?: string
   /** Photo de profil et couverture (image ou courte vidéo) */

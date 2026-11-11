@@ -16,15 +16,17 @@ export function Settings() {
   const [handle, setHandle] = useState(me.handle)
   const [city, setCity] = useState(me.city)
   const [bio, setBio] = useState(me.bio)
+  const [insta, setInsta] = useState(me.instagram ?? '')
+  const [provider, setProvider] = useState('Google')
   const [email, setEmail] = useState('')
   const [email0, setEmail0] = useState('')
   const [google, setGoogle] = useState(false)
   const [pw, setPw] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
 
-  useEffect(() => { if (isRemote) accountInfo().then((a) => { setEmail(a.email); setEmail0(a.email); setGoogle(a.google) }) }, [])
+  useEffect(() => { if (isRemote) accountInfo().then((a) => { setEmail(a.email); setEmail0(a.email); setGoogle(a.google); setProvider(a.provider) }) }, [])
 
-  const dirty = name.trim() !== me.name || handle !== me.handle || city.trim() !== me.city || bio.trim() !== me.bio
+  const dirty = name.trim() !== me.name || handle !== me.handle || city.trim() !== me.city || bio.trim() !== me.bio || insta !== (me.instagram ?? '')
   const run = async (k: string, fn: () => Promise<unknown>, ok: string, sub?: string) => {
     setBusy(k)
     try { await fn(); toast(ok, sub) } catch (e) { toast('Ça n\'a pas marché', (e as Error).message) }
@@ -50,9 +52,10 @@ export function Settings() {
           <label className="set-row"><span>Nom d'utilisateur</span><div className="set-at">@<input value={handle} onChange={(e) => setHandle(cleanHandle(e.target.value))} autoCapitalize="none" /></div></label>
           <label className="set-row"><span>Ville</span><input value={city} onChange={(e) => setCity(e.target.value)} maxLength={40} /></label>
           <label className="set-row col"><span>Bio</span><textarea rows={2} value={bio} onChange={(e) => setBio(e.target.value)} maxLength={160} placeholder="Tes spots, ton style de soirée…" /></label>
+          <label className="set-row"><span>Instagram</span><div className="set-at">@<input value={insta} onChange={(e) => setInsta(cleanHandle(e.target.value.replace(/^.*instagram\.com\//i, '').replace(/^@/, '')))} autoCapitalize="none" placeholder="ton.compte" /></div></label>
           {dirty && (
             <button className="btn btn-primary btn-block" disabled={busy === 'p' || name.trim().length < 2 || handle.length < 3}
-              onClick={() => run('p', () => updateProfile({ name: name.trim(), handle, city: city.trim(), bio: bio.trim() }), 'Profil mis à jour')}>
+              onClick={() => run('p', () => updateProfile({ name: name.trim(), handle, city: city.trim(), bio: bio.trim(), ...(insta !== (me.instagram ?? '') ? { instagram: insta } : {}) }), 'Profil mis à jour')}>
               {busy === 'p' ? 'Enregistrement…' : 'Enregistrer'}
             </button>
           )}
@@ -74,7 +77,7 @@ export function Settings() {
                   {busy === 'w' ? 'Enregistrement…' : 'Changer le mot de passe'}
                 </button>
               )}
-              {google && <p className="hint">Tu te connectes avec Google.</p>}
+              {google && <p className="hint">Tu te connectes avec {provider}.</p>}
             </>
           )}
         </section>

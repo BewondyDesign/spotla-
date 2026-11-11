@@ -26,7 +26,7 @@ export const EN: Record<string, string> = {
   'Crée ton compte pour': 'Create your account to', 'dire que tu y vas': 'say you\'re going', 'demander ta place': 'request a spot', 'aimer une publication': 'like a post',
   'commenter': 'comment', 'suivre quelqu\'un': 'follow someone', 'rejoindre le groupe des gens qui viennent seuls': 'join the solo group',
   'dire comment est l\'ambiance': 'say what the vibe is like', 'enregistrer ce lieu': 'save this place', 'laisser un avis': 'leave a review',
-  'Mode démo : tes données restent sur cet appareil.': 'Demo mode: your data stays on this device.', 'Continuer avec Google': 'Continue with Google',
+  'Mode démo : tes données restent sur cet appareil.': 'Demo mode: your data stays on this device.', 'Continuer avec Google': 'Continue with Google', 'Continuer avec Facebook': 'Continue with Facebook', 'Connexion Facebook impossible': 'Facebook sign-in failed', 'La connexion avec Facebook n\'est pas encore activée.': 'Facebook sign-in isn\'t enabled yet.', 'Ajouter ton Instagram': 'Add your Instagram', 'Tu te connectes avec Facebook.': 'You log in with Facebook.', 'Partager en story': 'Share as a story',
   'Nom': 'Name', 'Nom d\'utilisateur': 'Username', 'Lettres, chiffres, points et _ : c\'est ton adresse sur SpotLa.': 'Letters, numbers, dots and _: this is your address on SpotLa.',
   'E-mail': 'Email', 'En t\'inscrivant, tu acceptes les règles de la communauté SpotLa.': 'By signing up, you accept the SpotLa community rules.',
   'Déjà inscrit ?': 'Already signed up?', 'Se connecter': 'Log in', 'Mot de passe oublié ?': 'Forgot password?', 'Mot de passe oublié': 'Forgot password',

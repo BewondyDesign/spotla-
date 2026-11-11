@@ -1067,3 +1067,9 @@ p { line-height: 1.5; }
 .tour-hub { top: calc(52% - 20px); }
 .tour-person { top: calc(52% - 20px); }
 .tour-person i { transform: rotate(var(--a)) translateY(-58px) rotate(calc(-1 * var(--a))); }
+/* Bouton « Story » (partage vers Instagram / Facebook) */
+.story-btn { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 999px; border: 0; font: inherit; font-size: 14px; font-weight: 600;
+  color: #0B0B0D; background: linear-gradient(135deg, #F6DFA9, #E8C27A); box-shadow: 0 6px 18px rgba(0,0,0,.35); cursor: pointer; }
+.btn-fb { background: #1877F2; color: #fff; border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+.prof-insta { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text); text-decoration: none; font-weight: 500; }
+.prof-insta.muted { color: var(--muted); font-weight: 400; }

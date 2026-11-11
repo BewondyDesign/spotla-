@@ -9,6 +9,8 @@ import { distanceKm, fmtKm, timeAgo } from '../data/util'
 import { directions } from '../data/venues'
 import { CAT_ICON, Stars } from '../components/PlaceCard'
 import { Avatar } from '../components/ui'
+import { shareStory } from '../components/storyShare'
+import { Instagram } from 'lucide-react'
 import { share } from '../components/share'
 
 export function PlaceDetail() {
@@ -52,7 +54,7 @@ export function PlaceDetail() {
         {gallery.length ? <Gallery items={gallery} /> : <Icon className="pcard-icon" size={160} strokeWidth={1} aria-hidden="true" />}
         <div className="ev-top">
           <button className="iconbtn glass" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft /></button>
-          <button className="iconbtn glass" onClick={() => share(p.name, `#/place/${encodeURIComponent(p.id)}`)} aria-label="Partager"><Share2 size={20} /></button>
+          <span className="row gap8"><button className="story-btn" onClick={() => shareStory({ title: p.name, badge: p.kind.toUpperCase(), line: `${p.area} · ${p.address}`, photo: p.photo, hash: `#/place/${encodeURIComponent(p.id)}` })} aria-label="Partager en story"><Instagram size={17} /> Story</button><button className="iconbtn glass" onClick={() => share(p.name, `#/place/${encodeURIComponent(p.id)}`)} aria-label="Partager"><Share2 size={20} /></button></span>
         </div>
       </div>
 

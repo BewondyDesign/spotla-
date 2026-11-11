@@ -75,7 +75,7 @@ interface State {
   deleteStory: (storyId: string) => void
   deleteEvent: (eventId: string) => void
   toggleFollow: (userId: string) => void
-  updateProfile: (patch: { name?: string; handle?: string; city?: string; bio?: string; avatarUrl?: string; coverUrl?: string; coverKind?: 'image' | 'video'; vibes?: string[] }) => Promise<void>
+  updateProfile: (patch: { name?: string; handle?: string; city?: string; bio?: string; avatarUrl?: string; coverUrl?: string; coverKind?: 'image' | 'video'; vibes?: string[]; instagram?: string }) => Promise<void>
   report: (eventId: string) => void
   boost: (eventId: string) => void
   bump: (eventId: string, field: 'views' | 'shares') => void

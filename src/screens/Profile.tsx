@@ -13,6 +13,7 @@ import { Avatar, Empty, Verified } from '../components/ui'
 import { CAT_ICON, Stars } from '../components/PlaceCard'
 import { useCatalog, userPassport, type Review } from '../data/places'
 import { CATALOG } from '../data/catalog'
+import { Instagram } from 'lucide-react'
 import type { User } from '../data/types'
 
 const COVER_MAX_S = 15
@@ -65,6 +66,9 @@ export function Profile() {
         <h1 className="prof-name">{u.name} <Verified u={u} /></h1>
         <p className="prof-sub">@{u.handle}{u.city ? ` · ${u.city}` : ''}</p>
         {u.bio && <p className="prof-bio">{u.bio}</p>}
+        {u.instagram
+          ? <a className="prof-insta" href={`https://instagram.com/${u.instagram}`} target="_blank" rel="noreferrer"><Instagram size={16} /> @{u.instagram}</a>
+          : isMe && <Link className="prof-insta muted" to="/settings"><Instagram size={16} /> Ajouter ton Instagram</Link>}
         <p className="prof-line">
           <span><b>{places.length}</b> lieux</span>
           <span><b>{events.length}</b> {events.length > 1 ? 'sorties à venir' : 'sortie à venir'}</span>

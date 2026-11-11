@@ -53,6 +53,12 @@ export async function signInWithGoogle() {
   const { error } = await sb!.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: home() } })
   check(error)
 }
+/** Connexion Facebook : nom et photo du compte Facebook pré-remplissent le profil. */
+export async function signInWithFacebook() {
+  const { error } = await sb!.auth.signInWithOAuth({ provider: 'facebook', options: { redirectTo: home(), scopes: 'public_profile email' } })
+  if (error && /provider is not enabled|unsupported provider/i.test(error.message)) throw new Error('La connexion avec Facebook n\'est pas encore activée.')
+  check(error)
+}
 export async function sendPasswordReset(email: string) {
   const { error } = await sb!.auth.resetPasswordForEmail(email, { redirectTo: home() })
   check(error)
@@ -71,7 +77,8 @@ export const signOut = () => sb!.auth.signOut()
 /** E-mail du compte, et si la connexion passe par Google. */
 export async function accountInfo() {
   const { data } = await sb!.auth.getUser()
-  return { email: data.user?.email ?? '', google: data.user?.app_metadata?.provider === 'google' }
+  const provider = data.user?.app_metadata?.provider as string | undefined
+  return { email: data.user?.email ?? '', google: provider === 'google' || provider === 'facebook', provider: provider === 'facebook' ? 'Facebook' : 'Google' }
 }
 /** Changement d'e-mail : Supabase envoie un lien de confirmation à la nouvelle adresse. */
 export async function updateEmail(email: string) {
@@ -114,7 +121,7 @@ export async function loadAll(meId: string | null, pos: { lat: number; lng: numb
   const users: User[] = (profiles as Row[]).map((p) => ({
     id: p.id, name: p.name, handle: p.handle, kind: p.kind, verified: p.verified, color: p.color, bio: p.bio, city: p.city,
     venueAddress: p.venue_address ?? undefined, vibes: p.vibes,
-    avatarUrl: p.avatar_url ?? undefined, coverUrl: p.cover_url ?? undefined, coverKind: p.cover_kind ?? undefined,
+    avatarUrl: p.avatar_url ?? undefined, instagram: p.instagram ?? undefined, coverUrl: p.cover_url ?? undefined, coverKind: p.cover_kind ?? undefined,
     followers: fol.filter((f) => f.followee === p.id).length,
     following: fol.filter((f) => f.follower === p.id).map((f) => f.followee),
   }))
@@ -162,8 +169,9 @@ export const remote = {
     if (status === null) { must(await sb!.from('attendances').delete().match({ event_id: eventId, user_id: userId })); return }
     must(await sb!.from('attendances').upsert({ event_id: eventId, user_id: userId, status }))
   },
-  async updateProfile(me: string, patch: { name?: string; handle?: string; city?: string; bio?: string; avatarUrl?: string | null; coverUrl?: string | null; coverKind?: 'image' | 'video' | null; vibes?: string[] }) {
+  async updateProfile(me: string, patch: { name?: string; handle?: string; city?: string; bio?: string; avatarUrl?: string | null; coverUrl?: string | null; coverKind?: 'image' | 'video' | null; vibes?: string[]; instagram?: string }) {
     const row: Record<string, unknown> = {}
+    if (patch.instagram !== undefined) row.instagram = patch.instagram || null
     if (patch.vibes !== undefined) row.vibes = patch.vibes
     if (patch.bio !== undefined) row.bio = patch.bio
     if (patch.name !== undefined) row.name = patch.name
@@ -173,6 +181,7 @@ export const remote = {
     if (patch.coverUrl !== undefined) row.cover_url = patch.coverUrl
     if (patch.coverKind !== undefined) row.cover_kind = patch.coverKind
     const r = await sb!.from('profiles').update(row).eq('id', me)
+    if (r.error && /instagram/i.test(r.error.message)) throw new Error('Il manque une petite mise à jour de la base : exécute supabase/instagram.sql dans Supabase.')
     if (r.error && /avatar_url|cover_url|cover_kind|schema cache|column/i.test(r.error.message)) throw new Error('Il manque une petite mise à jour de la base : exécute supabase/profile-media.sql dans Supabase.')
     if (r.error && /profiles_handle_key|duplicate key/i.test(r.error.message)) throw new Error('Ce nom d\'utilisateur est déjà pris.')
     must(r)

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Building2, Camera, Eye, EyeOff, PartyPopper } from 'lucide-react'
 import { toast, useStore } from '../data/store'
-import { cleanHandle, createProfile, isRemote, uploadMedia, sendPasswordReset, signIn, signInWithGoogle, signUp, signupInfo, updatePassword } from '../data/backend'
+import { cleanHandle, createProfile, isRemote, uploadMedia, sendPasswordReset, signIn, signInWithGoogle, signInWithFacebook, signUp, signupInfo, updatePassword } from '../data/backend'
 import { TASTES } from '../data/tastes'
 import { LangSwitch, useT } from '../data/i18n'
 import type { AccountKind } from '../data/types'
@@ -37,7 +37,7 @@ function Welcome({ go }: { go: (v: View) => void }) {
         {isRemote ? (
           <div className="stack12">
             <button className="btn btn-primary btn-block" onClick={() => go('signup')}>{t('Créer un compte', 'Create an account')}</button>
-            <GoogleButton />
+            <GoogleButton /><FacebookButton />
             <p className="center muted">{t('Tu as déjà un compte ?', 'Already have an account?')} <button className="link-strong" onClick={() => go('login')}>{t('Se connecter', 'Log in')}</button></p>
             <button className="btn btn-ghost btn-block" onClick={() => useStore.getState().setGuest(true)}>{t('Explorer sans compte', 'Browse without an account')}</button>
           </div>
@@ -50,6 +50,19 @@ function Welcome({ go }: { go: (v: View) => void }) {
         )}
       </div>
     </div>
+  )
+}
+
+function FacebookButton() {
+  const [busy, setBusy] = useState(false)
+  return (
+    <button className="btn btn-fb btn-block" disabled={busy} onClick={async () => {
+      setBusy(true)
+      try { await signInWithFacebook() } catch (e) { toast('Connexion Facebook impossible', (e as Error).message); setBusy(false) }
+    }}>
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.69.24 2.69.24v2.97h-1.52c-1.49 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z"/></svg>
+      Continuer avec Facebook
+    </button>
   )
 }
 
@@ -119,7 +132,7 @@ function SignUp({ go, onEmail }: { go: (v: View) => void; onEmail: (e: string) =
     <form className="scr" onSubmit={submit}>
       <div className="pad stack16">
         <Header title="Créer un compte" back={() => go('welcome')} />
-        <GoogleButton />
+        <GoogleButton /><FacebookButton />
         <div className="or"><span>ou</span></div>
         <div className="field">
           <label className="lbl" htmlFor="su-name">Nom</label>
@@ -168,7 +181,7 @@ function Login({ go, onEmail, email: initial }: { go: (v: View) => void; onEmail
         {err && <p className="error" role="alert">{err}</p>}
         <button className="btn btn-primary btn-block" type="submit" disabled={!emailOk(email) || !pw || busy}>{busy ? 'Connexion…' : 'Se connecter'}</button>
         <div className="or"><span>ou</span></div>
-        <GoogleButton />
+        <GoogleButton /><FacebookButton />
         <p className="center muted">Pas encore de compte ? <button type="button" className="link-strong" onClick={() => go('signup')}>Créer un compte</button></p>
       </div>
     </form>
