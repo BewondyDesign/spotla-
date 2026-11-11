@@ -22,6 +22,7 @@ import { JoinScreen, JoinSheet } from './components/Join'
 import { EventChat } from './screens/EventChat'
 import { useOutingReminders } from './data/reminders'
 import { AgeGate } from './components/AgeGate'
+import { Explore } from './screens/Explore'
 import { startAutoTranslate, useLang } from './data/i18n'
 
 function Shell() {
@@ -73,7 +74,7 @@ function Shell() {
   // Règle d'âge : personne n'entre dans l'app sans avoir confirmé ses 18 ans (avec ou sans compte).
   if (!adultOk) return <div className="app"><AgeGate /><Toast /></div>
   const need = (el: React.ReactElement, what: string) => (me ? el : <JoinScreen what={what} />)
-  const fullscreen = loc.pathname.startsWith('/event/') || loc.pathname.startsWith('/place/') || loc.pathname.startsWith('/stories/') || loc.pathname === '/settings' || loc.pathname.startsWith('/agenda')
+  const fullscreen = loc.pathname.startsWith('/event/') || loc.pathname.startsWith('/place/') || loc.pathname.startsWith('/stories/') || loc.pathname === '/settings' || loc.pathname.startsWith('/agenda') || loc.pathname.startsWith('/explore/')
   return (
     <div className="app">
       <Routes>
@@ -87,6 +88,7 @@ function Shell() {
         <Route path="/u/me" element={need(<Profile />, 'Ton profil SpotLa')} />
         <Route path="/u/:id" element={<Profile />} />
         <Route path="/agenda" element={<Agenda />} />
+        <Route path="/explore/:k" element={<Explore />} />
         <Route path="/agenda/:id" element={<AgendaDetail />} />
         <Route path="/settings" element={need(<Settings />, 'Tes réglages')} />
         <Route path="/business" element={need(<Business />, 'Ton espace pro')} />

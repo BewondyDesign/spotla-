@@ -244,6 +244,7 @@ export const EN: Record<string, string> = {
   'As-tu 18 ans ou plus ?': 'Are you 18 or older?', 'SpotLa propose des sorties dans des bars, des clubs et des soirées : l\'app est réservée aux personnes majeures.': 'SpotLa lists outings in bars, clubs and parties: the app is for adults only.',
   'Oui, j\'ai 18 ans ou plus': 'Yes, I\'m 18 or older', 'Non': 'No', 'Publication refusée': 'Post refused',
   'SpotLa est réservé aux 18 ans et plus : les activités pour enfants ou familles ne sont pas acceptées.': 'SpotLa is for people 18 and over: activities for children or families are not allowed.',
+  'Explorer par catégorie': 'Browse by category',
   'Centre-ville': 'Downtown', 'Vieux-Montréal': 'Old Montréal', 'Quartier latin': 'Latin Quarter', 'Quartier chinois': 'Chinatown', 'Petite Italie': 'Little Italy', 'Vieux-Port': 'Old Port',
 }
 

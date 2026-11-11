@@ -14,6 +14,7 @@ import { Avatar, Verified } from '../components/ui'
 import type { Category } from '../data/catalog'
 import type { SpotEvent } from '../data/types'
 import { LangSwitch, useLang, useT } from '../data/i18n'
+import { CategoryChips } from './Explore'
 import { likesAgenda, likesEvent, likesPlace, lovedFirst } from '../data/tastes'
 
 // Photo d'entête choisie automatiquement selon la date à Montréal : temps des fêtes, hiver, printemps, été, automne.
@@ -149,6 +150,11 @@ export function Home() {
           </div>
         </div>
       </header>
+
+      <section className="rail-sec cat-sec" aria-label={t('Explorer par catégorie', 'Browse by category')}>
+        <div className="pad sec-head"><h2 className="sec-title">{t('Explorer par catégorie', 'Browse by category')}</h2></div>
+        <CategoryChips />
+      </section>
 
       <StoriesBar />
 
