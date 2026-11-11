@@ -5,7 +5,15 @@ const RESOURCE = '6decf611-6f11-4f34-bb36-324d804c9bad'
 const API = `https://donnees.montreal.ca/api/3/action/datastore_search?resource_id=${RESOURCE}&limit=5000&sort=date_debut%20asc`
 
 // On garde les sorties (spectacles, fêtes, expos…), pas les séances du conseil ni les ateliers en ligne.
-const SKIP_TYPES = new Set(['Conseil et comité', 'Assemblée publique', 'Consultation publique', 'Rencontre avec personne élue', 'Informatique', 'Soutien et échange', 'Langues', 'Heure du conte', 'Aide aux devoirs', 'Emploi'])
+const SKIP_TYPES = new Set(['Initiation à la musique', 'Conseil et comité', 'Assemblée publique', 'Consultation publique', 'Rencontre avec personne élue', 'Informatique', 'Soutien et échange', 'Langues', 'Heure du conte', 'Aide aux devoirs', 'Emploi'])
+// Public visé par la Ville : « Adultes » seulement (pas « Pour tous », « Famille », « Enfants »…),
+// puis on écarte tout ce qui parle d'enfants, de famille ou d'école dans le titre ou la description.
+const KID_WORDS = /enfant|famil|bébé|bebe|tout-petit|toutpetit|parent|jeunesse|jeunes\b|ado\b|ados\b|adolescen|scolaire|garderie|camp de jour|heure du conte|marionnette|\b\d{1,2}\s?(à|-|–)\s?\d{1,2} ans|\bkids?\b|famil|children|toddler|petits?\s(mentors|curieux|explorateurs|lecteurs)|mini-/i
+const isAdultOnly = (e) => {
+  const aud = clean(e.public_cible)
+  if (!/adulte/i.test(aud) || /enfant|famille|préscolaire|tous/i.test(aud)) return false
+  return !KID_WORDS.test(`${clean(e.titre)} ${clean(e.description)}`)
+}
 const clean = (v) => (v == null || v === 'nan' || v === 'NaN' ? '' : String(v).trim())
 
 export default async function handler(req, res) {
@@ -22,7 +30,8 @@ export default async function handler(req, res) {
       const type = clean(e.type_evenement)
       if (!start || end < today || start > horizon) continue
       if (SKIP_TYPES.has(type) || clean(e.emplacement) === 'En ligne') continue
-      if (/préscolaire|enfants/i.test(clean(e.public_cible)) && !/tous/i.test(clean(e.public_cible))) continue
+      // SpotLa est réservé aux 18 ans et plus : on ne garde que les activités prévues pour les adultes.
+      if (!isAdultOnly(e)) continue
       const lat = parseFloat(e.lat), lng = parseFloat(e.long)
       if (!isFinite(lat) || !isFinite(lng)) continue
       out.push({
