@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, CalendarDays, Heart, MapPin, Navigation, Share2, Star } from 'lucide-react'
 import { CATALOG, galleryOf } from '../data/catalog'
 import { Gallery } from '../components/Gallery'
@@ -8,6 +8,7 @@ import { toast, useStore } from '../data/store'
 import { distanceKm, fmtKm, timeAgo } from '../data/util'
 import { directions } from '../data/venues'
 import { CAT_ICON, Stars } from '../components/PlaceCard'
+import { Avatar } from '../components/ui'
 import { share } from '../components/share'
 
 export function PlaceDetail() {
@@ -18,6 +19,7 @@ export function PlaceDetail() {
   const p = useMemo(() => items.find((x) => x.id === placeId) ?? CATALOG.find((x) => x.id === placeId), [items, placeId])
   const pos = useStore((s) => s.pos)
   const meId = useStore((s) => s.meId)
+  const users = useStore((s) => s.users)
   const st = useStats(placeId)
   const [reviews, setReviews] = useState<Review[]>([])
   const [rating, setRating] = useState(0)
@@ -93,7 +95,10 @@ export function PlaceDetail() {
           {reviews.length === 0 && socialReady() && <p className="hint">Personne n'a encore donné son avis. Sois le premier !</p>}
           {reviews.map((r) => (
             <div key={r.id} className="review">
-              <div className="row between"><b>{r.author}</b><span className="hint">{timeAgo(r.createdAt)}</span></div>
+              <div className="row between">
+                <Link className="row gap8 rv-who" to={`/u/${r.userId}`}><Avatar u={users.find((x) => x.id === r.userId)} size={28} /><b>{r.author}</b></Link>
+                <span className="hint">{timeAgo(r.createdAt)}</span>
+              </div>
               <Stars rating={r.rating} />
               {r.body && <p>{r.body}</p>}
             </div>

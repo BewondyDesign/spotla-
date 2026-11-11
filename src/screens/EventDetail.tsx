@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Calendar, Check, Clapperboard, ExternalLink, Flag, Lock, MapPin, Share2, Ticket, Users, X } from 'lucide-react'
 import { askConfirm, canSeeAddress, goingCount, toast, useMe, useStore } from '../data/store'
 import { distanceKm, fmtDay, fmtKm, fmtTime, isLive, startsIn, VIS_LABEL } from '../data/util'
+import { eventVideo } from '../data/ambiance'
 import { Art, Avatar, LiveBadge, PriceBadge, Verified, VisBadge } from '../components/ui'
 import { share } from '../components/share'
 import { useStoryGroups } from '../components/Stories'
@@ -24,6 +25,7 @@ export function EventDetail() {
   if (!e || !me) return <div className="scr"><div className="pad"><button className="iconbtn" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft /></button><p className="empty">Cet événement n'existe plus.</p></div></div>
 
   const host = users.find((u) => u.id === e.hostId)
+  const goers = e.going.map((uid) => users.find((u) => u.id === uid)).filter((u): u is NonNullable<typeof u> => !!u)
   const mine = e.hostId === me.id
   const going = e.going.includes(me.id)
   const requested = e.requests.includes(me.id)
@@ -44,7 +46,7 @@ export function EventDetail() {
   return (
     <div className="scr no-tab">
       <div className="cover ev-cover">
-        <Art colors={e.colors} word={e.vibe} big />
+        <Art colors={e.colors} word={e.vibe} big video={eventVideo(e)} />
         <div className="shade" />
         <div className="ev-top">
           <button className="iconbtn glass" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft size={20} /></button>
@@ -84,6 +86,17 @@ export function EventDetail() {
           {!mine && <button className={`btn-mini ${following ? '' : 'accent'}`} onClick={() => toggleFollow(e.hostId)}>{following ? 'Suivi' : 'Suivre'}</button>}
         </div>
 
+        {goers.length > 0 && (
+          <section className="stack8">
+            <h3 className="sec-title">Qui y va</h3>
+            <div className="goers">
+              {goers.map((u) => (
+                <Link key={u.id} to={`/u/${u.id}`} className="goer"><Avatar u={u} size={48} /><span>{u.id === me.id ? 'Toi' : u.name.split(' ')[0]}</span></Link>
+              ))}
+            </div>
+          </section>
+        )}
+
         {mine && (
           <section className="stack8">
             <h3 className="sec-title">Demandes ({e.requests.length})</h3>
@@ -92,8 +105,8 @@ export function EventDetail() {
               const u = users.find((x) => x.id === uid)
               return (
                 <div key={uid} className="host">
-                  <Avatar u={u} size={36} />
-                  <div className="grow"><b>{u?.name}</b><span>@{u?.handle}</span></div>
+                  <Link to={`/u/${uid}`}><Avatar u={u} size={36} /></Link>
+                  <Link className="grow" to={`/u/${uid}`}><b>{u?.name}</b><span>@{u?.handle}</span></Link>
                   <button className="iconbtn ok" aria-label="Accepter" onClick={() => answerRequest(e.id, uid, true)}><Check size={18} /></button>
                   <button className="iconbtn" aria-label="Refuser" onClick={() => answerRequest(e.id, uid, false)}><X size={18} /></button>
                 </div>

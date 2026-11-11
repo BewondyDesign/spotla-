@@ -1,14 +1,16 @@
+import { AutoVideo } from './AutoVideo'
 import { money } from '../data/util'
 import { BadgeCheck, Lock, Users } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { SpotEvent, User } from '../data/types'
 import { useConfirm, useToast } from '../data/store'
 
-export function Art({ colors, word, big }: { colors: [string, string]; word?: string; big?: boolean }) {
+export function Art({ colors, word, big, video }: { colors: [string, string]; word?: string; big?: boolean; video?: string }) {
   return (
     <>
-      <div className="art" style={{ background: `radial-gradient(circle at 18% 22%, ${colors[0]}, transparent 58%), radial-gradient(circle at 85% 80%, ${colors[1]}, transparent 60%), #1A1426` }} />
-      {word && <span className={`word${big ? ' big' : ''}`} aria-hidden="true">{word}</span>}
+      {video && <AutoVideo className="art-vid" src={video} />}
+      <div className={`art${video ? ' under' : ''}`} style={{ background: `radial-gradient(circle at 18% 22%, ${colors[0]}, transparent 58%), radial-gradient(circle at 85% 80%, ${colors[1]}, transparent 60%), #1A1426` }} />
+      {word && !video && <span className={`word${big ? ' big' : ''}`} aria-hidden="true">{word}</span>}
     </>
   )
 }

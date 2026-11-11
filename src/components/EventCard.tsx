@@ -3,6 +3,7 @@ import { Clock, MapPin, Sparkles } from 'lucide-react'
 import type { SpotEvent } from '../data/types'
 import { goingCount, useStore } from '../data/store'
 import { distanceKm, fmtKm, fmtTime, isLive, startsIn } from '../data/util'
+import { eventVideo } from '../data/ambiance'
 import { Art, LiveBadge, PriceBadge, VisBadge } from './ui'
 
 export function EventCard({ e }: { e: SpotEvent }) {
@@ -11,7 +12,7 @@ export function EventCard({ e }: { e: SpotEvent }) {
   const live = isLive(e)
   return (
     <button className="card" onClick={() => nav(`/event/${e.id}`)}>
-      <div className="cover"><Art colors={e.colors} word={e.vibe} /></div>
+      <div className="cover"><Art colors={e.colors} word={e.vibe} video={eventVideo(e)} /></div>
       <div className="card-body">
         <h4>{e.title}</h4>
         <div className="meta">
@@ -36,7 +37,7 @@ export function HeroCard({ e }: { e: SpotEvent }) {
   return (
     <button className="hero2" onClick={() => nav(`/event/${e.id}`)}>
       <div className="cover hero">
-        <Art colors={e.colors} word={e.vibe} big />
+        <Art colors={e.colors} word={e.vibe} big video={eventVideo(e)} />
         <div className="row gap6 between">
           {isLive(e) ? <LiveBadge /> : <span className="badge b-soon">{startsIn(e)}</span>}
           <PriceBadge e={e} />

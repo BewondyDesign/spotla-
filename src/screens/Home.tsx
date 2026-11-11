@@ -8,8 +8,10 @@ import { StoriesBar } from '../components/Stories'
 import { LocationButton } from '../components/Location'
 import { PlaceCard } from '../components/PlaceCard'
 import { useCatalog } from '../data/places'
+import { inNextDays, useAgenda } from '../data/agenda'
+import { AgendaCard } from '../components/AgendaCard'
 import { PostCard } from '../components/PostCard'
-import { Empty } from '../components/ui'
+import { Avatar, Empty, Verified } from '../components/ui'
 
 export function Home() {
   const events = useStore((s) => s.events)
@@ -18,6 +20,9 @@ export function Home() {
   const radius = useStore((s) => s.radius)
   const unread = useStore((s) => s.notifs.filter((n) => !n.read).length)
   const me = useMe()
+  const users = useStore((s) => s.users)
+  // Membres à découvrir : ceux qu'on ne suit pas encore d'abord, les plus suivis en tête.
+  const members = useMemo(() => users.filter((u) => u.id !== me?.id).sort((a, b) => Number(me?.following.includes(a.id)) - Number(me?.following.includes(b.id)) || b.followers - a.followers).slice(0, 15), [users, me])
 
   const list = useMemo(() => events
     .filter((e) => !isHidden(e, me?.id ?? null))
@@ -32,6 +37,9 @@ export function Home() {
   }, [posts, me])
 
   const catalog = useCatalog()
+  const agenda = useAgenda()
+  // À l'affiche : ce qui se passe cette semaine, les grands festivals d'abord.
+  const soon = useMemo(() => agenda.filter((e) => inNextDays(e, 14)).sort((a, b) => Number(b.source === 'Bonjour Québec') - Number(a.source === 'Bonjour Québec')).slice(0, 12), [agenda])
   // Un seul Top 10 : on pioche à tour de rôle dans chaque catégorie (clubs, bars, fêtes, soirées, gourmand).
   const top10 = useMemo(() => {
     const order = ['club', 'bar', 'fetes', 'soiree', 'gastro']
@@ -58,6 +66,14 @@ export function Home() {
         <div className="rail">{top10.map((p, i) => <PlaceCard key={p.id} p={{ ...p, rank: i + 1 }} />)}</div>
       </section>
 
+      <section className="rail-sec" aria-label="Agenda de Montréal">
+        <div className="pad row between sec-head">
+          <div className="stack4"><span className="kicker">Sorties officielles</span><h2 className="sec-title">Agenda de Montréal</h2></div>
+          <Link className="sec-link" to="/agenda">Tout voir</Link>
+        </div>
+        <div className="rail">{(soon.length >= 4 ? soon : [...soon, ...agenda.filter((x) => !soon.includes(x))].slice(0, 10)).map((e) => <AgendaCard key={e.id} e={e} />)}</div>
+      </section>
+
       {list.length > 0 && (
         <section className="rail-sec" aria-label="Ce soir près de toi">
           <div className="pad row between sec-head">
@@ -65,6 +81,23 @@ export function Home() {
             <Link className="sec-link" to="/map">Carte</Link>
           </div>
           <div className="rail ev-rail">{list.slice(0, 8).map((e) => <EventCard key={e.id} e={e} />)}</div>
+        </section>
+      )}
+
+      {members.length > 0 && (
+        <section className="rail-sec" aria-label="Membres">
+          <div className="pad row between sec-head">
+            <h2 className="sec-title">Membres à découvrir</h2>
+          </div>
+          <div className="rail people-rail">
+            {members.map((u) => (
+              <Link key={u.id} to={`/u/${u.id}`} className="person">
+                <Avatar u={u} size={64} />
+                <b>{u.name} <Verified u={u} /></b>
+                <span>@{u.handle}</span>
+              </Link>
+            ))}
+          </div>
         </section>
       )}
 

@@ -1,6 +1,6 @@
 import { money } from '../data/util'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ChevronRight, Plus, X, Volume2, VolumeX } from 'lucide-react'
 import { useStore } from '../data/store'
 import type { Story } from '../data/types'
@@ -150,8 +150,10 @@ export function StoryViewer() {
         </div>
         <div className="row between">
           <div className="row gap8">
-            <Avatar u={u} size={34} />
-            <div className="viewer-who"><b>{u?.name} <Verified u={u} /></b><span>{timeAgo(story.createdAt)}</span></div>
+            <Link to={`/u/${group.authorId}`} className="row gap8" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+              <Avatar u={u} size={34} />
+              <div className="viewer-who"><b>{u?.name} <Verified u={u} /></b><span>{timeAgo(story.createdAt)}</span></div>
+            </Link>
             {live && <LiveBadge label="En ce moment" />}
           </div>
           <div className="row gap6">

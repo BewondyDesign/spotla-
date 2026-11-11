@@ -5,6 +5,7 @@ import type { Post } from '../data/types'
 import { useStore } from '../data/store'
 import { blobUrl } from '../data/media'
 import { fmtDay, fmtTime, timeAgo } from '../data/util'
+import { eventVideo } from '../data/ambiance'
 import { Art, Avatar, PriceBadge, Verified } from './ui'
 import { share } from './share'
 
@@ -24,7 +25,7 @@ export function PostCard({ p }: { p: Post }) {
 
   useEffect(() => { if (p.imageUrl) setImg(p.imageUrl); else if (p.imageKey) blobUrl(p.imageKey).then(setImg) }, [p.imageKey, p.imageUrl])
 
-  const visual = img ? <img src={img} alt="" className="post-img" /> : p.colors ? <div className="cover post-art"><Art colors={p.colors} word={ev?.vibe} big /></div> : null
+  const visual = img ? <img src={img} alt="" className="post-img" /> : p.colors ? <div className="cover post-art"><Art colors={p.colors} word={ev?.vibe} big video={ev ? eventVideo(ev) : undefined} /></div> : null
 
   return (
     <article className="post">
@@ -53,7 +54,7 @@ export function PostCard({ p }: { p: Post }) {
         <div className="comments">
           {(open ? p.comments : p.comments.slice(-1)).map((c) => {
             const cu = users.find((x) => x.id === c.authorId)
-            return <p key={c.id}><b>{cu?.name}</b> {c.text}</p>
+            return <p key={c.id}><Link className="c-who" to={`/u/${c.authorId}`}><b>{cu?.name}</b></Link> {c.text}</p>
           })}
           {!open && p.comments.length > 1 && <button className="textlink" onClick={() => setOpen(true)}>Voir les {p.comments.length} commentaires</button>}
           {open && (

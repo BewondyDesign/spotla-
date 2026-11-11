@@ -1,3 +1,5 @@
+import { Agenda } from './screens/Agenda'
+import { AgendaDetail } from './screens/AgendaDetail'
 import { Settings } from './screens/Settings'
 import { useEffect } from 'react'
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
@@ -54,7 +56,7 @@ function Shell() {
   if (recovery) return <div className="app"><NewPassword /><Toast /></div>
   if (!meId) return <div className="app"><Onboarding /><Toast /></div>
   if (!me) return <div className="app"><Onboarding authId={meId} /><Toast /></div>
-  const fullscreen = loc.pathname.startsWith('/event/') || loc.pathname.startsWith('/place/') || loc.pathname.startsWith('/stories/') || loc.pathname === '/settings'
+  const fullscreen = loc.pathname.startsWith('/event/') || loc.pathname.startsWith('/place/') || loc.pathname.startsWith('/stories/') || loc.pathname === '/settings' || loc.pathname.startsWith('/agenda')
   return (
     <div className="app">
       <Routes>
@@ -65,6 +67,8 @@ function Shell() {
         <Route path="/stories/:authorId" element={<StoryViewer />} />
         <Route path="/create" element={<Create />} />
         <Route path="/u/:id" element={<Profile />} />
+        <Route path="/agenda" element={<Agenda />} />
+        <Route path="/agenda/:id" element={<AgendaDetail />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/business" element={<Business />} />
         <Route path="/notifs" element={<Notifs />} />

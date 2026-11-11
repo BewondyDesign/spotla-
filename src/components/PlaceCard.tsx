@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom'
 import { Gift, Heart, Martini, MessageCircle, Music, PartyPopper, Star, UtensilsCrossed } from 'lucide-react'
 import type { CatalogItem, Category } from '../data/catalog'
 import { toggleLike, useStats } from '../data/places'
+import { placeVideo } from '../data/ambiance'
+import { AutoVideo } from './AutoVideo'
 import { toast, useStore } from '../data/store'
 import { distanceKm, fmtKm } from '../data/util'
 
@@ -24,6 +26,7 @@ export function PlaceCard({ p }: { p: CatalogItem }) {
   const meId = useStore((s) => s.meId)
   const st = useStats(p.id)
   const Icon = CAT_ICON[p.category]
+  const vid = placeVideo(p)
   const like = async (e: React.MouseEvent) => {
     e.stopPropagation()
     if (!meId) return
@@ -31,7 +34,7 @@ export function PlaceCard({ p }: { p: CatalogItem }) {
   }
   return (
     <article className={`pcard c-${p.category}`} onClick={() => nav(`/place/${encodeURIComponent(p.id)}`)}>
-      {p.video ? <video className="pcard-bg" src={p.video} poster={p.photo} autoPlay muted loop playsInline aria-hidden="true" />
+      {vid ? <AutoVideo className="pcard-bg" src={vid} poster={p.photo} />
         : p.photo ? <img className="pcard-bg" src={p.photo} alt="" loading="lazy" />
         : <Icon className="pcard-icon" size={130} strokeWidth={1} aria-hidden="true" />}
       <span className="pcard-rank">#{p.rank}</span>
