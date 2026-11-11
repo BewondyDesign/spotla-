@@ -923,3 +923,8 @@ p { line-height: 1.5; }
 .lang-switch button { border: 0; background: none; color: inherit; font: 700 11px/1 inherit; letter-spacing: .04em; padding: 7px 9px; border-radius: 999px; opacity: .65; cursor: pointer; }
 .lang-switch button.on { background: var(--neon); color: var(--on-accent); opacity: 1; }
 .lang-switch.glass { background: rgba(0,0,0,.28); border-color: rgba(255,255,255,.2); color: #fff; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+
+/* Fiche sortie : le bouton principal est dans la page, juste sous les infos (plus de barre flottante qui cache la carte « seul·e »). */
+.ev-cta { display: flex; gap: 10px; }
+.scr.no-tab.ev-scr { padding-bottom: calc(32px + var(--safe-b)); }
+.solo-card .btn-primary { background: transparent; color: var(--text); border: 1px solid var(--line); }

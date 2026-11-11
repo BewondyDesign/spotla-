@@ -50,7 +50,7 @@ export function EventDetail() {
   }
 
   return (
-    <div className="scr no-tab">
+    <div className="scr no-tab ev-scr">
       <div className="cover ev-cover">
         <Art colors={e.colors} word={e.vibe} big video={eventVideo(e)} />
         <div className="shade" />
@@ -81,6 +81,22 @@ export function EventDetail() {
           <div className="fact"><Ticket size={20} /><div><b>{e.price === 0 ? t('Gratuit', 'Free') : `${money(e.price)} ${t('l\'entrée', 'entry')}`}</b><span>{e.ticketUrl ? t('Billetterie du lieu', 'Venue tickets') : e.price === 0 ? t('Entrée libre', 'Free entry') : t('Paiement sur place', 'Pay at the door')}</span></div>{e.ticketUrl && <a className="btn-mini" href={e.ticketUrl} target="_blank" rel="noreferrer">{t('Billets', 'Tickets')} <ExternalLink size={14} /></a>}</div>
           <div className="fact"><Users size={20} /><div><b>{goingCount(e)} {t('y vont', 'going')}{e.capacity ? ` · ${e.capacity} ${t('places', 'spots')}` : ''}</b><span>{VIS_LABEL[e.visibility]}</span></div></div>
         </div>
+
+        {!mine && (
+          <div className="ev-cta">
+            {needsApproval ? (
+              <button className={`btn btn-block ${requested ? 'btn-ghost' : 'btn-primary'}`} onClick={() => { requestJoin(e.id); if (!requested) toast('Demande envoyée', `${host?.name} va te répondre. On te prévient.`) }}>
+                {requested ? t('Demande envoyée · Annuler', 'Request sent · Cancel') : t('Demander ma place', 'Request a spot')}
+              </button>
+            ) : full ? (
+              <button className="btn btn-block btn-ghost" disabled>{t('Complet', 'Full')}</button>
+            ) : (
+              <button className={`btn btn-block ${going ? 'btn-ok' : 'btn-primary'}`} onClick={() => { toggleGoing(e.id); if (!going) toast('C\'est noté !', 'On te rappelle 1 h avant. Partage-le à tes potes.') }}>
+                {going ? <><Check size={18} /> {t('J\'y vais', 'I\'m going')}</> : t('J\'y vais', 'I\'m going')}
+              </button>
+            )}
+          </div>
+        )}
 
         {!showAddr && (
           <div className="privacy"><Lock size={18} /><span>{accepted || (e.visibility === 'circle' && following) ? `Tu es invité·e. Pour la sécurité de tous, l'adresse exacte apparaît 2 h avant le début (${fmtTime(new Date(Date.parse(e.start) - 2 * 3600_000).toISOString())}).` : 'Événement privé : l\'organisateur valide chaque demande. Une fois accepté·e, tu verras l\'adresse exacte 2 h avant le début.'}</span></div>
@@ -134,22 +150,6 @@ export function EventDetail() {
 
         {!mine && <button className="textlink" onClick={onReport}><Flag size={14} /> {t('Signaler cet événement', 'Report this event')}</button>}
       </div>
-
-      {!mine && (
-        <div className="stickycta">
-          {needsApproval ? (
-            <button className={`btn btn-block ${requested ? 'btn-ghost' : 'btn-primary'}`} onClick={() => { requestJoin(e.id); if (!requested) toast('Demande envoyée', `${host?.name} va te répondre. On te prévient.`) }}>
-              {requested ? t('Demande envoyée · Annuler', 'Request sent · Cancel') : t('Demander ma place', 'Request a spot')}
-            </button>
-          ) : full ? (
-            <button className="btn btn-block btn-ghost" disabled>{t('Complet', 'Full')}</button>
-          ) : (
-            <button className={`btn btn-block ${going ? 'btn-ok' : 'btn-primary'}`} onClick={() => { toggleGoing(e.id); if (!going) toast('C\'est noté !', 'On te rappelle 1 h avant. Partage-le à tes potes.') }}>
-              {going ? <><Check size={18} /> {t('J\'y vais', 'I\'m going')}</> : t('J\'y vais', 'I\'m going')}
-            </button>
-          )}
-        </div>
-      )}
     </div>
   )
 }
