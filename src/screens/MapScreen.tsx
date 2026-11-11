@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Search } from 'lucide-react'
+import { Navigation, Search } from 'lucide-react'
 import { isHidden, useStore } from '../data/store'
 import { distanceKm, money, momentOf } from '../data/util'
 import { LocationSheet } from '../components/Location'
@@ -9,6 +9,9 @@ import { EventCard } from '../components/EventCard'
 import { VenueCard } from '../components/VenueCard'
 import { searchPlaces, useVenues, type Venue } from '../data/venues'
 import { RADII, fmtKm } from '../data/util'
+
+// La recherche en haut et la liste en bas cachent une partie de la carte.
+const FIT = { paddingTopLeft: [16, 140] as [number, number], paddingBottomRight: [16, 330] as [number, number] }
 
 export function MapScreen() {
   const events = useStore((s) => s.events)
@@ -49,7 +52,7 @@ export function MapScreen() {
     // Tuiles OpenStreetMap (sans clé), assombries en CSS pour le thème nuit.
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19, className: 'tiles-night' }).addTo(m)
     me.current = L.marker([pos.lat, pos.lng], { icon: L.divIcon({ className: '', html: '<div class="pulse"></div>', iconSize: [18, 18] }), interactive: false }).addTo(m)
-    ring.current = L.circle([pos.lat, pos.lng], { radius: radius * 1000, color: '#F2557A', weight: 1, fillOpacity: 0.04, interactive: false }).addTo(m)
+    ring.current = L.circle([pos.lat, pos.lng], { radius: radius * 1000, color: '#F2F2F3', weight: 1, opacity: 0.35, fillOpacity: 0.03, interactive: false }).addTo(m)
     vlayer.current = L.layerGroup().addTo(m)
     layer.current = L.layerGroup().addTo(m)
     m.on('click', () => { setSel(null); setVsel(null) })
@@ -66,7 +69,7 @@ export function MapScreen() {
     // On recadre seulement au premier affichage, quand le rayon change ou après un grand déplacement ;
     // sinon le point suit la position en direct sans faire sauter la carte.
     const jump = !fitAt.current || distanceKm(fitAt.current.pos, pos) > 1 || fitAt.current.radius !== radius
-    if (jump) { m.fitBounds(ring.current!.getBounds(), { padding: [20, 20] }); fitAt.current = { pos, radius } }
+    if (jump) { m.fitBounds(ring.current!.getBounds(), FIT); fitAt.current = { pos, radius } }
   }, [pos, radius])
 
   useEffect(() => {
@@ -98,33 +101,39 @@ export function MapScreen() {
     <div className="scr map-scr">
       <div ref={box} className="map" />
       <div className="map-top">
-        <label className="search"><Search size={18} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Club, bar, nom d'un lieu, ambiance…" aria-label="Rechercher un lieu ou un événement" /></label>
-        <div className="row gap8">
-          <button className="chip solid" aria-pressed={onlyTonight} onClick={() => setOnlyTonight(true)}>Ce soir</button>
-          <button className="chip solid" aria-pressed={!onlyTonight} onClick={() => setOnlyTonight(false)}>Tout à venir</button>
-        </div>
-        <div className="row gap6 radius-row" role="group" aria-label="Rayon autour de toi">
+        <label className="search"><Search size={18} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Club, bar, nom d'un lieu…" aria-label="Rechercher un lieu ou un événement" /></label>
+        <div className="row gap6 radius-row" role="group" aria-label="Filtres de la carte">
           {RADII.filter((k) => k >= 5).map((k) => <button key={k} className="chip solid" aria-pressed={radius === k} onClick={() => useStore.getState().setRadius(k)}>{k} km</button>)}
-          <button className="chip solid" onClick={() => setSheet(true)} aria-label="Changer de ville">⋯</button>
-        </div>
-        <div className="map-legend">
-          <span className={`live-pill ${geo === 'ok' && !manual ? 'on' : ''}`}>{geo === 'ok' && !manual ? '● Position en direct' : manual ? 'Ville choisie à la main' : geo === 'denied' ? 'Localisation bloquée' : 'Localisation…'}</span>
-          <span><i className="vpin club" /> Boîtes de nuit</span><span><i className="vpin" /> Bars et pubs</span>
-          {error && !found ? <button className="linkbtn" onClick={retry}>Lieux indisponibles · Réessayer</button> : <span className="muted">{loading || searching ? 'Recherche…' : `${shownVenues.length} lieu${shownVenues.length > 1 ? 'x' : ''} · ${visible.length} événement${visible.length > 1 ? 's' : ''} à ${radius} km`}</span>}
+          <button className="chip solid" aria-pressed={onlyTonight} onClick={() => setOnlyTonight(!onlyTonight)}>Ce soir</button>
+          <button className="chip solid" onClick={() => setSheet(true)} aria-label="Changer de ville">Ville…</button>
         </div>
       </div>
+      <button className="iconbtn map-me" aria-label="Me recentrer" onClick={() => { fitAt.current = null; if (!manual) useStore.getState().locate(); map.current?.fitBounds(ring.current!.getBounds(), FIT) }}><Navigation size={18} /></button>
       {sheet && <LocationSheet onClose={() => setSheet(false)} />}
       {selected && <div className="sheet"><div className="grab" /><EventCard e={selected} /></div>}
       {selVenue && !selected && <div className="sheet"><div className="grab" /><VenueCard v={selVenue} /></div>}
-      {q && !selected && !selVenue && (
-        <div className="sheet results"><div className="grab" />
-          {!searching && shownVenues.length === 0 && <p className="hint pad">Rien trouvé pour « {q} » à moins de {radius} km. Agrandis le rayon.</p>}
-          {shownVenues.slice(0, 20).map((v) => (
-            <button key={v.id} className="vrow" onClick={() => { setVsel(v.id); map.current?.setView([v.lat, v.lng], 16) }}>
-              <b>{v.name}</b><span>{fmtKm(distanceKm(pos, v))} · {v.kind}{v.address ? ` · ${v.address}` : ''}</span>
+      {!selected && !selVenue && (
+        <section className="sheet results" aria-label="Autour de toi">
+          <div className="grab" />
+          <div className="sheet-head">
+            <b>{loading || searching ? 'Recherche…' : `${shownVenues.length} lieu${shownVenues.length > 1 ? 'x' : ''} · ${visible.length} soirée${visible.length > 1 ? 's' : ''}`}</b>
+            <span className={`live-pill ${geo === 'ok' && !manual ? 'on' : ''}`}>{geo === 'ok' && !manual ? <><i className="live-dot" /> En direct</> : manual ? 'Ville choisie' : geo === 'denied' ? 'Localisation bloquée' : 'Localisation…'}</span>
+          </div>
+          {error && !found && <p className="hint pad">Lieux indisponibles pour l'instant. <button className="linkbtn" onClick={retry}>Réessayer</button></p>}
+          {q && !searching && shownVenues.length === 0 && <p className="hint pad">Rien trouvé pour « {q} » à moins de {radius} km. Agrandis le rayon.</p>}
+          {!q && visible.map((e) => (
+            <button key={e.id} className="vrow" onClick={() => { setSel(e.id); map.current?.setView([e.lat, e.lng], 16) }}>
+              <span className="vrow-km ev">{e.price === 0 ? 'Gratuit' : money(e.price)}</span>
+              <span className="grow"><b>{e.title}</b><span>{fmtKm(distanceKm(pos, e))} · {e.venue}</span></span>
             </button>
           ))}
-        </div>
+          {shownVenues.slice(0, 30).map((v) => (
+            <button key={v.id} className="vrow" onClick={() => { setVsel(v.id); map.current?.setView([v.lat, v.lng], 16) }}>
+              <span className={`vrow-km ${v.kind === 'Boîte de nuit' ? 'club' : ''}`}>{fmtKm(distanceKm(pos, v)).replace(',0 ', ' ')}</span>
+              <span className="grow"><b>{v.name}</b><span>{v.kind}{v.address ? ` · ${v.address}` : ''}</span></span>
+            </button>
+          ))}
+        </section>
       )}
     </div>
   )

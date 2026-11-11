@@ -12,8 +12,8 @@ export function LocationButton() {
   return (
     <>
       <button className="loc" onClick={() => setOpen(true)} aria-label="Changer de ville ou de rayon">
-        <small>{geo === 'locating' ? 'Localisation…' : `Dans un rayon de ${radius} km`}</small>
-        <b><MapPin size={16} /> {city} <span className="loc-caret">▾</span></b>
+        <b>{city} <span className="loc-caret">▾</span></b>
+        <small>{geo === 'locating' ? 'Localisation…' : geo === 'ok' ? <><i className="live-dot" /> Position en direct · {radius} km</> : `Rayon de ${radius} km`}</small>
       </button>
       {open && <LocationSheet onClose={() => setOpen(false)} />}
     </>

@@ -31,7 +31,7 @@ export function Avatar({ u, size = 40, ring }: { u: User | undefined; size?: num
   if (!u) return null
   const initials = u.name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase()
   const pic = (
-    <span className="avatar" style={{ width: size, height: size, background: u.color, fontSize: size * 0.36, borderRadius: u.kind === 'business' ? size * 0.3 : '50%' }}>
+    <span className="avatar" style={{ width: size, height: size, fontSize: size * 0.36, borderRadius: u.kind === 'business' ? size * 0.3 : '50%' }}>
       {initials}
     </span>
   )

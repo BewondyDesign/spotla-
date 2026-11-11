@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell } from 'lucide-react'
+import { Bell, Search } from 'lucide-react'
 import { isHidden, useMe, useStore } from '../data/store'
 import { distanceKm, momentOf, VIBES } from '../data/util'
 import type { Moment } from '../data/types'
@@ -50,9 +50,12 @@ export function Home() {
   const [hero, ...rest] = list
   return (
     <div className="scr">
-      <header className="pad row between">
+      <header className="pad row between home-head">
         <LocationButton />
-        <Link to="/notifs" className="iconbtn bell" aria-label="Activité"><Bell size={20} />{unread > 0 && <i>{unread}</i>}</Link>
+        <div className="row gap8">
+          <Link to="/map" className="iconbtn" aria-label="Rechercher un lieu"><Search size={20} /></Link>
+          <Link to="/notifs" className="iconbtn bell" aria-label="Activité"><Bell size={20} />{unread > 0 && <i>{unread}</i>}</Link>
+        </div>
       </header>
 
       <StoriesBar />
@@ -66,20 +69,20 @@ export function Home() {
 
       {tab === 'events' ? (
         <>
-          <div className="pad stack12">
-            <h1 className="title-xl">{seg === 'tonight' ? <>Ça bouge <em>ce soir</em></> : SEGS.find((s) => s.k === seg)!.l}</h1>
-            <div className="seg" role="group" aria-label="Moment">
-              {SEGS.map((s) => <button key={s.k} aria-pressed={seg === s.k} onClick={() => setSeg(s.k)}>{s.l}</button>)}
-            </div>
-          </div>
-          <div className="chips">
+          <div className="chips" role="group" aria-label="Filtres">
+            {SEGS.map((x) => <button key={x.k} className="chip" aria-pressed={seg === x.k} onClick={() => setSeg(x.k)}>{x.l}</button>)}
+            <span className="chips-sep" aria-hidden="true" />
             <button className="chip" aria-pressed={free} onClick={() => setFree(!free)}>Gratuit</button>
             {VIBES.slice(0, 4).map((v) => <button key={v.k} className="chip" aria-pressed={vibe === v.k} onClick={() => setVibe(vibe === v.k ? null : v.k)}>{v.l}</button>)}
+          </div>
+          <div className="pad row between sec-head">
+            <h1 className="sec-title big">{seg === 'tonight' ? <>Ça bouge <em>ce soir</em></> : SEGS.find((x) => x.k === seg)!.l}</h1>
+            <Link className="sec-link" to="/map">Voir sur la carte</Link>
           </div>
           {hero ? (
             <div className="stack12 mt12">
               <HeroCard e={hero} />
-              <div className="pad row between"><span className="sec-title">{list.length} événement{list.length > 1 ? 's' : ''}</span><Link className="sec-sub" to="/map">Voir sur la carte</Link></div>
+              {rest.length > 0 && <div className="pad sec-head"><h2 className="sec-title">Près de toi</h2></div>}
               <div className="list">{rest.map((e) => <EventCard key={e.id} e={e} />)}</div>
             </div>
           ) : (

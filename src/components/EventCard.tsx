@@ -34,17 +34,18 @@ export function HeroCard({ e }: { e: SpotEvent }) {
   const nav = useNavigate()
   const pos = useStore((s) => s.pos)
   return (
-    <button className="cover hero" onClick={() => nav(`/event/${e.id}`)}>
-      <Art colors={e.colors} word={e.vibe} big />
-      <div className="shade" />
-      <div className="row gap6">
-        <PriceBadge e={e} />
-        <VisBadge e={e} />
-        {isLive(e) ? <LiveBadge /> : <span className="badge b-soon">{startsIn(e)}</span>}
+    <button className="hero2" onClick={() => nav(`/event/${e.id}`)}>
+      <div className="cover hero">
+        <Art colors={e.colors} word={e.vibe} big />
+        <div className="row gap6 between">
+          {isLive(e) ? <LiveBadge /> : <span className="badge b-soon">{startsIn(e)}</span>}
+          <PriceBadge e={e} />
+        </div>
       </div>
-      <div>
-        <h3>{e.title}</h3>
-        <div className="meta">{e.venue} · {fmtKm(distanceKm(pos, e))} · {fmtTime(e.start)} – {fmtTime(e.end)} · {goingCount(e)} y vont</div>
+      <div className="hero-txt">
+        <div className="grow"><h3>{e.title}</h3>
+          <div className="meta">{e.venue} · {fmtKm(distanceKm(pos, e))} · {fmtTime(e.start)} – {fmtTime(e.end)}</div></div>
+        <span className="hero-going">{goingCount(e)} y vont</span>
       </div>
     </button>
   )
