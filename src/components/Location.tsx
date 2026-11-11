@@ -1,21 +1,27 @@
 import { useEffect, useState } from 'react'
-import { LocateFixed, MapPin, Search, X } from 'lucide-react'
+import { ChevronDown, LocateFixed, MapPin, Search, X } from 'lucide-react'
 import { useStore } from '../data/store'
 import { geocode, RADII, type Place } from '../data/util'
 
 /** En-tête « Autour de toi » : ville détectée + rayon. Un tap ouvre le réglage. */
-export function LocationButton() {
+export function LocationButton({ pill }: { pill?: boolean } = {}) {
   const city = useStore((s) => s.city)
   const radius = useStore((s) => s.radius)
   const geo = useStore((s) => s.geo)
   const [open, setOpen] = useState(false)
   return (
     <>
+      {pill ? (
+        <button className="loc-pill" onClick={() => setOpen(true)} aria-label="Changer de ville ou de rayon">
+          <MapPin size={15} /><b>{city}</b><span>· {radius} km</span>{geo === 'ok' && <i className="live-dot" aria-label="Position en direct" />}<ChevronDown size={15} />
+        </button>
+      ) : (
       <button className="loc" onClick={() => setOpen(true)} aria-label="Changer de ville ou de rayon">
         <span className="wordmark">spotla<i /></span>
         <b>{city} <span className="loc-caret">▾</span></b>
         <small>{geo === 'locating' ? 'Localisation…' : geo === 'ok' ? <><i className="live-dot" /> Position en direct · {radius} km</> : `Rayon de ${radius} km`}</small>
       </button>
+      )}
       {open && <LocationSheet onClose={() => setOpen(false)} />}
     </>
   )

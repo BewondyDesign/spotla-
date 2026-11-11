@@ -1,4 +1,4 @@
-import { videoIfMatch } from './ambiance'
+import { MK, videoIfMatch } from './ambiance'
 import { useEffect, useState } from 'react'
 
 // Agenda culturel de Montréal : sorties officielles, gratuites ou payantes.
@@ -101,4 +101,19 @@ export const isOnNow = (e: AgendaItem) => e.start <= today() && e.end >= today()
 export const inNextDays = (e: AgendaItem, n: number) => e.start <= new Date(Date.now() + n * 864e5).toISOString().slice(0, 10)
 
 /** Vidéo d'ambiance d'une sortie (illustration libre de droits), seulement quand le type s'y prête. */
-export const agendaVideo = (e: AgendaItem) => e.video ?? videoIfMatch(e.id, e.type, e.title)
+const FEST_VIDEO: Record<string, number> = {
+  'fest:festilumi': 48301,
+  'fest:lumino-2027': 34053,
+  'fest:mnm-2027': 14756,
+  'fest:nuit-blanche-2027': 3323,
+  'fest:rvqc-2027': 28422,
+  'fest:fta-2027': 51283,
+  'fest:fringe-2027': 43400,
+  'fest:francos-2027': 48509,
+  'fest:fete-nationale-2027': 4064,
+  'fest:jazz-2027': 43744,
+  'fest:off-jpr-2027': 21829,
+  'fest:osheaga-2027': 14088,
+  'fest:fierte-2027': 47143,
+}
+export const agendaVideo = (e: AgendaItem) => e.video ?? (FEST_VIDEO[e.id] ? MK(FEST_VIDEO[e.id]) : videoIfMatch(e.id, e.title, e.type))

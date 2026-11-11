@@ -10,8 +10,17 @@ import { PlaceCard } from '../components/PlaceCard'
 import { useCatalog } from '../data/places'
 import { inNextDays, useAgenda } from '../data/agenda'
 import { AgendaCard } from '../components/AgendaCard'
+import { AutoVideo } from '../components/AutoVideo'
+import { MK } from '../data/ambiance'
 import { PostCard } from '../components/PostCard'
 import { Avatar, Empty, Verified } from '../components/ui'
+
+// Vidéo d'entête selon la saison : rues enneigées et lumières de Noël en hiver, foule de festival le reste de l'année.
+const HERO_VIDS = (() => { const m = new Date().getMonth(); return m === 10 || m === 11 || m === 0 ? [3323, 29431] : m >= 5 && m <= 7 ? [14088, 13265] : [33901, 4187] })()
+/** Heure de Montréal, pour saluer au bon moment. */
+const mtlHour = () => Number(new Intl.DateTimeFormat('fr-CA', { hour: 'numeric', hour12: false, timeZone: 'America/Montreal' }).format(new Date()))
+const evening = () => { const h = mtlHour(); return h >= 16 || h < 5 }
+const greet = () => { const h = mtlHour(); return h >= 5 && h < 12 ? 'Bonjour' : h >= 12 && h < 18 ? 'Bel après-midi' : 'Bonsoir' }
 
 export function Home() {
   const events = useStore((s) => s.events)
@@ -21,8 +30,18 @@ export function Home() {
   const unread = useStore((s) => s.notifs.filter((n) => !n.read).length)
   const me = useMe()
   const users = useStore((s) => s.users)
-  // Membres à découvrir : ceux qu'on ne suit pas encore d'abord, les plus suivis en tête.
-  const members = useMemo(() => users.filter((u) => u.id !== me?.id).sort((a, b) => Number(me?.following.includes(a.id)) - Number(me?.following.includes(b.id)) || b.followers - a.followers).slice(0, 15), [users, me])
+  const city = useStore((s) => s.city)
+  // La communauté : qui sort ce soir d'abord, puis qui a partagé récemment. Pas de classement par abonnés.
+  const community = useMemo(() => {
+    const tonight = events.filter((e) => momentOf(e) === 'tonight' || momentOf(e) === 'today')
+    const lastPost = (uid: string) => posts.filter((p) => p.authorId === uid).reduce((m, p) => (p.createdAt > m ? p.createdAt : m), '')
+    return users.filter((u) => u.id !== me?.id).map((u) => {
+      const ev = tonight.find((e) => e.going.includes(u.id) || e.hostId === u.id)
+      const last = lastPost(u.id)
+      const status = ev ? `Sort ce soir · ${ev.venue}` : last && Date.now() - Date.parse(last) < 3 * 864e5 ? 'A partagé un moment' : u.city ? `De ${u.city}` : 'Membre SpotLa'
+      return { u, ev, status, score: (ev ? 2 : 0) + (last ? 1 : 0) }
+    }).sort((a, b) => b.score - a.score).slice(0, 15)
+  }, [users, events, posts, me])
 
   const list = useMemo(() => events
     .filter((e) => !isHidden(e, me?.id ?? null))
@@ -38,8 +57,9 @@ export function Home() {
 
   const catalog = useCatalog()
   const agenda = useAgenda()
-  // À l'affiche : ce qui se passe cette semaine, les grands festivals d'abord.
-  const soon = useMemo(() => agenda.filter((e) => inNextDays(e, 14)).sort((a, b) => Number(b.source === 'Bonjour Québec') - Number(a.source === 'Bonjour Québec')).slice(0, 12), [agenda])
+  const weekCount = useMemo(() => agenda.filter((e) => inNextDays(e, 7)).length, [agenda])
+  // Activités à faire : cette semaine et les deux suivantes, les plus proches de toi d'abord.
+  const soon = useMemo(() => agenda.filter((e) => inNextDays(e, 14)).sort((a, b) => distanceKm(pos, a) - distanceKm(pos, b)).slice(0, 12), [agenda, pos])
   // Un seul Top 10 : on pioche à tour de rôle dans chaque catégorie (clubs, bars, fêtes, soirées, gourmand).
   const top10 = useMemo(() => {
     const order = ['club', 'bar', 'fetes', 'soiree', 'gastro']
@@ -49,11 +69,28 @@ export function Home() {
     return out
   }, [catalog])
   return (
-    <div className="scr">
-      <header className="pad home-head">
-        <Link to="/map" className="iconbtn soft" aria-label="Rechercher un lieu"><Search size={20} /></Link>
-        <LocationButton />
-        <Link to="/notifs" className="iconbtn soft bell" aria-label="Activité"><Bell size={20} />{unread > 0 && <i>{unread}</i>}</Link>
+    <div className="scr home-scr">
+      <header className="home-hero">
+        <AutoVideo className="hero-vid" src={MK(HERO_VIDS[new Date().getDate() % HERO_VIDS.length])} />
+        <div className="hero-shade" />
+        <div className="hero-top">
+          <span className="wordmark light">spotla<i /></span>
+          <div className="row gap8">
+            <Link to="/map" className="iconbtn glass sm" aria-label="Rechercher un lieu"><Search size={19} /></Link>
+            <Link to="/notifs" className="iconbtn glass sm bell" aria-label="Activité"><Bell size={19} />{unread > 0 && <i>{unread}</i>}</Link>
+          </div>
+        </div>
+        <div className="hero-copy">
+          <p className="hero-hi">{greet()}{me?.name ? `, ${me.name.split(' ')[0]}` : ''}</p>
+          <h1 className="hero-h">{evening() ? <>Qu'est-ce qu'on fait <em>ce soir</em> ?</> : <>Qu'est-ce qu'on fait <em>aujourd'hui</em> ?</>}</h1>
+          <LocationButton pill />
+          <div className="hero-stats">
+{list.length > 0
+              ? <Link to="/map"><b>{list.length}</b> {list.length > 1 ? 'soirées' : 'soirée'} {evening() ? 'ce soir' : "aujourd'hui"}</Link>
+              : <Link to="/map"><b>{catalog.length}</b> lieux à découvrir</Link>}
+            {weekCount > 0 && <Link to="/agenda"><b>{weekCount}</b> {weekCount > 1 ? 'activités' : 'activité'} cette semaine</Link>}
+          </div>
+        </div>
       </header>
 
       <StoriesBar />
@@ -68,7 +105,7 @@ export function Home() {
 
       <section className="rail-sec" aria-label="Agenda de Montréal">
         <div className="pad row between sec-head">
-          <div className="stack4"><span className="kicker">Sorties officielles</span><h2 className="sec-title">Agenda de Montréal</h2></div>
+          <div className="stack4"><span className="kicker">Près de toi</span><h2 className="sec-title">Activités à faire à {city}</h2></div>
           <Link className="sec-link" to="/agenda">Tout voir</Link>
         </div>
         <div className="rail">{(soon.length >= 4 ? soon : [...soon, ...agenda.filter((x) => !soon.includes(x))].slice(0, 10)).map((e) => <AgendaCard key={e.id} e={e} />)}</div>
@@ -84,17 +121,18 @@ export function Home() {
         </section>
       )}
 
-      {members.length > 0 && (
-        <section className="rail-sec" aria-label="Membres">
-          <div className="pad row between sec-head">
-            <h2 className="sec-title">Membres à découvrir</h2>
+      {community.length > 0 && (
+        <section className="rail-sec" aria-label="Communauté">
+          <div className="pad stack4 sec-head">
+            <span className="kicker">Ta communauté</span>
+            <h2 className="sec-title">Qui sort ce soir ?</h2>
           </div>
           <div className="rail people-rail">
-            {members.map((u) => (
-              <Link key={u.id} to={`/u/${u.id}`} className="person">
-                <Avatar u={u} size={64} />
-                <b>{u.name} <Verified u={u} /></b>
-                <span>@{u.handle}</span>
+            {community.map(({ u, ev, status }) => (
+              <Link key={u.id} to={`/u/${u.id}`} className={`person${ev ? ' out' : ''}`}>
+                <span className="person-av"><Avatar u={u} size={60} />{ev && <i className="person-dot" aria-hidden="true" />}</span>
+                <b>{u.kind === 'business' ? u.name : u.name.split(' ')[0]} <Verified u={u} /></b>
+                <span>{status}</span>
               </Link>
             ))}
           </div>

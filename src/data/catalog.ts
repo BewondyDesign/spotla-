@@ -102,6 +102,45 @@ const CAT_VIDEOS: Record<Category, string[]> = {
   fetes: [MK(46591), MK(29479), MK(34702), MK(41949)],
   gastro: [MK(32558), MK(22441), MK(4295)],
 }
+/** Vidéo choisie pour chaque lieu selon ce qu'on y fait (Noël, jazz, cocktails, vinyles…). Mixkit, licence gratuite. */
+const VIDEO_OF: Record<string, number> = {
+  'osm:node/4486771295': 832,
+  'osm:node/6005804263': 45439,
+  'osm:node/11888760955': 4187,
+  'osm:node/13234865274': 1352,
+  'osm:node/2424892846': 33900,
+  'osm:node/2424590588': 33899,
+  'osm:node/13947882201': 303,
+  'osm:node/3744335928': 14105,
+  'osm:node/458918546': 14106,
+  'osm:node/11265181044': 33901,
+  'osm:node/13739215443': 4172,
+  'osm:node/5416663552': 4043,
+  'osm:node/13936960001': 42920,
+  'osm:node/11973468695': 24823,
+  'osm:node/11265612651': 50319,
+  'osm:node/4654823871': 486,
+  'osm:way/122209641': 25459,
+  'osm:node/5893382885': 22441,
+  'osm:node/12194843602': 4295,
+  'osm:node/9500927617': 15171,
+  'cat:igloofest-2027': 13265,
+  'cat:barbossa-jazz': 24759,
+  'cat:mtlatable-2026': 13261,
+  'cat:grand-marche-noel-2026': 29431,
+  'cat:marche-pvm-2026': 46591,
+  'cat:village-noel-atwater-2026': 46530,
+  'cat:marche-vieux-port-2026': 25034,
+  'cat:noel-parc-2026': 3323,
+  'cat:salon-metiers-art-2026': 13979,
+  'cat:jean-talon-fetes-2026': 22743,
+  'cat:raw-wine-2026': 41257,
+  'cat:timeout-fetes-2026': 39535,
+  'cat:noel-vegane-2026': 13258,
+  'cat:mtl-en-lumiere-2027': 15875,
+}
+for (const c of CATALOG) if (!c.video && VIDEO_OF[c.id]) c.video = MK(VIDEO_OF[c.id])
+
 export const isVideo = (url: string) => /\.(mp4|webm|mov)(\?|$)/i.test(url)
 /** Miniature d'une vidéo Mixkit (affichée avant la lecture). */
 export const posterOf = (url: string) => url.match(/assets\.mixkit\.co\/videos\/(\d+)\//) ? url.replace(/-720\.mp4$/, '-thumb-720-0.jpg') : undefined

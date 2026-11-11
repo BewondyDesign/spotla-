@@ -34,6 +34,13 @@ export function StoriesBar() {
   const meId = useStore((s) => s.meId)
   const nav = useNavigate()
   const hasMine = groups.some((g) => g.authorId === meId)
+  // Personne n'a encore de story : une ligne d'invitation plutôt qu'un rond seul.
+  if (groups.length === 0) return (
+    <button className="story-cta" onClick={() => nav('/create?mode=story')}>
+      <span className="story-add"><Plus size={20} /></span>
+      <span className="grow"><b>Ta soirée en story</b><small>30 s max · visible par tes abonnés</small></span>
+    </button>
+  )
   return (
     <div className="stories" role="list" aria-label="Stories">
       {!hasMine && (

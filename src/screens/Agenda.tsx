@@ -27,7 +27,7 @@ export function Agenda() {
     <div className="scr settings">
       <header className="pad set-head">
         <button className="iconbtn soft" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft size={20} /></button>
-        <h1>Agenda de Montréal</h1>
+        <h1>Activités à faire</h1>
         <span />
       </header>
       <div className="chips" role="group" aria-label="Filtres">
