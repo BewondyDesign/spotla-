@@ -4,8 +4,8 @@
   "description": "Trouve où sortir ce soir, près de toi.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#0D0B14",
-  "theme_color": "#0D0B14",
+  "background_color": "#0B0B0D",
+  "theme_color": "#0B0B0D",
   "lang": "fr",
   "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
 }

@@ -73,7 +73,7 @@ export async function createProfile(p: { id: string; name: string; handle?: stri
   const handle = p.handle ? cleanHandle(p.handle) : `${cleanHandle(p.name.replace(/\s+/g, '.')) || 'membre'}.${p.id.slice(0, 4)}`
   const { error } = await sb!.from('profiles').insert({
     id: p.id, name: p.name, handle, city: p.city ?? 'Montréal', kind: p.kind, vibes: p.vibes, venue_address: p.venueAddress ?? null,
-    color: p.kind === 'business' ? '#8B7CFF' : '#FF4F9A',
+    color: p.kind === 'business' ? '#3A3A40' : '#F2557A',
     bio: p.kind === 'business' ? 'Compte business en cours de vérification.' : '',
   })
   check(error)
@@ -114,7 +114,7 @@ export async function loadAll(meId: string, pos: { lat: number; lng: number }) {
     venue: e.venue, area: e.area, address: addr.get(e.id) ?? '', lat: e.lat, lng: e.lng, price: Number(e.price),
     ticketUrl: e.ticket_url ?? undefined, visibility: e.visibility, capacity: e.capacity ?? undefined, baseGoing: 0,
     going: byEvent(e.id, 'going', 'accepted'), requests: byEvent(e.id, 'requested'), accepted: byEvent(e.id, 'accepted'),
-    desc: e.description, colors: (e.colors?.length === 2 ? e.colors : ['#FF4F9A', '#8B7CFF']) as [string, string],
+    desc: e.description, colors: (e.colors?.length === 2 ? e.colors : ['#3A2A31', '#18181B']) as [string, string],
     createdAt: e.created_at, boosted: e.boosted, views: e.views, shares: e.shares, reports: e.hidden ? 3 : 0,
   }))
 

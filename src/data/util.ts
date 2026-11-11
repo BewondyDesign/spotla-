@@ -69,8 +69,9 @@ export function timeAgo(iso: string) {
 
 export const uid = (p: string) => `${p}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
+// Fonds d'affiche sobres : graphite avec une légère teinte.
 export const PALETTES: [string, string][] = [
-  ['#FF4F9A', '#FFB547'], ['#3CF0C8', '#8B7CFF'], ['#8B7CFF', '#FF4F9A'], ['#FFB547', '#FF6B5E'], ['#FF6B5E', '#FF4F9A'], ['#3CF0C8', '#FFB547'],
+  ['#3A2A31', '#18181B'], ['#2B2F36', '#141416'], ['#33302C', '#17171A'], ['#2E2A36', '#141416'], ['#3A2B2B', '#18181B'], ['#2A3330', '#141416'],
 ]
 
 export const VIBES = [

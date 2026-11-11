@@ -106,7 +106,15 @@ export const useStore = create<State>()(
               if (city) set({ city })
             }
           },
-          () => set({ geo: 'denied' }),
+          (err) => {
+            if (err.code === err.PERMISSION_DENIED) { set({ geo: 'denied' }); return }
+            // GPS lent (intérieur) : on prend tout de suite une position approximative (Wi-Fi / antennes).
+            navigator.geolocation.getCurrentPosition(
+              (p) => { if (get().geo !== 'ok') { set({ pos: { lat: p.coords.latitude, lng: p.coords.longitude }, geo: 'ok' }); get().reload(); reverseCity(p.coords.latitude, p.coords.longitude).then((city) => city && set({ city })) } },
+              () => { if (get().geo !== 'ok') set({ geo: 'denied' }) },
+              { enableHighAccuracy: false, timeout: 10000, maximumAge: 300_000 },
+            )
+          },
           { enableHighAccuracy: true, timeout: 15000, maximumAge: 10_000 },
         )
       },
@@ -142,7 +150,7 @@ export const useStore = create<State>()(
         const me: User = {
           id, name, kind, venueAddress,
           handle: name.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '') || 'moi',
-          verified: false, color: kind === 'business' ? '#8B7CFF' : '#FF4F9A',
+          verified: false, color: kind === 'business' ? '#3A3A40' : '#F2557A',
           bio: kind === 'business' ? 'Compte business en cours de vérification.' : '', city: 'Paris', followers: 0, following: [],
         }
         set((s) => ({ meId: id, vibes, users: [...s.users.filter((u) => u.id !== id), me] }))

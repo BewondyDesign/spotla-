@@ -29,7 +29,7 @@ export function MapScreen() {
   const layer = useRef<L.LayerGroup | null>(null)
   const vlayer = useRef<L.LayerGroup | null>(null)
   const [vsel, setVsel] = useState<string | null>(null)
-  const { venues, loading } = useVenues(pos, radius)
+  const { venues, loading, error, retry } = useVenues(pos, radius)
   const [found, setFound] = useState<Venue[] | null>(null)
   const [searching, setSearching] = useState(false)
   // Recherche libre dans le rayon choisi, à partir de ta position.
@@ -49,7 +49,7 @@ export function MapScreen() {
     // Tuiles OpenStreetMap (sans clé), assombries en CSS pour le thème nuit.
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19, className: 'tiles-night' }).addTo(m)
     me.current = L.marker([pos.lat, pos.lng], { icon: L.divIcon({ className: '', html: '<div class="pulse"></div>', iconSize: [18, 18] }), interactive: false }).addTo(m)
-    ring.current = L.circle([pos.lat, pos.lng], { radius: radius * 1000, color: '#FF4F9A', weight: 1, fillOpacity: 0.04, interactive: false }).addTo(m)
+    ring.current = L.circle([pos.lat, pos.lng], { radius: radius * 1000, color: '#F2557A', weight: 1, fillOpacity: 0.04, interactive: false }).addTo(m)
     vlayer.current = L.layerGroup().addTo(m)
     layer.current = L.layerGroup().addTo(m)
     m.on('click', () => { setSel(null); setVsel(null) })
@@ -110,7 +110,7 @@ export function MapScreen() {
         <div className="map-legend">
           <span className={`live-pill ${geo === 'ok' && !manual ? 'on' : ''}`}>{geo === 'ok' && !manual ? '● Position en direct' : manual ? 'Ville choisie à la main' : geo === 'denied' ? 'Localisation bloquée' : 'Localisation…'}</span>
           <span><i className="vpin club" /> Boîtes de nuit</span><span><i className="vpin" /> Bars et pubs</span>
-          <span className="muted">{loading || searching ? 'Recherche…' : `${shownVenues.length} lieu${shownVenues.length > 1 ? 'x' : ''} · ${visible.length} événement${visible.length > 1 ? 's' : ''} à ${radius} km`}</span>
+          {error && !found ? <button className="linkbtn" onClick={retry}>Lieux indisponibles · Réessayer</button> : <span className="muted">{loading || searching ? 'Recherche…' : `${shownVenues.length} lieu${shownVenues.length > 1 ? 'x' : ''} · ${visible.length} événement${visible.length > 1 ? 's' : ''} à ${radius} km`}</span>}
         </div>
       </div>
       {sheet && <LocationSheet onClose={() => setSheet(false)} />}
