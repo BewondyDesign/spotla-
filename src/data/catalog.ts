@@ -24,6 +24,8 @@ export interface CatalogItem {
   photo?: string
   /** Courte vidéo en boucle à la place de la photo */
   video?: string
+  /** Galerie de la fiche (photos et vidéos .mp4), sinon une galerie d'ambiance par catégorie */
+  gallery?: string[]
   rank: number
 }
 
@@ -89,4 +91,27 @@ export const CATALOG: CatalogItem[] = [
 export function activeCatalog(now = new Date()) {
   const today = now.toISOString().slice(0, 10)
   return CATALOG.filter((c) => !c.to || c.to >= today)
+}
+
+// Vidéos d'ambiance Mixkit (licence gratuite Mixkit, usage commercial libre).
+const MK = (id: number) => `https://assets.mixkit.co/videos/${id}/${id}-720.mp4`
+const CAT_VIDEOS: Record<Category, string[]> = {
+  club: [MK(9586), MK(341), MK(832)],
+  bar: [MK(4043), MK(4295), MK(22441)],
+  soiree: [MK(14088), MK(4043), MK(341)],
+  fetes: [MK(46591), MK(29479), MK(34702), MK(41949)],
+  gastro: [MK(32558), MK(22441), MK(4295)],
+}
+export const isVideo = (url: string) => /\.(mp4|webm|mov)(\?|$)/i.test(url)
+/** Miniature d'une vidéo Mixkit (affichée avant la lecture). */
+export const posterOf = (url: string) => url.match(/assets\.mixkit\.co\/videos\/(\d+)\//) ? url.replace(/-720\.mp4$/, '-thumb-720-0.jpg') : undefined
+
+/** Galerie de la fiche : la photo du lieu, une vidéo d'ambiance, puis deux autres photos de la même catégorie. */
+export function galleryOf(p: CatalogItem): string[] {
+  if (p.gallery?.length) return p.gallery
+  const same = CATALOG.filter((c) => c.category === p.category && c.id !== p.id && c.photo)
+  const i = Math.max(0, CATALOG.findIndex((c) => c.id === p.id))
+  const vids = CAT_VIDEOS[p.category]
+  const extra = [same[(i + 1) % Math.max(1, same.length)]?.photo, same[(i + 3) % Math.max(1, same.length)]?.photo]
+  return [...new Set([p.video, p.photo, vids[i % vids.length], ...extra].filter((x): x is string => !!x))]
 }

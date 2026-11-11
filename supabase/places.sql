@@ -41,6 +41,7 @@ alter table public.places add column if not exists category text not null defaul
 alter table public.places add column if not exists when_text text;
 alter table public.places add column if not exists ends_on date;
 alter table public.places add column if not exists video_url text;  -- courte vidéo en boucle sur la carte du lieu
+alter table public.places add column if not exists gallery text[];     -- galerie de la fiche : liens de photos et de vidéos .mp4, dans l'ordre
 create index if not exists place_reviews_place on public.place_reviews (place_id, created_at desc);
 
 -- Totaux par lieu : nombre de likes, nombre d'avis, note moyenne.

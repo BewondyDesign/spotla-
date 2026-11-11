@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, CalendarDays, Heart, MapPin, Navigation, Share2, Star } from 'lucide-react'
-import { CATALOG } from '../data/catalog'
+import { CATALOG, galleryOf } from '../data/catalog'
+import { Gallery } from '../components/Gallery'
 import { listReviews, saveReview, socialReady, toggleLike, useCatalog, useStats, type Review } from '../data/places'
 import { toast, useStore } from '../data/store'
 import { distanceKm, fmtKm, timeAgo } from '../data/util'
@@ -29,6 +30,7 @@ export function PlaceDetail() {
 
   if (!p) return <div className="scr"><div className="pad"><button className="iconbtn" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft /></button><p className="empty">Ce lieu n'est plus proposé.</p></div></div>
   const Icon = CAT_ICON[p.category]
+  const gallery = galleryOf(p)
 
   const like = async () => {
     if (!meId) return
@@ -44,7 +46,7 @@ export function PlaceDetail() {
   return (
     <div className="scr no-tab place-scr">
       <div className={`place-hero c-${p.category}`}>
-        {p.video ? <video src={p.video} poster={p.photo} autoPlay muted loop playsInline aria-hidden="true" /> : p.photo ? <img src={p.photo} alt="" /> : <Icon className="pcard-icon" size={160} strokeWidth={1} aria-hidden="true" />}
+        {gallery.length ? <Gallery items={gallery} /> : <Icon className="pcard-icon" size={160} strokeWidth={1} aria-hidden="true" />}
         <div className="ev-top">
           <button className="iconbtn glass" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft /></button>
           <button className="iconbtn glass" onClick={() => share(p.name, `#/place/${encodeURIComponent(p.id)}`)} aria-label="Partager"><Share2 size={20} /></button>
