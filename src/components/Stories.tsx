@@ -1,7 +1,8 @@
 import { money } from '../data/util'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ChevronRight, Plus, X, Volume2, VolumeX } from 'lucide-react'
+import { ChevronRight, Plus, Trash2, X, Volume2, VolumeX } from 'lucide-react'
+import { ConfirmDelete } from './Confirm'
 import { useStore } from '../data/store'
 import type { Story } from '../data/types'
 import { blobUrl, MAX_STORY_SECONDS } from '../data/media'
@@ -72,6 +73,9 @@ export function StoryViewer() {
   const users = useStore((s) => s.users)
   const events = useStore((s) => s.events)
   const seeStory = useStore((s) => s.seeStory)
+  const deleteStory = useStore((s) => s.deleteStory)
+  const myId = useStore((s) => s.meId)
+  const [askDel, setAskDel] = useState(false)
 
   // On fige l'ordre à l'ouverture pour ne pas sauter quand une story passe en « vue ».
   const [order] = useState(() => groups.map((g) => g.authorId))
@@ -167,11 +171,13 @@ export function StoryViewer() {
             {story.media.kind === 'video' && (
               <button className="iconbtn glass" onPointerDown={(e) => e.stopPropagation()} onClick={() => setMuted(!muted)} aria-label={muted ? 'Activer le son' : 'Couper le son'}>{muted ? <VolumeX size={18} /> : <Volume2 size={18} />}</button>
             )}
+            {story.authorId === myId && <button className="iconbtn glass" onPointerDown={(e) => e.stopPropagation()} onClick={() => { setPaused(true); setAskDel(true) }} aria-label="Supprimer ma story"><Trash2 size={18} /></button>}
             <button className="iconbtn glass" onPointerDown={(e) => e.stopPropagation()} onClick={close} aria-label="Fermer"><X size={20} /></button>
           </div>
         </div>
       </div>
 
+      {askDel && <ConfirmDelete title="Supprimer ta story ?" text="Elle disparaîtra pour tout le monde." onConfirm={() => { deleteStory(story.id); close() }} onClose={() => { setAskDel(false); setPaused(false) }} />}
       <button className="tapzone left" aria-label="Story précédente" onClick={prev} />
       <button className="tapzone right" aria-label="Story suivante" onClick={next} />
 

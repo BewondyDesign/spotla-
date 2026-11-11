@@ -855,3 +855,14 @@ p { line-height: 1.5; }
 .person-dot { position: absolute; right: -2px; bottom: -2px; width: 14px; height: 14px; border-radius: 50%; background: #4ADE80; border: 3px solid var(--night); }
 .person.out span:last-child { color: var(--brand); }
 .person span:last-child { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; }
+
+/* ---- Suppression de ses publications ---- */
+.post header { position: relative; }
+.post-more { margin-left: auto; width: 36px; height: 36px; color: var(--muted); background: transparent; }
+.comments .c-row { display: flex; align-items: flex-start; gap: 8px; }
+.c-del { flex: none; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); background: transparent; }
+.btn-danger { background: #E5484D; color: #fff; border: 0; }
+.textlink.danger { color: #F2777A; justify-self: start; font-size: 14px; }
+.del-sheet { gap: 10px; }
+.del-sheet .stack4 { margin-bottom: 6px; }
+.backdrop.fixed { position: fixed; z-index: 200; }

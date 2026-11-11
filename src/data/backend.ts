@@ -187,6 +187,9 @@ export const remote = {
   async comment(id: string, postId: string, me: string, body: string) {
     must(await sb!.from('comments').insert({ id, post_id: postId, author_id: me, body }))
   },
+  async remove(table: 'posts' | 'comments' | 'stories' | 'events', id: string) {
+    must(await sb!.from(table).delete().eq('id', id))
+  },
   async createPost(p: Post) {
     must(await sb!.from('posts').insert({ id: p.id, author_id: p.authorId, event_id: p.eventId ?? null, body: p.text, image_url: p.imageUrl ?? null }))
   },

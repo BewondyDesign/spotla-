@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Heart, MessageCircle, Send, Share2 } from 'lucide-react'
+import { Heart, MessageCircle, MoreHorizontal, Send, Share2, X } from 'lucide-react'
+import { ConfirmDelete } from './Confirm'
 import type { Post } from '../data/types'
 import { useStore } from '../data/store'
 import { blobUrl } from '../data/media'
@@ -13,6 +14,9 @@ import { share } from './share'
 export function PostCard({ p }: { p: Post }) {
   const users = useStore((s) => s.users)
   const meId = useStore((s) => s.meId)
+  const deletePost = useStore((s) => s.deletePost)
+  const deleteComment = useStore((s) => s.deleteComment)
+  const [ask, setAsk] = useState<null | { kind: 'post' } | { kind: 'comment'; id: string }>(null)
   const ev = useStore((s) => s.events.find((e) => e.id === p.eventId))
   const toggleLike = useStore((s) => s.toggleLike)
   const addComment = useStore((s) => s.addComment)
@@ -35,6 +39,7 @@ export function PostCard({ p }: { p: Post }) {
           <Link to={`/u/${u?.id}`}><b>{u?.name}</b> <Verified u={u} /></Link>
           <span>{timeAgo(p.createdAt)}</span>
         </div>
+        {p.authorId === meId && <button className="iconbtn post-more" onClick={() => setAsk({ kind: 'post' })} aria-label="Supprimer la publication"><MoreHorizontal size={20} /></button>}
       </header>
       {p.text && <p className="post-text">{p.text}</p>}
       {visual}
@@ -54,7 +59,7 @@ export function PostCard({ p }: { p: Post }) {
         <div className="comments">
           {(open ? p.comments : p.comments.slice(-1)).map((c) => {
             const cu = users.find((x) => x.id === c.authorId)
-            return <p key={c.id}><Link className="c-who" to={`/u/${c.authorId}`}><b>{cu?.name}</b></Link> {c.text}</p>
+            return <p key={c.id} className="c-row"><span className="grow"><Link className="c-who" to={`/u/${c.authorId}`}><b>{cu?.name}</b></Link> {c.text}</span>{c.authorId === meId && <button className="c-del" onClick={() => setAsk({ kind: 'comment', id: c.id })} aria-label="Supprimer mon commentaire"><X size={14} /></button>}</p>
           })}
           {!open && p.comments.length > 1 && <button className="textlink" onClick={() => setOpen(true)}>Voir les {p.comments.length} commentaires</button>}
           {open && (
@@ -64,6 +69,14 @@ export function PostCard({ p }: { p: Post }) {
             </form>
           )}
         </div>
+      )}
+      {ask && (
+        <ConfirmDelete
+          title={ask.kind === 'post' ? 'Supprimer la publication ?' : 'Supprimer ton commentaire ?'}
+          text={ask.kind === 'post' ? 'Elle disparaîtra pour tout le monde, avec ses likes et ses commentaires.' : 'Il disparaîtra pour tout le monde.'}
+          onConfirm={() => (ask.kind === 'post' ? deletePost(p.id) : deleteComment(p.id, ask.id))}
+          onClose={() => setAsk(null)}
+        />
       )}
     </article>
   )

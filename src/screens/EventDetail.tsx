@@ -1,5 +1,6 @@
 import { money } from '../data/util'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { ConfirmDelete } from '../components/Confirm'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Calendar, Check, Clapperboard, ExternalLink, Flag, Lock, MapPin, Share2, Ticket, Users, X } from 'lucide-react'
 import { askConfirm, canSeeAddress, goingCount, toast, useMe, useStore } from '../data/store'
@@ -16,7 +17,8 @@ export function EventDetail() {
   const users = useStore((s) => s.users)
   const pos = useStore((s) => s.pos)
   const stories = useStore((s) => s.stories)
-  const { toggleGoing, requestJoin, answerRequest, report, bump, toggleFollow } = useStore.getState()
+  const { toggleGoing, requestJoin, answerRequest, report, bump, toggleFollow, deleteEvent } = useStore.getState()
+  const [askDel, setAskDel] = useState(false)
   const me = useMe()
   const groups = useStoryGroups()
 
@@ -96,6 +98,9 @@ export function EventDetail() {
             </div>
           </section>
         )}
+
+        {mine && <button className="textlink danger" onClick={() => setAskDel(true)}>Supprimer cette soirée</button>}
+        {askDel && <ConfirmDelete title="Supprimer cette soirée ?" text="Elle disparaîtra de l'app pour tout le monde, avec les inscriptions." onConfirm={() => { deleteEvent(e.id); nav('/', { replace: true }) }} onClose={() => setAskDel(false)} />}
 
         {mine && (
           <section className="stack8">

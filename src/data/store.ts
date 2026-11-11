@@ -58,6 +58,10 @@ interface State {
   createPost: (p: { text: string; eventId?: string; imageKey?: string; imageUrl?: string }) => void
   toggleLike: (postId: string) => void
   addComment: (postId: string, text: string) => void
+  deletePost: (postId: string) => void
+  deleteComment: (postId: string, commentId: string) => void
+  deleteStory: (storyId: string) => void
+  deleteEvent: (eventId: string) => void
   toggleFollow: (userId: string) => void
   updateProfile: (patch: { name?: string; handle?: string; city?: string; bio?: string; avatarUrl?: string; coverUrl?: string; coverKind?: 'image' | 'video' }) => Promise<void>
   report: (eventId: string) => void
@@ -243,6 +247,24 @@ export const useStore = create<State>()(
         const id = uid('c')
         sync(() => remote.comment(id, postId, get().meId!, text))
         set((s) => ({ posts: s.posts.map((p) => (p.id === postId ? { ...p, comments: [...p.comments, { id, authorId: s.meId!, text, createdAt: new Date().toISOString() }] } : p)) }))
+      },
+
+      // Chacun peut supprimer ce qu'il a publié, quand il veut (la base refuse le reste).
+      deletePost: (postId) => {
+        set((s) => ({ posts: s.posts.filter((p) => p.id !== postId) }))
+        sync(() => remote.remove('posts', postId))
+      },
+      deleteComment: (postId, commentId) => {
+        set((s) => ({ posts: s.posts.map((p) => (p.id === postId ? { ...p, comments: p.comments.filter((c) => c.id !== commentId) } : p)) }))
+        sync(() => remote.remove('comments', commentId))
+      },
+      deleteStory: (storyId) => {
+        set((s) => ({ stories: s.stories.filter((st) => st.id !== storyId) }))
+        sync(() => remote.remove('stories', storyId))
+      },
+      deleteEvent: (eventId) => {
+        set((s) => ({ events: s.events.filter((e) => e.id !== eventId), posts: s.posts.map((p) => (p.eventId === eventId ? { ...p, eventId: undefined } : p)) }))
+        sync(() => remote.remove('events', eventId))
       },
 
       updateProfile: async (patch) => {
