@@ -39,7 +39,7 @@ const hourIn = (d: Date) => Number(new Intl.DateTimeFormat('en-US', { hour: 'num
 const mtlHour = () => hourIn(new Date())
 const greet = (en: boolean) => { const h = mtlHour(); return h >= 5 && h < 12 ? (en ? 'Good morning' : 'Bonjour') : h >= 12 && h < 18 ? (en ? 'Good afternoon' : 'Bel après-midi') : (en ? 'Good evening' : 'Bonsoir') }
 /** « quand » en toutes lettres, FR puis EN. */
-const WHEN: Record<Slot, [string, string]> = { now: ['maintenant', 'now'], aprem: ['cet après-midi', 'this afternoon'], soir: ['ce soir', 'tonight'], weekend: ['ce week-end', 'this weekend'] }
+const WHEN: Record<Slot, [string, string]> = { now: ['aujourd\'hui', 'today'], aprem: ['cet après-midi', 'this afternoon'], soir: ['ce soir', 'tonight'], weekend: ['ce week-end', 'this weekend'] }
 
 type Slot = 'now' | 'aprem' | 'soir' | 'weekend'
 const SLOTS: { k: Slot; label: string; en: string }[] = [
