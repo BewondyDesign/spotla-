@@ -928,3 +928,12 @@ p { line-height: 1.5; }
 .ev-cta { display: flex; gap: 10px; }
 .scr.no-tab.ev-scr { padding-bottom: calc(32px + var(--safe-b)); }
 .solo-card .btn-primary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+
+/* Entête : photo de saison + texte bien lisible */
+.home-hero .hero-shade { background: linear-gradient(180deg, rgba(11,11,13,.6) 0%, rgba(11,11,13,.2) 26%, rgba(11,11,13,.55) 52%, rgba(11,11,13,.92) 78%, var(--ink) 100%); }
+.home-hero .hero-hi, .home-hero .hero-h { text-shadow: 0 2px 14px rgba(0,0,0,.55); }
+.home-hero .hero-hi { color: rgba(255,255,255,.9); }
+/* FR / EN plus discret */
+.lang-switch { padding: 1px; }
+.lang-switch button { font-size: 10px; padding: 5px 7px; letter-spacing: .02em; }
+.lang-switch.glass button.on { background: rgba(255,255,255,.92); color: #0B0B0D; }

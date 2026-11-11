@@ -10,15 +10,29 @@ import { PlaceCard } from '../components/PlaceCard'
 import { useCatalog } from '../data/places'
 import { inNextDays, isOnNow, type AgendaItem, useAgenda } from '../data/agenda'
 import { AgendaCard } from '../components/AgendaCard'
-import { AutoVideo } from '../components/AutoVideo'
-import { MK } from '../data/ambiance'
 import { Avatar, Verified } from '../components/ui'
 import type { Category } from '../data/catalog'
 import type { SpotEvent } from '../data/types'
 import { LangSwitch, useLang, useT } from '../data/i18n'
 
-// Vidéo d'entête selon la saison : rues enneigées et lumières de Noël en hiver, foule de festival le reste de l'année.
-const HERO_VIDS = (() => { const m = new Date().getMonth(); return m === 10 || m === 11 || m === 0 ? [3323, 29431] : m >= 5 && m <= 7 ? [14088, 13265] : [33901, 4187] })()
+// Photo d'entête choisie automatiquement selon la date à Montréal : temps des fêtes, hiver, printemps, été, automne.
+type Season = 'fetes' | 'hiver' | 'printemps' | 'ete' | 'automne'
+const SEASON_PHOTO: Record<Season, string> = {
+  fetes: 'photo-1702214957911-03f594aa4181', // rue enneigée la nuit, sapin illuminé
+  hiver: 'photo-1643915868532-0ba6a4c1be1b', // rue sous la neige, le soir
+  printemps: 'photo-1683665265710-9364501fcec0', // gens assis dans l'herbe
+  ete: 'photo-1683624668626-2fce96bf73a9', // belvédère au-dessus de la ville
+  automne: 'photo-1697978235636-e3c4d9898983', // allée de parc aux feuilles rouges
+}
+const seasonOf = (d = new Date()): Season => {
+  const md = Number(new Intl.DateTimeFormat('en-CA', { month: '2-digit', day: '2-digit', timeZone: 'America/Montreal' }).format(d).replace(/\D/g, ''))
+  if (md >= 1201 || md <= 106) return 'fetes'
+  if (md <= 320) return 'hiver'
+  if (md <= 620) return 'printemps'
+  if (md <= 922) return 'ete'
+  return 'automne'
+}
+const heroPhoto = () => `https://images.unsplash.com/${SEASON_PHOTO[seasonOf()]}?auto=format&fit=crop&w=900&h=1100&q=70`
 /** Heure de Montréal, pour saluer au bon moment. */
 const hourIn = (d: Date) => Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: 'America/Montreal' }).format(d)) % 24
 const mtlHour = () => hourIn(new Date())
@@ -105,7 +119,7 @@ export function Home() {
   return (
     <div className="scr home-scr">
       <header className="home-hero">
-        <AutoVideo className="hero-vid" src={MK(HERO_VIDS[new Date().getDate() % HERO_VIDS.length])} />
+        <img className="hero-vid" src={heroPhoto()} alt="" />
         <div className="hero-shade" />
         <div className="hero-top">
           <span className="wordmark light">spotla<i /></span>
