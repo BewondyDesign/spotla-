@@ -23,6 +23,7 @@ import { EventChat } from './screens/EventChat'
 import { useOutingReminders } from './data/reminders'
 import { AgeGate } from './components/AgeGate'
 import { Explore } from './screens/Explore'
+import { Intro } from './components/Intro'
 import { startAutoTranslate, useLang } from './data/i18n'
 
 function Shell() {
@@ -112,5 +113,5 @@ export function App() {
   const lang = useLang((s) => s.lang)
   useEffect(() => { startAutoTranslate(lang) }, [lang])
   // Changer de langue remonte l'app : le texte d'origine revient, puis il est traduit si besoin.
-  return <HashRouter key={lang}><Shell /></HashRouter>
+  return <><HashRouter key={lang}><Shell /></HashRouter><Intro /></>
 }
