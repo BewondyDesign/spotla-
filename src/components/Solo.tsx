@@ -57,7 +57,6 @@ export function VibeGauge({ e }: { e: SpotEvent }) {
   const t = useT()
   const en = useLang((s) => s.lang) === 'en'
   const label = (l: VibeLevel) => (en ? VIBE_EN[l] : VIBE_LABEL[l])
-  const [open, setOpen] = useState(false)
   const [v, setV] = useState<{ counts: Record<VibeLevel, number>; mine: VibeLevel | null; total: number } | null>(null)
   const load = () => vibeOf(e.id, meId).then(setV)
   useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t) }, [e.id, meId]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -73,13 +72,10 @@ export function VibeGauge({ e }: { e: SpotEvent }) {
       <div className="row gap10">
         <i className={`vibe-dot${lvl ? ` l${lvl}` : ''}`} aria-hidden="true" />
         <span className="grow small">{lvl ? <><b>{label(lvl)}</b> · {v.total} {t('avis sur place', 'on site')}</> : <span className="muted">{t('Ambiance : pas encore d\'avis', 'Vibe: no votes yet')}</span>}</span>
-        <button className="textlink small" onClick={() => setOpen(!open)}>{open ? t('Fermer', 'Close') : v.mine ? t('Changer mon avis', 'Change my vote') : t('Donner mon avis', 'Rate the vibe')}</button>
       </div>
-      {open && (
-        <div className="vibe-chips" role="group" aria-label="Ton avis sur l'ambiance">
-          {([1, 2, 3] as VibeLevel[]).map((l) => <button key={l} className={v.mine === l ? 'on' : ''} onClick={() => { vote(l); setOpen(false) }}>{label(l)}</button>)}
-        </div>
-      )}
+      <div className="vibe-chips" role="group" aria-label="Ton avis sur l'ambiance">
+        {([1, 2, 3] as VibeLevel[]).map((l) => <button key={l} className={v.mine === l ? 'on' : ''} onClick={() => vote(l)}>{label(l)}</button>)}
+      </div>
     </div>
   )
 }
