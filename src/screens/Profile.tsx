@@ -1,9 +1,9 @@
 import { useShallow } from 'zustand/react/shallow'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, BarChart3, Camera, LogOut, Pencil, Share2, X } from 'lucide-react'
+import { ArrowLeft, BarChart3, Camera, Pencil, Settings, Share2, X } from 'lucide-react'
 import { share } from '../components/share'
-import { askConfirm, toast, useMe, useStore } from '../data/store'
+import { toast, useMe, useStore } from '../data/store'
 import { isRemote, uploadMedia } from '../data/backend'
 import { momentOf } from '../data/util'
 import { useStoryGroups } from '../components/Stories'
@@ -26,7 +26,6 @@ export function Profile() {
   const posts = useStore(useShallow((s) => s.posts.filter((p) => p.authorId === uid)))
   const events = useStore(useShallow((s) => s.events.filter((e) => e.hostId === uid && momentOf(e) !== 'past')))
   const toggleFollow = useStore((s) => s.toggleFollow)
-  const logout = useStore((s) => s.logout)
   const group = useStoryGroups().find((g) => g.authorId === uid)
   const [tab, setTab] = useState<'places' | 'events' | 'posts'>('places')
   const [editing, setEditing] = useState(false)
@@ -54,7 +53,7 @@ export function Profile() {
             {isMe && u.kind === 'business' && <Link className="iconbtn glass sm" to="/business" aria-label="Espace business"><BarChart3 size={17} /></Link>}
             <button className="iconbtn glass sm" onClick={() => share(`${u.name} sur SpotLa`, `#/u/${u.id}`)} aria-label="Partager le profil"><Share2 size={17} /></button>
             {isMe && <button className="iconbtn glass sm" onClick={() => setEditing(true)} aria-label="Modifier le profil"><Pencil size={17} /></button>}
-            {isMe && <button className="iconbtn glass sm" onClick={async () => { if (await askConfirm('Se déconnecter ?', 'Se déconnecter')) logout() }} aria-label="Se déconnecter"><LogOut size={17} /></button>}
+            {isMe && <Link className="iconbtn glass sm" to="/settings" aria-label="Réglages"><Settings size={17} /></Link>}
           </div>
         </div>
       </div>

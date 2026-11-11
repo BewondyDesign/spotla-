@@ -691,3 +691,26 @@ a.review { display: grid; gap: 4px; }
 .edit-cover span { position: relative; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 0 12px; text-align: center; }
 .edit-av { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 14px; font-weight: 600; }
 .scr.prof { padding-top: 0; } .prof-cover-bar { top: calc(10px + var(--safe-t)); }
+.pick-photo { display: flex; align-items: center; gap: 14px; cursor: pointer; }
+.pick-photo-img { width: 72px; height: 72px; border-radius: 50%; flex: none; display: grid; place-items: center; border: 1.5px dashed #3A3A40; color: var(--brand); background: var(--night) center / cover no-repeat; }
+.pick-photo b { display: block; font-size: 15px; }
+.pick-photo small { color: var(--muted); font-size: 12px; }
+/* Réglages */
+.set-head { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; text-align: center; }
+.set-head h1 { font-size: 17px; font-weight: 700; }
+.set-group { display: grid; gap: 0; border: 1px solid #222226; border-radius: 18px; background: var(--night); overflow: hidden; }
+.set-group h2 { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 14px 16px 6px; }
+.set-group > .btn, .set-group > .hint { margin: 10px 16px 14px; width: auto; }
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 16px; border-top: 1px solid #1E1E22; font-size: 14px; text-align: left; width: 100%; color: var(--text); }
+.set-row > span { color: #C8C8CE; flex: none; }
+.set-row input, .set-row textarea { background: none; border: 0; color: var(--text); font: inherit; text-align: right; min-width: 0; flex: 1; outline: none; }
+.set-row input:focus, .set-row textarea:focus { color: var(--brand); }
+.set-row.col { display: grid; gap: 6px; }
+.set-row.col textarea { text-align: left; resize: none; }
+.set-at { display: flex; align-items: center; flex: 1; justify-content: flex-end; color: var(--muted); min-width: 0; }
+.set-at input { flex: 0 1 auto; width: 100%; }
+.set-row.link svg { color: var(--muted); }
+.set-out { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 16px; border: 1px solid #222226; color: #FF6B6B; font-weight: 600; }
+.hint.center { text-align: center; }
+.set-at input { flex: 0 1 auto; width: auto; field-sizing: content; min-width: 3ch; max-width: 100%; }
+.set-row.col textarea { width: 100%; }

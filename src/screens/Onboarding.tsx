@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Building2, Eye, EyeOff, PartyPopper } from 'lucide-react'
+import { ArrowLeft, Building2, Camera, Eye, EyeOff, PartyPopper } from 'lucide-react'
 import { toast, useStore } from '../data/store'
-import { cleanHandle, createProfile, isRemote, sendPasswordReset, signIn, signInWithGoogle, signUp, signupInfo, updatePassword } from '../data/backend'
+import { cleanHandle, createProfile, isRemote, uploadMedia, sendPasswordReset, signIn, signInWithGoogle, signUp, signupInfo, updatePassword } from '../data/backend'
 import { VIBES } from '../data/util'
 import type { AccountKind } from '../data/types'
 
@@ -244,18 +244,27 @@ function ProfileForm({ authId }: { authId?: string }) {
   const [handle, setHandle] = useState('')
   const [addr, setAddr] = useState('')
   const [vibes, setVibes] = useState<string[]>(['danser', 'live'])
+  // Photo de profil : celle de Google par défaut, ou une photo choisie.
+  const [photo, setPhoto] = useState<{ url: string; file?: File } | null>(null)
 
   useEffect(() => {
     if (!isRemote || !authId) return
-    signupInfo().then((i) => { setName((n) => n || i.name); setHandle((h) => h || cleanHandle(i.handle || i.name.replace(/\s+/g, '.'))) })
+    signupInfo().then((i) => {
+      setName((n) => n || i.name); setHandle((h) => h || cleanHandle(i.handle || i.name.replace(/\s+/g, '.')))
+      if (i.avatar) setPhoto((ph) => ph ?? { url: i.avatar })
+    })
   }, [authId])
 
   const ok = name.trim().length >= 2 && (!isRemote || handle.length >= 3) && (kind === 'perso' || addr.trim().length > 4)
   const submit = async () => {
     const p = { name: name.trim(), kind, vibes, venueAddress: kind === 'business' ? addr.trim() : undefined }
-    if (!isRemote) return onboard(p)
+    if (!isRemote) { onboard(p); if (photo) useStore.getState().updateProfile({ avatarUrl: photo.url }); return }
     setBusy(true)
-    try { await createProfile({ id: authId!, handle, city: useStore.getState().city, ...p }); await reload() } catch (e) { toast('Création du profil impossible', (e as Error).message); setBusy(false) }
+    try {
+      let avatarUrl = photo?.url
+      if (photo?.file) avatarUrl = await uploadMedia(authId!, photo.file, 'profile').catch(() => undefined)
+      await createProfile({ id: authId!, handle, city: useStore.getState().city, ...p, avatarUrl }); await reload()
+    } catch (e) { toast('Création du profil impossible', (e as Error).message); setBusy(false) }
   }
 
   return (
@@ -263,6 +272,11 @@ function ProfileForm({ authId }: { authId?: string }) {
       <div className="pad stack18">
         <div className="steps"><i className="on" /><i className="on" /></div>
         <h2 className="h2">Ton profil</h2>
+        <label className="pick-photo">
+          <span className="pick-photo-img" style={photo ? { backgroundImage: `url(${photo.url})` } : undefined}>{!photo && <Camera size={26} />}</span>
+          <span><b>{photo ? 'Changer la photo' : 'Ajoute ta photo'}</b><small>{kind === 'business' ? 'Ton logo ou une photo du lieu' : 'Pour qu\'on te reconnaisse en soirée'}</small></span>
+          <input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) setPhoto({ url: URL.createObjectURL(f), file: f }) }} />
+        </label>
         <div className="kind-pick" role="radiogroup" aria-label="Type de compte">
           <button role="radio" aria-checked={kind === 'perso'} onClick={() => setKind('perso')}>
             <PartyPopper /><b>Je veux sortir</b><span>Découvrir, publier mes soirées, partager des stories.</span>

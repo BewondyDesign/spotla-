@@ -59,7 +59,7 @@ interface State {
   toggleLike: (postId: string) => void
   addComment: (postId: string, text: string) => void
   toggleFollow: (userId: string) => void
-  updateProfile: (patch: { bio?: string; avatarUrl?: string; coverUrl?: string; coverKind?: 'image' | 'video' }) => Promise<void>
+  updateProfile: (patch: { name?: string; handle?: string; city?: string; bio?: string; avatarUrl?: string; coverUrl?: string; coverKind?: 'image' | 'video' }) => Promise<void>
   report: (eventId: string) => void
   boost: (eventId: string) => void
   bump: (eventId: string, field: 'views' | 'shares') => void

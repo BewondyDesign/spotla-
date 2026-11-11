@@ -1,3 +1,4 @@
+import { Settings } from './screens/Settings'
 import { useEffect } from 'react'
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useMe, useStore } from './data/store'
@@ -53,7 +54,7 @@ function Shell() {
   if (recovery) return <div className="app"><NewPassword /><Toast /></div>
   if (!meId) return <div className="app"><Onboarding /><Toast /></div>
   if (!me) return <div className="app"><Onboarding authId={meId} /><Toast /></div>
-  const fullscreen = loc.pathname.startsWith('/event/') || loc.pathname.startsWith('/place/') || loc.pathname.startsWith('/stories/')
+  const fullscreen = loc.pathname.startsWith('/event/') || loc.pathname.startsWith('/place/') || loc.pathname.startsWith('/stories/') || loc.pathname === '/settings'
   return (
     <div className="app">
       <Routes>
@@ -64,6 +65,7 @@ function Shell() {
         <Route path="/stories/:authorId" element={<StoryViewer />} />
         <Route path="/create" element={<Create />} />
         <Route path="/u/:id" element={<Profile />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="/business" element={<Business />} />
         <Route path="/notifs" element={<Notifs />} />
         <Route path="*" element={<Navigate to="/" replace />} />

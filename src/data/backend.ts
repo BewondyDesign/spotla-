@@ -65,16 +65,27 @@ export async function updatePassword(password: string) {
 export async function signupInfo() {
   const { data } = await sb!.auth.getUser()
   const m = (data.user?.user_metadata ?? {}) as Record<string, string>
-  return { name: m.name || m.full_name || '', handle: m.handle || '' }
+  return { name: m.name || m.full_name || '', handle: m.handle || '', avatar: m.avatar_url || m.picture || '' }
 }
 export const signOut = () => sb!.auth.signOut()
+/** E-mail du compte, et si la connexion passe par Google. */
+export async function accountInfo() {
+  const { data } = await sb!.auth.getUser()
+  return { email: data.user?.email ?? '', google: data.user?.app_metadata?.provider === 'google' }
+}
+/** Changement d'e-mail : Supabase envoie un lien de confirmation à la nouvelle adresse. */
+export async function updateEmail(email: string) {
+  const { error } = await sb!.auth.updateUser({ email }, { emailRedirectTo: home() })
+  check(error)
+}
 
-export async function createProfile(p: { id: string; name: string; handle?: string; city?: string; kind: AccountKind; vibes: string[]; venueAddress?: string }) {
+export async function createProfile(p: { id: string; name: string; handle?: string; city?: string; kind: AccountKind; vibes: string[]; venueAddress?: string; avatarUrl?: string }) {
   const handle = p.handle ? cleanHandle(p.handle) : `${cleanHandle(p.name.replace(/\s+/g, '.')) || 'membre'}.${p.id.slice(0, 4)}`
   const { error } = await sb!.from('profiles').insert({
     id: p.id, name: p.name, handle, city: p.city ?? 'Montréal', kind: p.kind, vibes: p.vibes, venue_address: p.venueAddress ?? null,
     color: p.kind === 'business' ? '#3A3A40' : '#F2557A',
     bio: p.kind === 'business' ? 'Compte business en cours de vérification.' : '',
+    ...(p.avatarUrl ? { avatar_url: p.avatarUrl } : {}),
   })
   check(error)
 }
@@ -151,14 +162,18 @@ export const remote = {
     if (status === null) { must(await sb!.from('attendances').delete().match({ event_id: eventId, user_id: userId })); return }
     must(await sb!.from('attendances').upsert({ event_id: eventId, user_id: userId, status }))
   },
-  async updateProfile(me: string, patch: { bio?: string; avatarUrl?: string | null; coverUrl?: string | null; coverKind?: 'image' | 'video' | null }) {
+  async updateProfile(me: string, patch: { name?: string; handle?: string; city?: string; bio?: string; avatarUrl?: string | null; coverUrl?: string | null; coverKind?: 'image' | 'video' | null }) {
     const row: Record<string, unknown> = {}
     if (patch.bio !== undefined) row.bio = patch.bio
+    if (patch.name !== undefined) row.name = patch.name
+    if (patch.handle !== undefined) row.handle = patch.handle
+    if (patch.city !== undefined) row.city = patch.city
     if (patch.avatarUrl !== undefined) row.avatar_url = patch.avatarUrl
     if (patch.coverUrl !== undefined) row.cover_url = patch.coverUrl
     if (patch.coverKind !== undefined) row.cover_kind = patch.coverKind
     const r = await sb!.from('profiles').update(row).eq('id', me)
     if (r.error && /avatar_url|cover_url|cover_kind|schema cache|column/i.test(r.error.message)) throw new Error('Il manque une petite mise à jour de la base : exécute supabase/profile-media.sql dans Supabase.')
+    if (r.error && /profiles_handle_key|duplicate key/i.test(r.error.message)) throw new Error('Ce nom d\'utilisateur est déjà pris.')
     must(r)
   },
   async follow(me: string, other: string, on: boolean) {
