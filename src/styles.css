@@ -714,3 +714,67 @@ a.review { display: grid; gap: 4px; }
 .hint.center { text-align: center; }
 .set-at input { flex: 0 1 auto; width: auto; field-sizing: content; min-width: 3ch; max-width: 100%; }
 .set-row.col textarea { width: 100%; }
+
+/* ===== v4 : rendu « app pro » — police système, pas de zoom, plus d'air ===== */
+:root {
+  --f-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --f-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+html, body { overflow-x: hidden; max-width: 100%; touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+#root, .scr { overflow-x: hidden; }
+/* iOS zoome sur un champ dont le texte fait moins de 16 px : on reste à 16 px partout. */
+input, textarea, select, .input, .set-row input, .set-row textarea { font-size: 16px !important; }
+
+/* Titres : sobres, lisibles, jamais serrés */
+h1, h2, h3, h4 { line-height: 1.25; letter-spacing: -.01em; font-weight: 700; }
+.title-xl { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+.sec-title { font-size: 19px; font-weight: 700; letter-spacing: -.01em; line-height: 1.3; }
+.sec-title.big { font-size: 22px; font-weight: 700; letter-spacing: -.015em; }
+.title-xl em, .sec-title em, .onboard em { font-style: normal; }
+.loc b, .home-head .loc b { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+.prof-name { font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+.wordmark { font-weight: 700; font-size: 11px; letter-spacing: .14em; }
+.kicker { font-size: 11px; font-weight: 600; letter-spacing: .1em; }
+.avatar, .pcard-rank, .brand, .splash, .stat b, .passport-sum b { font-weight: 700; }
+.h2 { line-height: 1.25; letter-spacing: -.01em; }
+p { line-height: 1.5; }
+
+/* Espacements : entêtes et contenus respirent */
+.scr { padding-top: calc(16px + var(--safe-t)); }
+.home-head { padding-top: 6px; padding-bottom: 14px; row-gap: 0; }
+.home-head .loc { gap: 4px; }
+.stories { margin-top: 4px; margin-bottom: 8px; }
+.rail-sec { margin-top: 32px; }
+.rail-head { gap: 6px; margin-bottom: 16px; }
+.sec-head { margin: 32px 0 12px; }
+.set-head { margin-bottom: 24px; }
+.settings .stack16 { gap: 24px; }
+.set-group h2 { padding: 16px 16px 8px; }
+.set-row { padding: 15px 16px; }
+.prof-id { gap: 6px; }
+.prof-nav { margin: 28px 0 18px; }
+.confirm h2, .confirm .sec-title { margin-bottom: 4px; }
+
+/* Cartes du Top 10 : hautes, image ou vidéo plein cadre, infos et étoiles dedans */
+.pcard { position: relative; flex: 0 0 74%; max-width: 300px; aspect-ratio: 3 / 4.4; display: block; border: 0; border-radius: 24px; background: var(--night-2); }
+.pcard.c-club { background: #241B2B; } .pcard.c-bar { background: #2A2120; } .pcard.c-soiree { background: #1D2230; } .pcard.c-fetes { background: #1E2A24; } .pcard.c-gastro { background: #2B2619; }
+.pcard-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pcard > .pcard-icon { position: absolute; top: 34%; left: 50%; transform: translate(-50%, -50%); color: rgba(255, 255, 255, .1); }
+.pcard::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, .35) 0%, transparent 22%, transparent 45%, rgba(0, 0, 0, .82) 100%); pointer-events: none; }
+.pcard-rank, .pcard-like { z-index: 2; }
+.pcard-rank { top: 14px; left: 14px; }
+.pcard-like { top: 12px; right: 12px; }
+.pcard-over { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; padding: 16px 16px 18px; display: grid; gap: 6px; }
+.pcard-over .pcard-when { position: static; justify-self: start; width: auto; background: rgba(255, 255, 255, .14); margin-bottom: 4px; }
+.pcard-over h3 { font-size: 20px; font-weight: 700; line-height: 1.2; }
+.pcard-over h3 a { color: #fff; }
+.pcard-over .pcard-meta { color: rgba(255, 255, 255, .72); }
+.pcard-over .pcard-stats { color: #fff; margin-top: 2px; gap: 12px; }
+.stars { display: inline-flex; align-items: center; gap: 6px; }
+.stars-row { display: inline-flex; gap: 2px; }
+.stars svg { fill: none; stroke: rgba(255, 255, 255, .45); }
+.stars svg.on { fill: #FFC53D; stroke: #FFC53D; }
+.stars-n { font-weight: 600; }
+.place-hero video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.scr.place-scr, .scr.prof { padding-top: 0; }
+.scr.map-scr { padding-top: 0; } .set-row.col { grid-template-columns: minmax(0, 1fr); } .set-row.col textarea { width: 100% !important; justify-self: stretch; }

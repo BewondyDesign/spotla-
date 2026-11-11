@@ -102,9 +102,9 @@ export function useCatalog() {
       let extra: CatalogItem[] = []
       if (isRemote) {
         const r = await sb!.from('places').select('*').eq('featured', true)
-        if (!r.error) extra = (r.data as { id: string; name: string; kind: string; category?: string; area?: string; address?: string; lat: number; lng: number; description?: string; photo_url?: string; when_text?: string; ends_on?: string }[])
+        if (!r.error) extra = (r.data as { id: string; name: string; kind: string; category?: string; area?: string; address?: string; lat: number; lng: number; description?: string; photo_url?: string; video_url?: string; when_text?: string; ends_on?: string }[])
           .filter((p) => !p.ends_on || p.ends_on >= new Date().toISOString().slice(0, 10))
-          .map((p, i) => ({ id: p.id, name: p.name, kind: p.kind, category: (p.category as CatalogItem['category']) || 'bar', area: p.area ?? '', address: p.address, lat: p.lat, lng: p.lng, blurb: p.description ?? '', photo: p.photo_url, when: p.when_text, to: p.ends_on, rank: 100 + i }))
+          .map((p, i) => ({ id: p.id, name: p.name, kind: p.kind, category: (p.category as CatalogItem['category']) || 'bar', area: p.area ?? '', address: p.address, lat: p.lat, lng: p.lng, blurb: p.description ?? '', photo: p.photo_url, video: p.video_url, when: p.when_text, to: p.ends_on, rank: 100 + i }))
       }
       // Une ligne de la table remplace l'entrée intégrée du même id (ex. pour ajouter une photo).
       const byId = new Map(base.map((c) => [c.id, c]))

@@ -44,7 +44,7 @@ export function PlaceDetail() {
   return (
     <div className="scr no-tab place-scr">
       <div className={`place-hero c-${p.category}`}>
-        {p.photo ? <img src={p.photo} alt="" /> : <Icon className="pcard-icon" size={160} strokeWidth={1} aria-hidden="true" />}
+        {p.video ? <video src={p.video} poster={p.photo} autoPlay muted loop playsInline aria-hidden="true" /> : p.photo ? <img src={p.photo} alt="" /> : <Icon className="pcard-icon" size={160} strokeWidth={1} aria-hidden="true" />}
         <div className="ev-top">
           <button className="iconbtn glass" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft /></button>
           <button className="iconbtn glass" onClick={() => share(p.name, `#/place/${encodeURIComponent(p.id)}`)} aria-label="Partager"><Share2 size={20} /></button>

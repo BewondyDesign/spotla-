@@ -22,6 +22,8 @@ export interface CatalogItem {
   to?: string
   free?: boolean
   photo?: string
+  /** Courte vidéo en boucle à la place de la photo */
+  video?: string
   rank: number
 }
 
