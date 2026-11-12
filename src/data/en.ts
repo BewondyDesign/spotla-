@@ -2,6 +2,7 @@
 // Les textes avec des parties variables sont dans PATTERNS plus bas.
 export const EN: Record<string, string> = {
   // ---------- Général ----------
+  'Compte suspendu': 'Account suspended', 'Ton compte a été suspendu parce qu\'il ne respecte pas les règles de SpotLa. Pour contester, écris-nous depuis la page des règles.': 'Your account was suspended because it breaks the SpotLa rules. To appeal, write to us from the rules page.', 'Voir les règles': 'See the rules', 'Espace admin': 'Admin space', 'Chiffres, signalements, bugs': 'Numbers, reports, bugs',
   'Retour': 'Back', 'Fermer': 'Close', 'Ambiance : pas encore d\'avis': 'Vibe: no votes yet', 'Donner mon avis': 'Rate the vibe', 'Changer mon avis': 'Change my vote', 'Annuler': 'Cancel', 'Supprimer': 'Delete', 'Confirmer': 'Confirm', 'Envoyer': 'Send',
   'Enregistrer': 'Save', 'Enregistrement…': 'Saving…', 'Envoi…': 'Sending…', 'Suivant': 'Next', 'Voir': 'View', 'Partager': 'Share',
   'Réessayer': 'Try again', 'Réessaie dans un instant.': 'Try again in a moment.', 'Ça n\'a pas marché': 'That didn\'t work',

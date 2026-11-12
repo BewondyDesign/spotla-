@@ -48,6 +48,11 @@ export function Settings() {
       </header>
 
       <div className="pad stack16">
+        {me.isAdmin && (
+          <button className="set-group set-admin" onClick={() => nav('/admin')}>
+            <span><b>Espace admin</b><br /><small className="muted">Chiffres, signalements, bugs</small></span><ChevronRight size={18} />
+          </button>
+        )}
         <section className="set-group">
           <h2>Langue · Language</h2>
           <div className="set-row"><span>Français / English</span><LangSwitch /></div>

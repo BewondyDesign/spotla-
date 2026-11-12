@@ -1,4 +1,5 @@
 import { toast } from '../data/store'
+import { track } from '../data/track'
 import { useLang } from '../data/i18n'
 
 /**
@@ -224,6 +225,7 @@ async function send(file: File, en: boolean) {
 }
 
 export async function shareStory(c: StoryCard) {
+  track('share_story', { video: !!c.video })
   const url = `${location.origin}${location.pathname}${c.hash}`
   const en = EN()
   try { await navigator.clipboard?.writeText(url) } catch { /* pas grave */ }

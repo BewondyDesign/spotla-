@@ -5,6 +5,7 @@ import { App } from './App'
 import { sb } from './data/backend'
 import { toast, useStore } from './data/store'
 import './styles.css'
+import { startTracking } from './data/track'
 
 // Lien d'un lieu partenaire (affiche avec code QR) : ?ref=<lieu>, gardé jusqu'à l'inscription pour compter les inscriptions par lieu.
 try { const r = new URLSearchParams(location.search).get('ref'); if (r && /^[a-z0-9-]{2,60}$/.test(r)) localStorage.setItem('spotla-ref', r) } catch { /* rien */ }
@@ -17,6 +18,8 @@ try { const r = new URLSearchParams(location.search).get('ref'); if (r && /^[a-z
 const shown = (ok: boolean) => (e: Event) => { if (e.target instanceof HTMLImageElement) e.target.classList.add(ok ? 'ok' : 'bad') }
 document.addEventListener('load', shown(true), true)
 document.addEventListener('error', shown(false), true)
+
+startTracking()
 
 async function boot() {
   const raw = location.hash.slice(1)

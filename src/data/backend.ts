@@ -133,7 +133,7 @@ export async function loadAll(meId: string | null, pos: { lat: number; lng: numb
   const users: User[] = (profiles as Row[]).map((p) => ({
     id: p.id, name: p.name, handle: p.handle, kind: p.kind, verified: p.verified, color: p.color, bio: p.bio, city: p.city,
     venueAddress: p.venue_address ?? undefined, vibes: p.vibes,
-    avatarUrl: p.avatar_url ?? undefined, instagram: p.instagram ?? undefined, coverUrl: p.cover_url ?? undefined, coverKind: p.cover_kind ?? undefined, shareGoing: p.share_going !== false,
+    avatarUrl: p.avatar_url ?? undefined, instagram: p.instagram ?? undefined, coverUrl: p.cover_url ?? undefined, coverKind: p.cover_kind ?? undefined, shareGoing: p.share_going !== false, isAdmin: p.is_admin === true, banned: p.banned === true,
     followers: fol.filter((f) => f.followee === p.id).length,
     following: fol.filter((f) => f.follower === p.id).map((f) => f.followee),
   }))

@@ -31,6 +31,10 @@ export interface User {
   avatarUrl?: string
   coverUrl?: string
   coverKind?: 'image' | 'video'
+  /** Équipe SpotLa (accès à l'espace admin) */
+  isAdmin?: boolean
+  /** Banni par la modération : ne peut plus rien publier */
+  banned?: boolean
 }
 
 export interface SpotEvent {

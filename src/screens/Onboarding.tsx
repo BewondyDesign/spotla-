@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Building2, Camera, Eye, EyeOff, PartyPopper } from 'lucide-react'
 import { toast, useStore } from '../data/store'
+import { track } from '../data/track'
 import { cleanHandle, createProfile, isRemote, uploadMedia, sendPasswordReset, signIn, signInWithGoogle, signInWithFacebook, signInWithApple, signUp, signupInfo, updatePassword } from '../data/backend'
 import { TASTES } from '../data/tastes'
 import { LangSwitch, useT } from '../data/i18n'
@@ -316,7 +317,7 @@ function ProfileForm({ authId }: { authId?: string }) {
     try {
       let avatarUrl = photo?.url
       if (photo?.file) avatarUrl = await uploadMedia(authId!, photo.file, 'profile').catch(() => undefined)
-      await createProfile({ id: authId!, handle, city: useStore.getState().city, ...p, avatarUrl }); await reload()
+      await createProfile({ id: authId!, handle, city: useStore.getState().city, ...p, avatarUrl }); track('signup', { kind: p.kind ?? 'perso' }); await reload()
     } catch (e) { toast('Création du profil impossible', (e as Error).message); setBusy(false) }
   }
 

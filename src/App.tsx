@@ -11,10 +11,12 @@ function usePrefetchScreens() {
 }
 const Agenda = lazy(() => load('./screens/Agenda').then((m) => ({ default: (m as Record<string, React.ComponentType>).Agenda })))
 const AgendaDetail = lazy(() => load('./screens/AgendaDetail').then((m) => ({ default: (m as Record<string, React.ComponentType>).AgendaDetail })))
+const Admin = lazy(() => load('./screens/Admin').then((m) => ({ default: (m as Record<string, React.ComponentType>).Admin })))
 const Settings = lazy(() => load('./screens/Settings').then((m) => ({ default: (m as Record<string, React.ComponentType>).Settings })))
 const MySorties = lazy(() => load('./screens/MySorties').then((m) => ({ default: (m as Record<string, React.ComponentType>).MySorties })))
 import { lazy, Suspense, useEffect } from 'react'
 import { SkelScreen } from './components/Skeleton'
+import { track } from './data/track'
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useConfirm, useMe, useStore } from './data/store'
 import { isRemote, sb, subscribe } from './data/backend'
@@ -52,6 +54,7 @@ function Shell() {
   const loc = useLocation()
   useOutingReminders()
   // Changer d'écran ferme une question restée ouverte (comme « Annuler »).
+  useEffect(() => { track('screen') }, [loc.pathname])
   useEffect(() => { const q = useConfirm.getState().q; if (q) { useConfirm.setState({ q: null }); q.resolve(false) } }, [loc.pathname])
 
   // Mode Supabase : on suit la session et on recharge en temps réel.
@@ -95,6 +98,8 @@ function Shell() {
   if (recovery) return <div className="app"><NewPassword /><Toast /></div>
   if (!meId && !guest) return <div className="app"><Onboarding /><Toast /></div>
   if (meId && !me) return <div className="app"><Onboarding authId={meId} /><Toast /></div>
+  // Compte banni par la modération : plus d'accès à l'app.
+  if (me?.banned) return <div className="app"><div className="banned-scr"><h1>Compte suspendu</h1><p className="muted">Ton compte a été suspendu parce qu'il ne respecte pas les règles de SpotLa. Pour contester, écris-nous depuis la page des règles.</p><a className="btn-mini" href="#/legal/regles">Voir les règles</a></div></div>
   // Règle d'âge : personne n'entre dans l'app sans avoir confirmé ses 18 ans (avec ou sans compte).
   if (!adultOk) return <div className="app"><AgeGate /><Toast /></div>
   const need = (el: React.ReactElement, what: string) => (me ? el : <JoinScreen what={what} />)
@@ -118,6 +123,7 @@ function Shell() {
         <Route path="/settings" element={need(<Settings />, 'Tes réglages')} />
         <Route path="/business" element={need(<Business />, 'Ton espace pro')} />
         <Route path="/notifs" element={need(<Notifs />, 'Tes notifications')} />
+        <Route path="/admin" element={need(<Admin />, 'Espace admin')} />
         <Route path="/sorties" element={need(<MySorties />, 'Retrouve tes sorties ici')} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

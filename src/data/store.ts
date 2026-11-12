@@ -5,6 +5,7 @@ import { SEED_USERS, seedEvents, seedNotifs, seedPosts, seedStories } from './se
 import { distanceKm, MONTREAL, PARIS, RADII, reverseCity, uid as localUid } from './util'
 import { isForKids } from './adult'
 import { isRemote, loadAll, markNotifsRead, remote, signOut } from './backend'
+import { track } from './track'
 
 // En mode Supabase, les ids sont des UUID partagés avec la base.
 const uid = (p: string) => (isRemote ? crypto.randomUUID() : localUid(p))
@@ -118,7 +119,7 @@ export const useStore = create<State>()(
       adultOk: false,
       minorBlocked: false,
       joinAsk: null,
-      setGuest: (on) => { set({ guest: on, joinAsk: null }); if (on) get().reload() },
+      setGuest: (on) => { set({ guest: on, joinAsk: null }); if (on) { track('guest'); get().reload() } },
       vibes: [],
       // Ville de lancement : Montréal (le mode démo garde ses données de Paris).
       pos: isRemote ? MONTREAL : PARIS,
@@ -228,6 +229,7 @@ export const useStore = create<State>()(
         const me = get().meId!
         const was = get().events.find((e) => e.id === eventId)?.going.includes(me)
         set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, going: toggle(e.going, me) })) }))
+        track(was ? 'not_going' : 'going', { event: eventId })
         sync(() => remote.setAttendance(eventId, me, was ? null : 'going'))
       },
 
