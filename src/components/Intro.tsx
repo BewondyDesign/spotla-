@@ -4,11 +4,11 @@ import { Tour, tourDone } from './Tour'
 import { dayInfo, PART_WHEN } from '../data/daypart'
 import { useStore } from '../data/store'
 
-// Vidéos de fond (Mixkit, licence gratuite) : foule qui danse en club, mains levées, couple sur la piste. Adultes seulement.
-// Lues directement depuis Mixkit (comme les vidéos des cartes) : le proxy du site ne gère pas la lecture par morceaux d'iPhone.
-const CLIPS = [4344, 341, 344].map((id) => ({ src: `https://assets.mixkit.co/videos/${id}/${id}-720.mp4`, poster: `https://assets.mixkit.co/videos/${id}/${id}-thumb-720-0.jpg` }))
-const CUT = [0, 2400, 4600] // début de chaque plan (ms), fondu enchaîné d'une seconde
-const LENGTH = 6600 // durée totale avant le fondu de sortie
+// Vidéo de fond (Mixkit, licence gratuite) : foule qui danse en club, sous les lasers. Adultes seulement.
+// Version 360p (environ 1 Mo) lue directement depuis Mixkit : elle démarre tout de suite, même en données mobiles.
+const CLIP = { src: 'https://assets.mixkit.co/videos/4344/4344-360.mp4', poster: 'https://assets.mixkit.co/videos/4344/4344-thumb-720-0.jpg' }
+const LENGTH = 7000 // durée de l'animation, comptée à partir du moment où la vidéo joue
+const WAIT = 1800 // si la vidéo tarde (réseau lent, mode économie d'énergie), l'animation part quand même
 
 /**
  * Animation d'ouverture : un plan de ville apparaît, un repère « spot » tombe et rebondit,
@@ -27,38 +27,37 @@ export function Intro() {
   // Première ouverture : après l'animation, 2 écrans de présentation.
   const [firstTime] = useState(() => !tourDone())
   const [when] = useState(() => PART_WHEN[dayInfo(new Date(), useStore.getState().pos).part])
-  const [clip, setClip] = useState(0)
-  const vids = useRef<(HTMLVideoElement | null)[]>([])
+  const [started, setStarted] = useState(false)
+  const vid = useRef<HTMLVideoElement | null>(null)
+  // Lecture : on force « muet » (attribut HTML, exigé par iPhone) puis play() ; l'animation démarre quand la vidéo joue.
   useEffect(() => {
+    const v = vid.current
+    if (v) { v.muted = true; v.defaultMuted = true; v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.play().catch(() => {}) }
+    const t = setTimeout(() => setStarted(true), WAIT)
+    return () => clearTimeout(t)
+  }, [])
+  useEffect(() => {
+    if (!started) return
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
     const a = setTimeout(() => setPhase(firstTime ? 'tour' : 'out'), reduce ? 900 : LENGTH)
     const b = firstTime ? 0 : setTimeout(() => setPhase('done'), reduce ? 1300 : LENGTH + 800)
-    // Plans suivants : on ne coupe que si la vidéo est prête, sinon le plan en cours continue.
-    const cuts = reduce ? [] : CUT.slice(1).map((t, i) => setTimeout(() => {
-      const v = vids.current[i + 1]
-      if (v && v.readyState >= 3) { v.currentTime = 0; v.play().catch(() => {}); setClip(i + 1) }
-    }, t))
-    // iPhone : lecture automatique seulement si la vidéo est vraiment muette (attribut HTML) et lancée par play().
-    const first = vids.current[0]
-    vids.current.forEach((v) => { if (v) { v.muted = true; v.setAttribute('muted', ''); v.load() } })
-    if (first && !reduce) first.play().catch(() => {})
-    return () => { clearTimeout(a); clearTimeout(b); cuts.forEach(clearTimeout) }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    return () => { clearTimeout(a); clearTimeout(b) }
+  }, [started]) // eslint-disable-line react-hooks/exhaustive-deps
   if (phase === 'done') return null
   if (phase === 'tour') return <Tour onDone={() => setPhase('done')} />
   const skip = () => { if (firstTime) { setPhase('tour'); return } setPhase('out'); setTimeout(() => setPhase('done'), 800) }
 
   return (
-    <div className={`intro${phase === 'out' ? ' out' : ''}`} onClick={skip} role="presentation" aria-hidden="true">
-      <div className="intro-vids">
-        {CLIPS.map((c, i) => (
-          <video key={c.src} ref={(el) => { vids.current[i] = el; if (el) el.playbackRate = 0.8 }} className={i === clip ? 'on' : ''}
-            src={c.src} poster={i === 0 ? c.poster : undefined} muted playsInline autoPlay={i === 0} loop preload="auto" disablePictureInPicture
-            onCanPlay={(e) => { if (i === 0) e.currentTarget.play().catch(() => {}) }}
-            onLoadedMetadata={(e) => { e.currentTarget.playbackRate = 0.8 }} />
-        ))}
+    <div className={`intro${phase === 'out' ? ' out' : ''}`} onClick={skip} role="presentation">
+      <div className={`intro-vids${started ? ' on' : ''}`}>
+        <video ref={vid} src={CLIP.src} poster={CLIP.poster} muted playsInline autoPlay loop preload="auto" disablePictureInPicture
+          onLoadedMetadata={(e) => { e.currentTarget.playbackRate = 0.85 }}
+          onCanPlay={(e) => { e.currentTarget.play().catch(() => {}) }}
+          onPlaying={() => setStarted(true)} />
       </div>
       <div className="intro-shade" />
+      <button className="intro-skip" onClick={(e) => { e.stopPropagation(); skip() }} aria-label={en ? 'Skip' : 'Passer'}>{en ? 'Skip' : 'Passer'}</button>
+      {started && <>
       <div className="intro-glow" />
       <svg className="intro-map" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice">
         <g fill="none" stroke="currentColor" strokeLinecap="round">
@@ -97,6 +96,7 @@ export function Intro() {
         </h1>
         <p className="intro-tag">{en ? `Where are we going ${when[1]}?` : `On va où ${when[0]} ?`}</p>
       </div>
+      </>}
     </div>
   )
 }
