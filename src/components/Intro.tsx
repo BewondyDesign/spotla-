@@ -21,7 +21,29 @@ const PARTICLES = Array.from({ length: 18 }, (_, i) => {
   return { x: Math.cos(a) * d, y: Math.sin(a) * d * 0.85 - 20, c: ['#E8C27A', '#F2557A', '#FFFFFF', '#F4DDAE'][i % 4], s: 4 + (i % 3) * 2, delay: (i % 5) * 30 }
 })
 
+const SEEN = 'spotla-intro-seen'
+const AWAY = 5 * 60_000 // absent plus de 5 minutes = on rejoue l'ouverture au retour
+
+/**
+ * Quand jouer l'ouverture : une fois à l'ouverture de l'app (pas à chaque rafraîchissement de la page),
+ * et de nouveau quand on revient dans l'app après l'avoir quittée plus de 5 minutes.
+ */
 export function Intro() {
+  const [run, setRun] = useState(() => { try { return sessionStorage.getItem(SEEN) ? 0 : 1 } catch { return 1 } })
+  useEffect(() => {
+    try { sessionStorage.setItem(SEEN, '1') } catch { /* rien */ }
+    let hiddenAt = 0
+    const vis = () => {
+      if (document.visibilityState === 'hidden') hiddenAt = Date.now()
+      else if (hiddenAt && Date.now() - hiddenAt > AWAY) setRun((n) => n + 1)
+    }
+    document.addEventListener('visibilitychange', vis)
+    return () => document.removeEventListener('visibilitychange', vis)
+  }, [])
+  return run ? <IntroPlayer key={run} /> : null
+}
+
+function IntroPlayer() {
   const en = useLang((s) => s.lang) === 'en'
   const [phase, setPhase] = useState<'play' | 'out' | 'tour' | 'done'>('play')
   // Première ouverture : après l'animation, 2 écrans de présentation.

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Bell, Search } from 'lucide-react'
 import { isHidden, useMe, useStore } from '../data/store'
@@ -15,7 +15,7 @@ import type { Category } from '../data/catalog'
 import type { SpotEvent } from '../data/types'
 import { LangSwitch, useLang, useT } from '../data/i18n'
 import { CategoryChips } from './Explore'
-import { dayInfo, PART_WHEN, useDayInfo, type DayPart, type Light } from '../data/daypart'
+import { PART_WHEN, useDayInfo, type DayPart, type Light } from '../data/daypart'
 import { likesAgenda, likesEvent, likesPlace, lovedFirst } from '../data/tastes'
 
 // Photo d'entête choisie automatiquement selon la saison à Montréal (temps des fêtes, hiver, printemps, été, automne)
@@ -47,9 +47,6 @@ const greet = (en: boolean, part: DayPart) => part === 'matin' ? (en ? 'Good mor
 const WHEN: Record<Slot, [string, string]> = { now: ['aujourd\'hui', 'today'], aprem: ['cet après-midi', 'this afternoon'], soir: ['ce soir', 'tonight'], weekend: ['ce week-end', 'this weekend'] }
 
 type Slot = 'now' | 'aprem' | 'soir' | 'weekend'
-const SLOTS: { k: Slot; label: string; en: string }[] = [
-  { k: 'now', label: 'Maintenant', en: 'Now' }, { k: 'aprem', label: 'Cet après-midi', en: 'This afternoon' }, { k: 'soir', label: 'Ce soir', en: 'Tonight' }, { k: 'weekend', label: 'Ce week-end', en: 'This weekend' },
-]
 const H = 3600_000
 const ymd = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'America/Montreal' })
 /** Samedi et dimanche qui viennent (ou ce week-end si on y est), au format AAAA-MM-JJ. */
@@ -80,9 +77,9 @@ export function Home() {
   const unread = useStore((s) => s.notifs.filter((n) => !n.read).length)
   const me = useMe()
   const day = useDayInfo()
-  const [slot, setSlot] = useState<Slot>(() => { const p = dayInfo().part; return p === 'soir' || p === 'nuit' ? 'soir' : 'now' })
-  // « On va où … ? » suit l'heure : aujourd'hui (matin), cet après-midi, ce soir, cette nuit.
-  const when = (slot === 'now' || (slot === 'soir' && day.part === 'nuit')) ? PART_WHEN[day.part] : WHEN[slot]
+  // Pas de filtre à choisir : l'accueil suit l'heure tout seul (matin, après-midi, soir, nuit).
+  const slot = (day.part === 'matin' ? 'now' : day.part === 'aprem' ? 'aprem' : 'soir') as Slot
+  const when = PART_WHEN[day.part]
   const users = useStore((s) => s.users)
   const storeTastes = useStore((s) => s.vibes)
   const tastes = me?.vibes?.length ? me.vibes : storeTastes
@@ -150,11 +147,7 @@ export function Home() {
           <p className="hero-hi">{greet(en, day.part)}{me?.name ? `, ${me.name.split(' ')[0]}` : ''}</p>
           <h1 className="hero-h">{en ? <>Where are we going <em>{when[1]}</em>?</> : <>On va où <em>{when[0]}</em> ?</>}</h1>
           <LocationButton pill />
-          <div className="slot-chips" role="tablist" aria-label={t('Quand ?', 'When?')}>
-            {SLOTS.filter((x) => x.k !== 'aprem' || mtlHour() < 17).map((x) => (
-              <button key={x.k} role="tab" aria-selected={slot === x.k} className={slot === x.k ? 'on' : ''} onClick={() => setSlot(x.k)}>{en ? x.en : x.label}</button>
-            ))}
-          </div>
+
         </div>
       </header>
 
