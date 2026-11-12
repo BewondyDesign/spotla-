@@ -5,8 +5,8 @@ import { dayInfo, PART_WHEN } from '../data/daypart'
 import { useStore } from '../data/store'
 
 // Vidéos de fond (Mixkit, licence gratuite) : foule qui danse en club, mains levées, couple sur la piste. Adultes seulement.
-// Passent par le proxy du site (/m/mixkit) pour se charger sur iPhone.
-const CLIPS = [48510, 341, 344].map((id) => ({ src: `/m/mixkit/videos/${id}/${id}-720.mp4`, poster: `/m/mixkit/videos/${id}/${id}-thumb-720-0.jpg` }))
+// Lues directement depuis Mixkit (comme les vidéos des cartes) : le proxy du site ne gère pas la lecture par morceaux d'iPhone.
+const CLIPS = [4344, 341, 344].map((id) => ({ src: `https://assets.mixkit.co/videos/${id}/${id}-720.mp4`, poster: `https://assets.mixkit.co/videos/${id}/${id}-thumb-720-0.jpg` }))
 const CUT = [0, 2400, 4600] // début de chaque plan (ms), fondu enchaîné d'une seconde
 const LENGTH = 6600 // durée totale avant le fondu de sortie
 
@@ -38,6 +38,10 @@ export function Intro() {
       const v = vids.current[i + 1]
       if (v && v.readyState >= 3) { v.currentTime = 0; v.play().catch(() => {}); setClip(i + 1) }
     }, t))
+    // iPhone : lecture automatique seulement si la vidéo est vraiment muette (attribut HTML) et lancée par play().
+    const first = vids.current[0]
+    vids.current.forEach((v) => { if (v) { v.muted = true; v.setAttribute('muted', ''); v.load() } })
+    if (first && !reduce) first.play().catch(() => {})
     return () => { clearTimeout(a); clearTimeout(b); cuts.forEach(clearTimeout) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   if (phase === 'done') return null
@@ -49,7 +53,8 @@ export function Intro() {
       <div className="intro-vids">
         {CLIPS.map((c, i) => (
           <video key={c.src} ref={(el) => { vids.current[i] = el; if (el) el.playbackRate = 0.8 }} className={i === clip ? 'on' : ''}
-            src={c.src} poster={i === 0 ? c.poster : undefined} muted playsInline autoPlay={i === 0} loop preload="auto"
+            src={c.src} poster={i === 0 ? c.poster : undefined} muted playsInline autoPlay={i === 0} loop preload="auto" disablePictureInPicture
+            onCanPlay={(e) => { if (i === 0) e.currentTarget.play().catch(() => {}) }}
             onLoadedMetadata={(e) => { e.currentTarget.playbackRate = 0.8 }} />
         ))}
       </div>
