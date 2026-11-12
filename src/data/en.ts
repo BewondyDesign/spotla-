@@ -2,6 +2,7 @@
 // Les textes avec des parties variables sont dans PATTERNS plus bas.
 export const EN: Record<string, string> = {
   // ---------- Général ----------
+  'Republier une soirée': 'Repost an event', 'Nom de la soirée': 'Event name', 'Répéter': 'Repeat', 'Une seule fois': 'Just once', 'Plus d\'options': 'More options', 'Ajoute le lieu et l\'adresse dans « Plus d\'options ».': 'Add the venue and address in "More options".', 'Infos reprises': 'Details copied', 'Une par semaine, au même horaire.': 'One per week, same time.',
   'Compte suspendu': 'Account suspended', 'Ton compte a été suspendu parce qu\'il ne respecte pas les règles de SpotLa. Pour contester, écris-nous depuis la page des règles.': 'Your account was suspended because it breaks the SpotLa rules. To appeal, write to us from the rules page.', 'Voir les règles': 'See the rules', 'Espace admin': 'Admin space', 'Chiffres, signalements, bugs': 'Numbers, reports, bugs',
   'Retour': 'Back', 'Fermer': 'Close', 'Ambiance : pas encore d\'avis': 'Vibe: no votes yet', 'Donner mon avis': 'Rate the vibe', 'Changer mon avis': 'Change my vote', 'Annuler': 'Cancel', 'Supprimer': 'Delete', 'Confirmer': 'Confirm', 'Envoyer': 'Send',
   'Enregistrer': 'Save', 'Enregistrement…': 'Saving…', 'Envoi…': 'Sending…', 'Suivant': 'Next', 'Voir': 'View', 'Partager': 'Share',
@@ -307,4 +308,7 @@ export const PATTERNS: [RegExp, string | ((...m: string[]) => string)][] = [
   [/^(\d+) avis$/, '$1 review(s)'],
   [/^(\d+) personnes? y vont? seules?\. Retrouvez-vous sur place\.$/, '$1 going solo. Meet up there.'],
   [/^(lun|mar|mer|jeu|ven|sam|dim)\.? (\d+) (.+)$/, (_, d, n, m) => `${({ lun: 'Mon', mar: 'Tue', mer: 'Wed', jeu: 'Thu', ven: 'Fri', sam: 'Sat', dim: 'Sun' } as Record<string, string>)[d]} ${n} ${m}`],
+  [/^Chaque semaine · (\d+) sem\.$/, 'Every week · $1 wks'],
+  [/^(\d+) soirées publiées$/, '$1 events posted'],
+  [/^« (.+) » : choisis juste le jour et publie\.$/, '"$1": just pick the day and post.'],
 ]

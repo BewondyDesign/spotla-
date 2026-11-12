@@ -1167,3 +1167,7 @@ img.bad { visibility: hidden; }
 .adm-err { color: #FF8FA8; font-size: 14px; }
 .banned-scr { min-height: 100dvh; display: grid; place-content: center; text-align: center; gap: 12px; padding: 24px; }
 .set-admin { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; color: inherit; font: inherit; cursor: pointer; }
+.wizard.express { display: flex; flex-direction: column; gap: 18px; }
+.price-chip { display: inline-flex; align-items: center; gap: 4px; }
+.price-chip input { width: 54px; background: transparent; border: 0; color: inherit; font: inherit; text-align: right; }
+.express-where { display: flex; align-items: center; gap: 6px; }

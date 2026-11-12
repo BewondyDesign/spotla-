@@ -7,6 +7,7 @@ import { MAX_STORY_SECONDS, putBlob, videoDuration } from '../data/media'
 import { isRemote, uploadMedia } from '../data/backend'
 import { geocode, momentOf, PALETTES, uid, VIBES, VIS_LABEL, type Place } from '../data/util'
 import { textOk } from '../data/safety'
+import { track } from '../data/track'
 import type { Visibility } from '../data/types'
 
 type Mode = 'event' | 'story' | 'post'
@@ -65,6 +66,23 @@ function EventForm() {
   const [vis, setVis] = useState<Visibility>(biz ? 'open' : 'request')
   const [cap, setCap] = useState(25)
   const [busy, setBusy] = useState(false)
+  const [weeks, setWeeks] = useState(1)
+  // Mes sorties déjà publiées : on peut en republier une en un tap (soirée récurrente).
+  const events = useStore((s) => s.events)
+  const mine = useMemo(() => {
+    const seen = new Set<string>()
+    return events.filter((e) => e.hostId === me.id).sort((a, b) => b.start.localeCompare(a.start))
+      .filter((e) => { const k = e.title.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true }).slice(0, 4)
+  }, [events, me.id])
+  // Version express (1 écran) : par défaut pour les lieux, ou dès qu'on a déjà publié.
+  const [express, setExpress] = useState(biz || mine.length > 0)
+  const hhmm = (iso: string) => { const d = new Date(iso); return `${pad(d.getHours())}:${pad(d.getMinutes())}` }
+  const reuse = (e: (typeof mine)[number]) => {
+    setTitle(e.title); setTag(e.tags[0] ?? tag); setDesc(e.desc); setStart(hhmm(e.start)); setEnd(hhmm(e.end))
+    setVenue(e.venue); setAddress(e.address); setSpot({ name: e.address, short: e.address, area: e.area, lat: e.lat, lng: e.lng } as Place)
+    setPaid(e.price > 0); if (e.price > 0) setPrice(e.price); setTicketUrl(e.ticketUrl ?? ''); setVis(e.visibility); if (e.capacity) setCap(e.capacity)
+    toast('Infos reprises', `« ${e.title} » : choisis juste le jour et publie.`)
+  }
 
   // Suggestions d'adresse pendant la saisie, autour de toi.
   useEffect(() => {
@@ -82,20 +100,71 @@ function EventForm() {
     const found = spot ?? (await geocode(address.trim(), pos))[0]
     if (!found) toast('Adresse non trouvée sur la carte', 'L\'événement est placé près de ta position. Vérifie l\'adresse si besoin.')
     const at = found ?? { lat: pos.lat + (Math.random() - 0.5) * 0.01, lng: pos.lng + (Math.random() - 0.5) * 0.01 }
-    const s = new Date(`${date}T${start}`)
-    const e = new Date(`${date}T${end}`)
-    if (e <= s) e.setDate(e.getDate() + 1) // finit après minuit
-    const id = createEvent({
-      title: title.trim(), vibe: VIBES.find((v) => v.k === tag)!.l.split(' ')[0], tags: [tag],
-      start: s.toISOString(), end: e.toISOString(), venue: venue.trim(), area: found?.area || useStore.getState().city, address: address.trim(),
-      lat: at.lat, lng: at.lng,
-      price: paid ? price : 0, ticketUrl: paid && ticketUrl ? ticketUrl : undefined,
-      visibility: vis, capacity: vis === 'open' ? undefined : cap, desc: desc.trim(), colors: PALETTES[Math.floor(Math.random() * PALETTES.length)],
-    })
+    let id = ''
+    for (let w = 0; w < weeks; w++) {
+      const s = new Date(`${date}T${start}`)
+      s.setDate(s.getDate() + 7 * w)
+      const e = new Date(`${date}T${end}`)
+      e.setDate(e.getDate() + 7 * w)
+      if (e <= s) e.setDate(e.getDate() + 1) // finit après minuit
+      const made = createEvent({
+        title: title.trim(), vibe: VIBES.find((v) => v.k === tag)!.l.split(' ')[0], tags: [tag],
+        start: s.toISOString(), end: e.toISOString(), venue: venue.trim(), area: found?.area || useStore.getState().city, address: address.trim(),
+        lat: at.lat, lng: at.lng,
+        price: paid ? price : 0, ticketUrl: paid && ticketUrl ? ticketUrl : undefined,
+        visibility: vis, capacity: vis === 'open' ? undefined : cap, desc: desc.trim(), colors: PALETTES[Math.floor(Math.random() * PALETTES.length)],
+      })
+      if (w === 0) id = made
+    }
+    track('publish_event', { express, weeks, biz })
     const ev = useStore.getState().events.find((x) => x.id === id)!
-    toast('Événement publié', momentOf(ev) === 'tonight' ? 'Il apparaît dans « Ce soir » pour les gens autour.' : 'Il est visible sur ton mur et sur la carte.')
+    toast(weeks > 1 ? `${weeks} soirées publiées` : 'Événement publié', weeks > 1 ? 'Une par semaine, au même horaire.' : momentOf(ev) === 'tonight' ? 'Il apparaît dans « Ce soir » pour les gens autour.' : 'Il est visible sur ton mur et sur la carte.')
     nav(`/event/${id}`, { replace: true })
   }
+
+  const okExpress = title.trim().length >= 3 && !!venue.trim() && !!address.trim()
+  if (express) return (
+    <div className="wizard express">
+      {mine.length > 0 && (
+        <div className="field"><span className="lbl">Republier une soirée</span>
+          <div className="wrap-chips">{mine.map((e) => <button key={e.id} className="chip" onClick={() => reuse(e)}>{e.title}</button>)}</div>
+        </div>
+      )}
+      <input className="input big" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nom de la soirée" maxLength={80} aria-label="Nom de l'événement" />
+      <div className="field"><span className="lbl">Jour</span>
+        <div className="wrap-chips">
+          <button className="chip" aria-pressed={dayChoice === 0} onClick={() => setDate(addDays(0))}>Ce soir</button>
+          <button className="chip" aria-pressed={dayChoice === 1} onClick={() => setDate(addDays(1))}>Demain</button>
+          <label className={`chip date-chip ${dayChoice === 2 ? 'on' : ''}`}><CalendarDays size={15} /> {dayChoice === 2 ? new Date(`${date}T12:00`).toLocaleDateString(document.documentElement.lang === 'en' ? 'en-CA' : 'fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Autre date'}
+            <input type="date" value={date} min={addDays(0)} onChange={(e) => e.target.value && setDate(e.target.value)} />
+          </label>
+        </div>
+      </div>
+      <div className="grid2">
+        <div className="field"><span className="lbl">Début</span><input className="input" type="time" value={start} onChange={(e) => setStart(e.target.value)} /></div>
+        <div className="field"><span className="lbl">Fin</span><input className="input" type="time" value={end} onChange={(e) => setEnd(e.target.value)} /></div>
+      </div>
+      <div className="field"><span className="lbl">Entrée</span>
+        <div className="wrap-chips">
+          <button className="chip" aria-pressed={!paid} onClick={() => setPaid(false)}>Gratuit</button>
+          <button className="chip" aria-pressed={paid} onClick={() => setPaid(true)}>Payant</button>
+          {paid && <label className="chip price-chip"><input type="number" inputMode="decimal" min={1} value={price} onChange={(e) => setPrice(Math.max(1, Number(e.target.value)))} aria-label={`Prix (${CUR})`} /> {CUR}</label>}
+        </div>
+      </div>
+      <div className="field"><span className="lbl">Répéter</span>
+        <div className="wrap-chips">
+          {[1, 4, 8].map((n) => <button key={n} className="chip" aria-pressed={weeks === n} onClick={() => setWeeks(n)}>{n === 1 ? 'Une seule fois' : `Chaque semaine · ${n} sem.`}</button>)}
+        </div>
+      </div>
+      {venue.trim() && address.trim()
+        ? <p className="hint express-where"><MapPin size={13} /> {venue} · {address}</p>
+        : <p className="hint express-where">Ajoute le lieu et l'adresse dans « Plus d'options ».</p>}
+      <div className="wiz-foot">
+        <button className="btn btn-ghost" onClick={() => setExpress(false)}>Plus d'options</button>
+        <button className="btn btn-primary" disabled={busy || !okExpress} onClick={submit}>{busy ? 'Publication…' : 'Publier'}</button>
+      </div>
+    </div>
+  )
 
   return (
     <div className="wizard">
