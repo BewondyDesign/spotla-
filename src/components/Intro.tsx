@@ -35,7 +35,7 @@ export function Intro() {
   useEffect(() => {
     const v = vid.current
     if (v) { v.muted = true; v.defaultMuted = true; v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.play().catch(() => {}) }
-    const slow = setTimeout(() => { if (!playing.current) setSrc(CLIP.sd) }, 1400)
+    const slow = setTimeout(() => { if (!playing.current && (vid.current?.readyState ?? 0) < 2) setSrc(CLIP.sd) }, 1400)
     const t = setTimeout(() => setStarted(true), WAIT)
     return () => { clearTimeout(t); clearTimeout(slow) }
   }, [])
