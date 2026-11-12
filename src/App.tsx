@@ -1,11 +1,11 @@
 // Les autres écrans se chargent à part (l'ouverture ne télécharge que l'accueil),
-// puis en arrière-plan quelques secondes après : un tap ensuite est instantané.
+// puis en arrière-plan une fois l'ouverture terminée : un tap ensuite est instantané.
 const LOADERS: Record<string, () => Promise<unknown>> = import.meta.glob(['./screens/*.tsx', '!./screens/{Home,Onboarding,Explore,Legal}.tsx'])
 const load = (path: string) => LOADERS[path + '.tsx']() as Promise<Record<string, unknown>>
 function usePrefetchScreens() {
   useEffect(() => {
     const go = () => Object.values(LOADERS).forEach((f) => f().catch(() => {}))
-    const id = setTimeout(() => ('requestIdleCallback' in window ? requestIdleCallback(go) : go()), 2500)
+    const id = setTimeout(() => ('requestIdleCallback' in window ? requestIdleCallback(go) : go()), 12000)
     return () => clearTimeout(id)
   }, [])
 }

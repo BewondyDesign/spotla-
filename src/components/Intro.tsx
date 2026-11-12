@@ -31,7 +31,6 @@ const AWAY = 5 * 60_000 // absent plus de 5 minutes = on rejoue l'ouverture au r
 export function Intro() {
   const [run, setRun] = useState(() => { try { return sessionStorage.getItem(SEEN) ? 0 : 1 } catch { return 1 } })
   useEffect(() => {
-    try { sessionStorage.setItem(SEEN, '1') } catch { /* rien */ }
     let hiddenAt = 0
     const vis = () => {
       if (document.visibilityState === 'hidden') hiddenAt = Date.now()
@@ -68,6 +67,8 @@ function IntroPlayer() {
     const b = firstTime ? 0 : setTimeout(() => setPhase('done'), reduce ? 1300 : LENGTH + 800)
     return () => { clearTimeout(a); clearTimeout(b) }
   }, [started]) // eslint-disable-line react-hooks/exhaustive-deps
+  // L'ouverture n'est notée « vue » qu'une fois finie ou passée : si la page est rechargée en plein milieu, elle rejoue.
+  useEffect(() => { if (phase !== 'play') try { sessionStorage.setItem(SEEN, '1') } catch { /* rien */ } }, [phase])
   if (phase === 'done') return null
   if (phase === 'tour') return <Tour onDone={() => setPhase('done')} />
   const skip = () => { if (firstTime) { setPhase('tour'); return } setPhase('out'); setTimeout(() => setPhase('done'), 800) }

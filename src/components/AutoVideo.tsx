@@ -12,7 +12,7 @@ export function AutoVideo({ src, poster, className }: { src: string; poster?: st
   useEffect(() => {
     const v = ref.current
     if (!v || !('IntersectionObserver' in window)) return
-    const soon = new IntersectionObserver(([en]) => { if (en.isIntersecting) { setNear(true); soon.disconnect() } }, { rootMargin: '200px' })
+    const soon = new IntersectionObserver(([en]) => { if (en.isIntersecting) { setNear(true); soon.disconnect() } }, { rootMargin: '60px' })
     const io = new IntersectionObserver(([en]) => { if (en.isIntersecting) v.play().catch(() => {}); else v.pause() }, { threshold: 0.35 })
     soon.observe(v)
     io.observe(v)
