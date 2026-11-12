@@ -67,12 +67,39 @@ const TYPE_OF: [RegExp, string][] = [
   [/cuisine|gourmand/i, 'cuisine'], [/cinéma|film/i, 'cinema'], [/sport|plein air|bien-être|nature/i, 'plein'],
   [/société|histoire|lecture|littérature|conférence|atelier/i, 'lecture'], [/fête|marché|festival/i, 'fete'],
 ]
+/** Photos par activité précise, choisies d'après le titre et la description (couture, poterie, yoga…). */
+const TOPIC_POOL: Record<string, string[]> = {
+  couture: ['1578353022142-09264fd64295', '1560796952-f1c9b838544c', '1626274890657-e28d5b65b04b', '1673201229733-69d19c5c4a87', '1605002619330-080580537d72', '1625479144604-ae69462778b7', '1745847655362-fc86d76584b2'],
+  tricot: ['1584992236310-6edddc08acff', '1632649027900-389e810204e6', '1595341595379-cf1cb694ea1f', '1470049384172-927891aad5e9', '1619608155967-7a5058b2a963', '1591051649443-453d2e0a716d'],
+  poterie: ['1781389004999-d1a7e41639c5', '1771523350538-29baf74f710c', '1771523350747-638a89667c8f', '1771523350533-a831d1f703a7', '1589051088132-06f36a22012a', '1764507768797-5b7de6eedcb7', '1480355781839-51097c7d4f9f'],
+  peinture: ['1541753866388-0b3c701627d3', '1658303135227-fcdfb0dab396', '1597274303632-880ef8660375'],
+  photo: ['1495745966610-2a67f2297e5e', '1542038784456-1ea8e935640e', '1516961642265-531546e84af2', '1495707902641-75cac588d2e9', '1502982720700-bfff97f2ecac', '1580707221190-bd94d9087b7f', '1512790182412-b19e6d62bc39'],
+  conference: ['1540575467063-178a50c2df87', '1587825140708-dfaf72ae4b04', '1594122230689-45899d9e6f69', '1627931539006-d5c4677e05ea', '1544531586-fde5298cdd40', '1582192730841-2a682d7375f9', '1603478804503-dc909c7f5ce5', '1558008258-3256797b43f3', '1571645163064-77faa9676a46'],
+  yoga: ['1544367567-0f2fcb009e0b', '1761035005546-62b8018b212a', '1599901860904-17e6ed7083a0', '1506126613408-eca07ce68773', '1552196563-55cd4e45efb3', '1787647089633-37e49ee2e054', '1579454566790-f9e5697ddf36', '1552196527-bffef41ef674', '1575052814086-f385e2e2ad1b'],
+  danse: ['1524594152303-9fd13543fe6e', '1604954055722-7f80571fbfc3', '1550026593-f369f98df0af', '1555489401-79c274997434', '1591162689269-a3fcdab967e3', '1765632814488-52e6d0653ebe', '1682760631807-71067eeea033', '1593105722399-0ee263656fdd'],
+  jardin: ['1555955208-94f6fafea771', '1627647563441-c4bdf17486d2', '1643730508670-9e4804f59eb9', '1681675748349-7168e5fe4be8'],
+  numerique: ['1603302576837-37561b2e2302', '1539376248633-cf94fa8b7bd8', '1654119895136-6aad918f412c', '1568333261345-0918efdce2d9', '1620365602462-40d8f2cdd84c', '1547731030-cd126f44e9c5'],
+}
+const TOPIC_OF: [RegExp, string][] = [
+  [/couture|coudre|machine à coudre|broderie|textile|sewing/i, 'couture'],
+  [/tricot|crochet|laine|knit/i, 'tricot'],
+  [/poterie|céramique|argile|modelage|pottery|ceramic/i, 'poterie'],
+  [/peinture|aquarelle|dessin|croquis|acrylique|painting|drawing/i, 'peinture'],
+  [/photograph|photo\b|appareil photo/i, 'photo'],
+  [/yoga|méditation|pleine conscience|tai[- ]chi|qi gong|pilates/i, 'yoga'],
+  [/cours de danse|danse (en ligne|sociale|latine|swing)|salsa|tango|bachata|swing|zumba|dance class/i, 'danse'],
+  [/jardin|horticult|plantes?\b|semis|potager|garden/i, 'jardin'],
+  [/informatique|numérique|ordinateur|internet|tablette|cellulaire|courriel|logiciel|code\b|coding/i, 'numerique'],
+  [/conférence|causerie|table ronde|discussion|débat|panel|talk/i, 'conference'],
+]
 const turn: Record<string, number> = {}
-const imgFor = (type: string) => {
+const pick = (k: string, pool: string[]) => { turn[k] = (turn[k] ?? -1) + 1; return U(pool[turn[k] % pool.length]) }
+/** Le titre d'abord (le plus fiable), puis un type clair (concert, film…), sinon la description, sinon le type. */
+const topic = (text: string) => TOPIC_OF.find(([r]) => r.test(text))?.[1]
+const imgFor = (type: string, title = '', description = '') => {
   const k = TYPE_OF.find(([r]) => r.test(type))?.[1] ?? 'fete'
-  const pool = TYPE_POOL[k]
-  turn[k] = (turn[k] ?? -1) + 1
-  return U(pool[turn[k] % pool.length])
+  const t = topic(title) ?? (['musique', 'cinema', 'scene', 'cuisine'].includes(k) ? undefined : topic(description))
+  return t ? pick(t, TOPIC_POOL[t]) : pick(k, TYPE_POOL[k])
 }
 
 type CityRow = { id: string; title: string; url: string; description: string; start: string; end: string; type: string; free: boolean; cost: string; borough: string; venue: string; address: string; lat: number; lng: number }
@@ -90,7 +117,7 @@ async function loadAgenda(): Promise<AgendaItem[]> {
       const j = (await r.json()) as { events: CityRow[] }
       city = j.events.map((e) => ({
         id: e.id, title: e.title, type: e.type, start: e.start, end: e.end, free: e.free, cost: e.cost, venue: e.venue || undefined,
-        address: e.address || undefined, area: e.borough, lat: e.lat, lng: e.lng, url: e.url, description: e.description, image: imgFor(e.type), source: 'Ville de Montréal',
+        address: e.address || undefined, area: e.borough, lat: e.lat, lng: e.lng, url: e.url, description: e.description, image: imgFor(e.type, e.title, e.description), source: 'Ville de Montréal',
       }))
     }
   } catch { /* hors ligne ou démo locale : on garde les festivals */ }
@@ -138,4 +165,7 @@ const FEST_VIDEO: Record<string, number> = {
   'fest:osheaga-2027': 14088,
   'fest:fierte-2027': 47143,
 }
-export const agendaVideo = (e: AgendaItem) => claimVideo(e.id, e.video ?? (FEST_VIDEO[e.id] ? MK(FEST_VIDEO[e.id]) : undefined)) ?? uniqueVideo(e.id, e.title, e.type)
+const TOPIC_IDS = Object.values(TOPIC_POOL).flat()
+const hasTopic = (e: AgendaItem) => TOPIC_IDS.some((id) => e.image.includes(id))
+/** Un atelier précis (couture, yoga…) garde sa photo assortie : pas de vidéo générique du type « Exposition ». */
+export const agendaVideo = (e: AgendaItem) => claimVideo(e.id, e.video ?? (FEST_VIDEO[e.id] ? MK(FEST_VIDEO[e.id]) : undefined)) ?? (hasTopic(e) ? undefined : uniqueVideo(e.id, e.title, e.type))
