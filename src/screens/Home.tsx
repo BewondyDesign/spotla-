@@ -181,17 +181,17 @@ export function Home() {
           )}
       </section>
 
-      <section className="rail-sec cat-sec" aria-label={t('Explorer par catégorie', 'Browse by category')}>
-        <div className="pad sec-head"><h2 className="sec-title">{t('Explorer par catégorie', 'Browse by category')}</h2></div>
-        <CategoryChips />
-      </section>
-
       <section className="rail-sec" aria-label="Envie de bouger">
         <div className="pad stack4 sec-head">
           <span className="kicker">{t('Ouvert à toute heure · près de toi', 'Open all day · near you')}</span>
           <h2 className="sec-title">{slot === 'soir' ? t('Où aller ce soir', 'Where to go tonight') : t('Envie de bouger ?', 'Feel like going out?')}</h2>
         </div>
         <div className="rail">{spots.map((p) => <PlaceCard key={p.id} p={p} />)}</div>
+      </section>
+
+      <section className="rail-sec cat-sec" aria-label={t('Explorer par catégorie', 'Browse by category')}>
+        <div className="pad sec-head"><h2 className="sec-title">{t('Explorer par catégorie', 'Browse by category')}</h2></div>
+        <CategoryChips />
       </section>
 
       <section className="rail-sec" aria-label="Activités à faire">
