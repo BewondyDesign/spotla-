@@ -5,8 +5,8 @@ import { dayInfo, PART_WHEN } from '../data/daypart'
 import { useStore } from '../data/store'
 
 // Vidéo de fond (Mixkit, licence gratuite) : foule qui danse en club, sous les lasers. Adultes seulement.
-// Version 360p (environ 1 Mo) lue directement depuis Mixkit : elle démarre tout de suite, même en données mobiles.
-const CLIP = { src: 'https://assets.mixkit.co/videos/4344/4344-360.mp4', poster: 'https://assets.mixkit.co/videos/4344/4344-thumb-720-0.jpg' }
+// Lue directement depuis Mixkit en 720p (nette sur téléphone) ; si elle ne démarre pas vite (réseau lent), on passe à la version 360p, plus légère.
+const CLIP = { hd: 'https://assets.mixkit.co/videos/4344/4344-720.mp4', sd: 'https://assets.mixkit.co/videos/4344/4344-360.mp4', poster: 'https://assets.mixkit.co/videos/4344/4344-thumb-720-0.jpg' }
 const LENGTH = 7000 // durée de l'animation, comptée à partir du moment où la vidéo joue
 const WAIT = 1800 // si la vidéo tarde (réseau lent, mode économie d'énergie), l'animation part quand même
 
@@ -28,13 +28,16 @@ export function Intro() {
   const [firstTime] = useState(() => !tourDone())
   const [when] = useState(() => PART_WHEN[dayInfo(new Date(), useStore.getState().pos).part])
   const [started, setStarted] = useState(false)
+  const [src, setSrc] = useState(CLIP.hd)
+  const playing = useRef(false)
   const vid = useRef<HTMLVideoElement | null>(null)
   // Lecture : on force « muet » (attribut HTML, exigé par iPhone) puis play() ; l'animation démarre quand la vidéo joue.
   useEffect(() => {
     const v = vid.current
     if (v) { v.muted = true; v.defaultMuted = true; v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.play().catch(() => {}) }
+    const slow = setTimeout(() => { if (!playing.current) setSrc(CLIP.sd) }, 1400)
     const t = setTimeout(() => setStarted(true), WAIT)
-    return () => clearTimeout(t)
+    return () => { clearTimeout(t); clearTimeout(slow) }
   }, [])
   useEffect(() => {
     if (!started) return
@@ -50,10 +53,10 @@ export function Intro() {
   return (
     <div className={`intro${phase === 'out' ? ' out' : ''}`} onClick={skip} role="presentation">
       <div className={`intro-vids${started ? ' on' : ''}`}>
-        <video ref={vid} src={CLIP.src} poster={CLIP.poster} muted playsInline autoPlay loop preload="auto" disablePictureInPicture
+        <video ref={vid} src={src} poster={CLIP.poster} muted playsInline autoPlay loop preload="auto" disablePictureInPicture
           onLoadedMetadata={(e) => { e.currentTarget.playbackRate = 0.85 }}
           onCanPlay={(e) => { e.currentTarget.play().catch(() => {}) }}
-          onPlaying={() => setStarted(true)} />
+          onPlaying={() => { playing.current = true; setStarted(true) }} />
       </div>
       <div className="intro-shade" />
       <button className="intro-skip" onClick={(e) => { e.stopPropagation(); skip() }} aria-label={en ? 'Skip' : 'Passer'}>{en ? 'Skip' : 'Passer'}</button>
