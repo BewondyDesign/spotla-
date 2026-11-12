@@ -114,27 +114,45 @@ const pickMime = () => ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs
   .find((m) => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported?.(m))
 
 /** Vidéo verticale 720 × 1280 : la vidéo de la carte, avec le calque SpotLa par-dessus (10 s max). */
+let why = ''
 async function renderVideo(c: StoryCard, onProgress: (p: number) => void): Promise<File | null> {
   const mime = pickMime()
-  if (!mime || !c.video || !HTMLCanvasElement.prototype.captureStream) return null
+  if (!mime) { why = 'MediaRecorder'; return null }
+  if (!c.video) { why = 'pas de vidéo'; return null }
+  if (!HTMLCanvasElement.prototype.captureStream) { why = 'captureStream'; return null }
   const VW = 720, VH = 1280
+  // Sur iPhone, une vidéo ne se charge que si elle est dans la page et lancée : on la pose, invisible, et on la lit.
   const v = document.createElement('video')
-  v.muted = true; v.playsInline = true; v.crossOrigin = 'anonymous'; v.preload = 'auto'; v.src = sameOrigin(c.video)
-  const ok = await new Promise<boolean>((res) => { v.oncanplay = () => res(true); v.onerror = () => res(false); setTimeout(() => res(false), 12000) })
-  if (!ok) return null
+  v.muted = true; v.defaultMuted = true; v.playsInline = true; v.autoplay = true; v.preload = 'auto'
+  v.setAttribute('playsinline', ''); v.setAttribute('muted', '')
+  v.style.cssText = 'position:fixed;left:0;top:0;width:4px;height:4px;opacity:.01;pointer-events:none;z-index:-1'
+  v.src = sameOrigin(c.video)
+  document.body.appendChild(v)
+  const cleanup = () => { v.pause(); v.removeAttribute('src'); v.load(); v.remove() }
+  v.load(); v.play().catch(() => {})
+  const ok = await new Promise<boolean>((res) => {
+    const check = () => { if (v.readyState >= 2 && v.videoWidth > 0) res(true) }
+    v.addEventListener('loadeddata', check); v.addEventListener('playing', check); v.addEventListener('canplay', check)
+    v.onerror = () => { why = `chargement (${v.error?.code ?? '?'})`; res(false) }
+    setTimeout(() => { why = why || 'délai dépassé'; res(false) }, 15000)
+  })
+  if (!ok) { cleanup(); return null }
   const cv = document.createElement('canvas'); cv.width = VW; cv.height = VH
   const ctx = cv.getContext('2d')!
   const top = overlay(c)
   const draw = () => { ctx.fillStyle = '#0B0B0D'; ctx.fillRect(0, 0, VW, VH); cover(ctx, v, v.videoWidth, v.videoHeight, VW, VH); ctx.drawImage(top, 0, 0, VW, VH) }
   draw()
-  let stream: MediaStream
-  try { stream = cv.captureStream(30) } catch { return null }
-  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 4_000_000 })
+  let stream: MediaStream, rec: MediaRecorder
+  try {
+    stream = cv.captureStream(30)
+    rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 4_000_000 })
+  } catch (e) { why = `enregistreur (${(e as Error).name})`; cleanup(); return null }
   const chunks: Blob[] = []
   rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data) }
   const done = new Promise<void>((res) => { rec.onstop = () => res() })
   const len = Math.min(isFinite(v.duration) && v.duration > 1 ? v.duration : 8, 10)
-  try { await v.play() } catch { return null }
+  if (v.paused) { try { await v.play() } catch (e) { why = `lecture (${(e as Error).name})`; cleanup(); return null } }
+  v.currentTime = 0
   rec.start(250)
   const t0 = performance.now()
   await new Promise<void>((res) => {
@@ -148,10 +166,12 @@ async function renderVideo(c: StoryCard, onProgress: (p: number) => void): Promi
     }
     requestAnimationFrame(tick)
   })
-  rec.stop(); v.pause(); await done
+  rec.stop(); await done
   stream.getTracks().forEach((t) => t.stop())
+  cleanup()
   const type = mime.split(';')[0]
   const blob = new Blob(chunks, { type })
+  if (blob.size <= 10_000) why = 'vidéo vide'
   return blob.size > 10_000 ? new File([blob], `spotla-story.${type === 'video/mp4' ? 'mp4' : 'webm'}`, { type }) : null
 }
 
@@ -199,10 +219,12 @@ export async function shareStory(c: StoryCard) {
   // Carte avec vidéo : on partage une vraie vidéo.
   if (c.video) {
     const s = sheet(en)
-    const file = await renderVideo(c, s.progress).catch(() => null)
+    why = ''
+    const file = await renderVideo(c, s.progress).catch((e) => { why = String((e as Error)?.message ?? e); return null })
     if (s.cancelled) return false
     if (file) return new Promise<boolean>((res) => s.ready(() => { send(file, en).then(res) }))
     s.close() // vidéo impossible sur ce navigateur : on retombe sur l'image
+    toast(en ? 'Video unavailable, sharing an image' : 'Vidéo indisponible, partage en image', why)
   }
   const blob = await renderImage(c)
   if (!blob) { toast(en ? 'Couldn\'t create the image' : 'Image impossible à créer', ''); return false }
