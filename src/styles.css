@@ -1205,3 +1205,14 @@ img.bad { visibility: hidden; }
 .welcome .terms-note { margin: 14px 0 0; font-size: 11px; line-height: 1.5; color: rgba(255,255,255,.45); }
 .welcome .terms-note a { color: rgba(255,255,255,.6); }
 .welcome .onboard-shade { background: linear-gradient(180deg, rgba(11,11,13,.45) 0%, rgba(11,11,13,0) 18%, rgba(11,11,13,.1) 38%, rgba(11,11,13,.8) 60%, #0B0B0D 82%); }
+
+/* Accueil : textes lisibles sur la vidéo */
+.welcome .onboard-vid video { filter: brightness(.78) saturate(1.1); }
+.welcome .onboard-shade { background: linear-gradient(180deg, rgba(11,11,13,.55) 0%, rgba(11,11,13,.08) 16%, rgba(11,11,13,.2) 30%, rgba(11,11,13,.72) 44%, rgba(11,11,13,.92) 58%, #0B0B0D 74%); }
+.wel-brand { text-shadow: 0 1px 12px rgba(0,0,0,.6); }
+.wel-title { color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,.35), 0 4px 28px rgba(0,0,0,.65); }
+.wel-title em { color: #F4D08E; }
+.wel-sub { color: rgba(255,255,255,.9); text-shadow: 0 1px 10px rgba(0,0,0,.6); }
+.wel-login { color: rgba(255,255,255,.82); }
+.wel-guest { color: rgba(255,255,255,.75); }
+.welcome .terms-note { color: rgba(255,255,255,.55); }
