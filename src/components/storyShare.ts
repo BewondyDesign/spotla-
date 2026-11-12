@@ -124,11 +124,20 @@ async function renderVideo(c: StoryCard, onProgress: (p: number) => void): Promi
   // Sur iPhone, une vidéo ne se charge que si elle est dans la page et lancée : on la pose, invisible, et on la lit.
   const v = document.createElement('video')
   v.muted = true; v.defaultMuted = true; v.playsInline = true; v.autoplay = true; v.preload = 'auto'
+  onProgress(0.03)
   v.setAttribute('playsinline', ''); v.setAttribute('muted', '')
   v.style.cssText = 'position:fixed;left:0;top:0;width:4px;height:4px;opacity:.01;pointer-events:none;z-index:-1'
-  v.src = sameOrigin(c.video)
+  // On télécharge d'abord la vidéo en entier (Safari lit mal une vidéo relayée par morceaux).
+  let blobUrl = ''
+  try {
+    const res = await fetch(sameOrigin(c.video))
+    if (!res.ok) { why = `téléchargement (${res.status})`; return null }
+    const raw = await res.blob()
+    blobUrl = URL.createObjectURL(new Blob([raw], { type: /\.webm/i.test(c.video) ? 'video/webm' : 'video/mp4' }))
+  } catch (e) { why = `téléchargement (${(e as Error).name})`; return null }
+  v.src = blobUrl
   document.body.appendChild(v)
-  const cleanup = () => { v.pause(); v.removeAttribute('src'); v.load(); v.remove() }
+  const cleanup = () => { v.pause(); v.removeAttribute('src'); v.load(); v.remove(); URL.revokeObjectURL(blobUrl) }
   v.load(); v.play().catch(() => {})
   const ok = await new Promise<boolean>((res) => {
     const check = () => { if (v.readyState >= 2 && v.videoWidth > 0) res(true) }
