@@ -3,7 +3,24 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/m/mixkit/:path*", "destination": "https://assets.mixkit.co/:path*" },
-    { "source": "/m/sb/:path*", "destination": "https://ksxomkznjwecwxdssdlc.supabase.co/storage/v1/object/public/:path*" }
+    {
+      "source": "/m/mixkit/:path*",
+      "destination": "https://assets.mixkit.co/:path*"
+    },
+    {
+      "source": "/m/sb/:path*",
+      "destination": "https://ksxomkznjwecwxdssdlc.supabase.co/storage/v1/object/public/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
   ]
 }

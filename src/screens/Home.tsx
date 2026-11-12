@@ -8,8 +8,9 @@ import { StoriesBar } from '../components/Stories'
 import { LocationButton } from '../components/Location'
 import { PlaceCard } from '../components/PlaceCard'
 import { useCatalog } from '../data/places'
-import { inNextDays, isOnNow, type AgendaItem, useAgenda } from '../data/agenda'
+import { inNextDays, isOnNow, type AgendaItem, useAgenda, useAgendaPending } from '../data/agenda'
 import { AgendaCard } from '../components/AgendaCard'
+import { SkelRail } from '../components/Skeleton'
 import { Avatar, Verified } from '../components/ui'
 import type { Category } from '../data/catalog'
 import type { SpotEvent } from '../data/types'
@@ -111,6 +112,7 @@ export function Home() {
 
   const catalog = useCatalog()
   const agenda = useAgenda()
+  const agendaPending = useAgendaPending()
   // Activités à faire : cette semaine et les deux suivantes, les plus proches de toi d'abord.
   const soon = useMemo(() => {
     const inside = agenda.filter((e) => agendaIn(e, slot)).sort((a, b) => distanceKm(pos, a) - distanceKm(pos, b))
@@ -199,7 +201,9 @@ export function Home() {
           <div className="stack4"><span className="kicker">{slot === 'weekend' ? t('Ce week-end', 'This weekend') : t("Aujourd'hui", 'Today')} · {t('près de toi', 'near you')}</span><h2 className="sec-title">{t('Activités à faire à', 'Things to do in')} {city}</h2></div>
           <Link className="sec-link" to="/agenda">{t('Tout voir', 'See all')}</Link>
         </div>
-        <div className="rail">{soon.map((e) => <AgendaCard key={e.id} e={e} />)}</div>
+        {agendaPending && soon.length < 3
+          ? <SkelRail kind="agenda" />
+          : <div className="rail">{soon.map((e) => <AgendaCard key={e.id} e={e} />)}</div>}
       </section>
 
       {community.length > 0 && (

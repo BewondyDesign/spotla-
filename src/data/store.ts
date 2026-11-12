@@ -92,6 +92,24 @@ function freshSeed() {
 const mapEv = (s: State, id: string, f: (e: SpotEvent) => SpotEvent) => s.events.map((e) => (e.id === id ? f(e) : e))
 const toggle = (arr: string[], v: string) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v])
 
+/** Dernier fil chargé, gardé sur l'appareil pour que l'app s'ouvre instantanément (rafraîchi juste après). */
+const CACHE_KEY = 'spotla-feed-cache'
+type Feed = Pick<State, 'users' | 'events' | 'stories' | 'posts' | 'notifs'>
+function saveCache(me: string | null, d: Feed) {
+  try {
+    const data = { users: d.users, events: d.events, stories: d.stories, posts: d.posts.slice(0, 60), notifs: d.notifs.slice(0, 40) }
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ me, at: Date.now(), data }))
+  } catch { /* plein ou bloqué : on chargera en ligne */ }
+}
+function readCache(me: string | null): Feed | null {
+  try {
+    const c = JSON.parse(localStorage.getItem(CACHE_KEY) ?? 'null') as { me: string | null; at: number; data: Feed } | null
+    if (!c || c.me !== me || Date.now() - c.at > 3 * 864e5) return null
+    return c.data
+  } catch { return null }
+}
+function clearCache() { try { localStorage.removeItem(CACHE_KEY) } catch { /* rien */ } }
+
 export const useStore = create<State>()(
   persist(
     (set, get) => ({
@@ -162,6 +180,7 @@ export const useStore = create<State>()(
           loadedFor = me
           const data = await loadAll(me, get().pos)
           set({ ...data, loading: false })
+          saveCache(me, data)
           // Quelqu'un que tu suis vient de dire « J'y vais » : on te prévient tout de suite.
           const fresh = first ? [] : data.notifs.filter((n) => !n.read && !before.has(n.id))
           for (const n of fresh.slice(0, 2)) {
@@ -174,7 +193,10 @@ export const useStore = create<State>()(
         }
       },
       setSession: async (id) => {
-        set({ meId: id, loading: !!id || get().guest })
+        // Comme Instagram : on montre tout de suite le dernier fil gardé sur l'appareil, puis on le rafraîchit.
+        const c = readCache(id)
+        if (c) set({ ...c, meId: id, loading: false })
+        else set({ meId: id, loading: !!id || get().guest })
         if (id || get().guest) await get().reload()
       },
 
@@ -196,7 +218,7 @@ export const useStore = create<State>()(
         }
       },
       logout: () => {
-        if (isRemote) { signOut(); set({ meId: null, users: [], events: [], stories: [], posts: [], notifs: [] }); return }
+        if (isRemote) { signOut(); clearCache(); set({ meId: null, users: [], events: [], stories: [], posts: [], notifs: [] }); return }
         set({ meId: null, ...freshSeed() })
       },
       setPos: (pos) => set({ pos }),

@@ -142,14 +142,34 @@ async function loadAgenda(): Promise<AgendaItem[]> {
   return [...FESTIVALS, ...city].filter((e) => e.end >= t && !isForKids(e.title, e.description, e.type)).sort((a, b) => a.start.localeCompare(b.start))
 }
 
+// Activités de la Ville gardées sur l'appareil pour la journée : la rangée s'affiche tout de suite à la réouverture.
+const AG_KEY = 'spotla-agenda-cache'
+function readAgenda(): AgendaItem[] | null {
+  try {
+    const c = JSON.parse(localStorage.getItem(AG_KEY) ?? 'null') as { day: string; items: AgendaItem[] } | null
+    return c && c.day === today() ? c.items.filter((e) => e.end >= today()) : null
+  } catch { return null }
+}
+const stored = readAgenda()
+const fetchAgenda = () => (inflight ??= loadAgenda().then((x) => {
+  cache = x
+  try { if (x.length > FESTIVALS.length) localStorage.setItem(AG_KEY, JSON.stringify({ day: today(), items: x })) } catch { /* plein */ }
+  return x
+}))
+
 export function useAgenda() {
-  const [items, setItems] = useState<AgendaItem[]>(cache ?? FESTIVALS.filter((e) => e.end >= today()))
+  const [items, setItems] = useState<AgendaItem[]>(cache ?? stored ?? FESTIVALS.filter((e) => e.end >= today()))
   useEffect(() => {
     if (cache) return
-    inflight ??= loadAgenda()
-    inflight.then((x) => { cache = x; setItems(x) })
+    fetchAgenda().then(setItems)
   }, [])
   return items
+}
+/** Vrai tant que les activités de la Ville n'ont jamais été chargées (on montre alors un squelette). */
+export function useAgendaPending() {
+  const [pending, setPending] = useState(!cache && !stored)
+  useEffect(() => { if (pending) fetchAgenda().then(() => setPending(false)) }, [pending])
+  return pending
 }
 
 const MOIS_FR = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.']

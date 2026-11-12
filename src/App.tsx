@@ -1,25 +1,37 @@
-import { Agenda } from './screens/Agenda'
-import { AgendaDetail } from './screens/AgendaDetail'
-import { Settings } from './screens/Settings'
-import { MySorties } from './screens/MySorties'
-import { useEffect } from 'react'
+// Les autres écrans se chargent à part (l'ouverture ne télécharge que l'accueil),
+// puis en arrière-plan quelques secondes après : un tap ensuite est instantané.
+const LOADERS: Record<string, () => Promise<unknown>> = import.meta.glob(['./screens/*.tsx', '!./screens/{Home,Onboarding,Explore,Legal}.tsx'])
+const load = (path: string) => LOADERS[path + '.tsx']() as Promise<Record<string, unknown>>
+function usePrefetchScreens() {
+  useEffect(() => {
+    const go = () => Object.values(LOADERS).forEach((f) => f().catch(() => {}))
+    const id = setTimeout(() => ('requestIdleCallback' in window ? requestIdleCallback(go) : go()), 2500)
+    return () => clearTimeout(id)
+  }, [])
+}
+const Agenda = lazy(() => load('./screens/Agenda').then((m) => ({ default: (m as Record<string, React.ComponentType>).Agenda })))
+const AgendaDetail = lazy(() => load('./screens/AgendaDetail').then((m) => ({ default: (m as Record<string, React.ComponentType>).AgendaDetail })))
+const Settings = lazy(() => load('./screens/Settings').then((m) => ({ default: (m as Record<string, React.ComponentType>).Settings })))
+const MySorties = lazy(() => load('./screens/MySorties').then((m) => ({ default: (m as Record<string, React.ComponentType>).MySorties })))
+import { lazy, Suspense, useEffect } from 'react'
+import { SkelScreen } from './components/Skeleton'
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useConfirm, useMe, useStore } from './data/store'
 import { isRemote, sb, subscribe } from './data/backend'
 import { NewPassword, Onboarding } from './screens/Onboarding'
 import { Home } from './screens/Home'
-import { MapScreen } from './screens/MapScreen'
-import { PlaceDetail } from './screens/PlaceDetail'
-import { EventDetail } from './screens/EventDetail'
-import { Create } from './screens/Create'
-import { Profile } from './screens/Profile'
-import { Business } from './screens/Business'
-import { Notifs } from './screens/Notifs'
+const MapScreen = lazy(() => load('./screens/MapScreen').then((m) => ({ default: (m as Record<string, React.ComponentType>).MapScreen })))
+const PlaceDetail = lazy(() => load('./screens/PlaceDetail').then((m) => ({ default: (m as Record<string, React.ComponentType>).PlaceDetail })))
+const EventDetail = lazy(() => load('./screens/EventDetail').then((m) => ({ default: (m as Record<string, React.ComponentType>).EventDetail })))
+const Create = lazy(() => load('./screens/Create').then((m) => ({ default: (m as Record<string, React.ComponentType>).Create })))
+const Profile = lazy(() => load('./screens/Profile').then((m) => ({ default: (m as Record<string, React.ComponentType>).Profile })))
+const Business = lazy(() => load('./screens/Business').then((m) => ({ default: (m as Record<string, React.ComponentType>).Business })))
+const Notifs = lazy(() => load('./screens/Notifs').then((m) => ({ default: (m as Record<string, React.ComponentType>).Notifs })))
 import { StoryViewer } from './components/Stories'
 import { TabBar } from './components/TabBar'
 import { ConfirmSheet, Toast } from './components/ui'
 import { JoinScreen, JoinSheet } from './components/Join'
-import { EventChat } from './screens/EventChat'
+const EventChat = lazy(() => load('./screens/EventChat').then((m) => ({ default: (m as Record<string, React.ComponentType>).EventChat })))
 import { useOutingReminders } from './data/reminders'
 import { AgeGate } from './components/AgeGate'
 import { Explore } from './screens/Explore'
@@ -78,7 +90,8 @@ function Shell() {
   if (loc.pathname.startsWith('/legal')) return <div className="app"><Routes><Route path="/legal/:doc" element={<Legal />} /><Route path="*" element={<Legal />} /></Routes><Toast /></div>
   // Moins de 18 ans : rien d'autre ne s'affiche (ni inscription, ni visite) tant que l'âge n'est pas confirmé.
   if (minorBlocked) return <div className="app"><AgeGate /></div>
-  if (isRemote && loading) return <div className="app"><div className="splash"><span className="dot" />SpotLa</div></div>
+  // Premier chargement : la forme de l'accueil s'affiche tout de suite (squelette), pas un écran vide.
+  if (isRemote && loading) return <div className="app"><SkelScreen home /></div>
   if (recovery) return <div className="app"><NewPassword /><Toast /></div>
   if (!meId && !guest) return <div className="app"><Onboarding /><Toast /></div>
   if (meId && !me) return <div className="app"><Onboarding authId={meId} /><Toast /></div>
@@ -88,6 +101,7 @@ function Shell() {
   const fullscreen = loc.pathname.startsWith('/event/') || loc.pathname.startsWith('/place/') || loc.pathname.startsWith('/stories/') || loc.pathname === '/settings' || loc.pathname.startsWith('/agenda') || loc.pathname.startsWith('/explore/')
   return (
     <div className="app">
+      <Suspense fallback={<SkelScreen />}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/map" element={<MapScreen />} />
@@ -107,6 +121,7 @@ function Shell() {
         <Route path="/sorties" element={need(<MySorties />, 'Retrouve tes sorties ici')} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
       {!fullscreen && <TabBar />}
       <Toast />
       <ConfirmSheet />
@@ -121,6 +136,7 @@ export function App() {
   const lang = useLang((s) => s.lang)
   useEffect(() => { startAutoTranslate(lang) }, [lang])
   useEffect(() => { startSafety() }, [])
+  usePrefetchScreens()
   // Changer de langue remonte l'app : le texte d'origine revient, puis il est traduit si besoin.
   return <><HashRouter key={lang}><Shell /></HashRouter><Intro /></>
 }

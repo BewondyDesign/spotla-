@@ -12,10 +12,18 @@ try { const r = new URLSearchParams(location.search).get('ref'); if (r && /^[a-z
 // Le lien de connexion revient avec les jetons (ou une erreur) dans l'URL, après le #.
 // On laisse Supabase les lire AVANT que le routeur (qui utilise aussi le #) ne démarre,
 // puis on nettoie l'adresse.
+// Chaque photo apparaît en fondu dès qu'elle est prête (la carte brille en attendant).
+// Une photo introuvable reste cachée (pas d'icône d'image cassée).
+const shown = (ok: boolean) => (e: Event) => { if (e.target instanceof HTMLImageElement) e.target.classList.add(ok ? 'ok' : 'bad') }
+document.addEventListener('load', shown(true), true)
+document.addEventListener('error', shown(false), true)
+
 async function boot() {
   const raw = location.hash.slice(1)
   const params = new URLSearchParams(raw.includes('access_token') || raw.includes('error') ? raw : location.search.slice(1))
-  if (sb) {
+  // Retour d'un lien de connexion seulement : sinon on affiche l'app tout de suite, sans attendre le réseau.
+  const fromLink = ['access_token', 'error', 'code', 'type'].some((k) => params.has(k))
+  if (sb && fromLink) {
     await sb.auth.getSession()
     if (params.get('type') === 'recovery') useStore.setState({ recovery: true })
     if (params.has('access_token') || params.has('error') || params.has('code')) {

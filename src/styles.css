@@ -1117,3 +1117,30 @@ p { line-height: 1.5; }
 .btn-apple { background: #000; color: #fff; border: 1px solid rgba(255,255,255,.28); display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
 .terms-note { line-height: 1.45; }
 .terms-note a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
+
+/* ---------- Chargement : squelettes qui brillent, photos qui apparaissent en fondu ---------- */
+.skel { position: relative; overflow: hidden; background: #17171A; }
+.skel::after, .pcard::before, .acard::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.06) 45%, transparent 70%);
+  background-size: 220% 100%; animation: skel-shine 1.3s ease-in-out infinite;
+}
+.pcard::before, .acard::before { z-index: 0; }
+@keyframes skel-shine { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+.skel-rail { pointer-events: none; }
+.skel-card { flex: 0 0 74%; max-width: 300px; aspect-ratio: 3 / 4.4; border-radius: 24px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; padding: 18px; }
+.skel-card.skel-agenda { flex-basis: 64%; max-width: 250px; aspect-ratio: 3 / 4; border-radius: 22px; }
+.skel-line { display: block; height: 12px; border-radius: 6px; background: #222226; }
+.skel-line.big { height: 22px; }
+.skel-line.w30 { width: 30%; } .skel-line.w40 { width: 40%; } .skel-line.w50 { width: 50%; } .skel-line.w60 { width: 60%; }
+.skel-hero { height: 340px; border-radius: 0 0 28px 28px; }
+.skel-hero.short { height: 220px; }
+.skel-stories { display: flex; gap: 14px; padding: 16px; }
+.skel-dot { width: 64px; height: 64px; border-radius: 50%; flex: none; }
+.skel-head { padding-top: 22px; padding-bottom: 12px; }
+/* Les photos des cartes arrivent en fondu au lieu d'apparaître d'un coup, morceau par morceau. */
+img.pcard-bg, img.acard-bg, img.hero-vid, .gallery img { opacity: 0; transition: opacity .35s ease; }
+img.ok { opacity: 1; }
+img.bad { visibility: hidden; }
+.pcard:has(img.ok, img.bad)::before, .acard:has(img.ok, img.bad)::before { animation: none; opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .skel::after, .pcard::before, .acard::before { animation: none; } }
