@@ -11,6 +11,7 @@ import { share } from '../components/share'
 import { useStoryGroups } from '../components/Stories'
 import { shareStory } from '../components/storyShare'
 import { Instagram } from 'lucide-react'
+import { blobUrl } from '../data/media'
 import { useT } from '../data/i18n'
 
 export function EventDetail() {
@@ -45,6 +46,16 @@ export function EventDetail() {
   const following = (me?.following ?? []).includes(e.hostId)
   const needsApproval = (e.visibility === 'request' || (e.visibility === 'circle' && !following)) && !accepted && !mine
 
+  // Story : on partage en priorité une vraie vidéo filmée sur place par un membre (la plus récente).
+  const realStoryVideo = async () => {
+    for (const s of [...evStories].sort((a, b) => b.createdAt.localeCompare(a.createdAt))) {
+      if (s.media.kind !== 'video') continue
+      const u = s.media.url ?? (s.media.blobKey ? await blobUrl(s.media.blobKey) : null)
+      if (u) return u
+    }
+    return undefined
+  }
+
   const onReport = async () => {
     if (!(await askConfirm('Signaler cet événement à la modération ? (contenu trompeur, dangereux ou inapproprié)', 'Signaler'))) return
     report(e.id)
@@ -58,7 +69,7 @@ export function EventDetail() {
         <div className="shade" />
         <div className="ev-top">
           <button className="iconbtn glass" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft size={20} /></button>
-          <span className="row gap8"><button className="story-btn" onClick={() => shareStory({ title: e.title, badge: `${fmtDay(e.start)} · ${fmtTime(e.start)}`.toUpperCase(), line: `${e.venue} · ${e.area}`, video: eventVideo(e), hash: `#/event/${e.id}` }).then((ok) => ok && bump(e.id, 'shares'))} aria-label="Partager en story"><Instagram size={17} /> Story</button><button className="iconbtn glass" onClick={async () => { if (await share(e.title, `#/event/${e.id}`)) bump(e.id, 'shares') }} aria-label="Partager"><Share2 size={20} /></button></span>
+          <span className="row gap8"><button className="story-btn" onClick={async () => { const real = await realStoryVideo(); if (await shareStory({ title: e.title, badge: live ? (t('EN DIRECT', 'LIVE')) : `${fmtDay(e.start)} · ${fmtTime(e.start)}`.toUpperCase(), line: `${e.venue} · ${e.area}`, video: real ?? eventVideo(e), maxSeconds: real ? 15 : 10, hash: `#/event/${e.id}` })) bump(e.id, 'shares') }} aria-label="Partager en story"><Instagram size={17} /> Story</button><button className="iconbtn glass" onClick={async () => { if (await share(e.title, `#/event/${e.id}`)) bump(e.id, 'shares') }} aria-label="Partager"><Share2 size={20} /></button></span>
         </div>
         <div className="stack8">
           <div className="row gap6 wrapf"><PriceBadge e={e} /><VisBadge e={e} />{live && <LiveBadge />}</div>

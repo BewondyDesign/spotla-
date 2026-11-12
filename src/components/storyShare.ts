@@ -13,6 +13,8 @@ export interface StoryCard {
   photo?: string
   /** Vidéo de la carte : si présente, la story est partagée en vidéo (10 s max). */
   video?: string
+  /** Durée max de la vidéo partagée (s). 10 s pour une vidéo d'ambiance, 15 s pour une vraie story. */
+  maxSeconds?: number
   colors?: [string, string]
   hash: string
 }
@@ -159,7 +161,7 @@ async function renderVideo(c: StoryCard, onProgress: (p: number) => void): Promi
   const chunks: Blob[] = []
   rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data) }
   const done = new Promise<void>((res) => { rec.onstop = () => res() })
-  const len = Math.min(isFinite(v.duration) && v.duration > 1 ? v.duration : 8, 10)
+  const len = Math.min(isFinite(v.duration) && v.duration > 1 ? v.duration : 8, c.maxSeconds ?? 10)
   if (v.paused) { try { await v.play() } catch (e) { why = `lecture (${(e as Error).name})`; cleanup(); return null } }
   v.currentTime = 0
   rec.start(250)
