@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLang } from '../data/i18n'
+import { Tour, tourDone } from './Tour'
 import { dayInfo, PART_WHEN } from '../data/daypart'
 import { useStore } from '../data/store'
 
@@ -12,7 +13,7 @@ const WAIT = 1800 // si la vidéo tarde (réseau lent, mode économie d'énergie
 /**
  * Animation d'ouverture : un plan de ville apparaît, un repère « spot » tombe et rebondit,
  * des ondes partent du point, une petite gerbe de lumières (ambiance soirée), puis le nom SpotLa.
- * Le tout par-dessus une vidéo de soirée au ralenti. Jouée à chaque ouverture de l'app (environ 7 s). Toucher l'écran la passe.
+ * Le tout par-dessus une vidéo de soirée au ralenti. Jouée à la toute première ouverture (environ 7 s). Toucher l'écran la passe.
  */
 const PARTICLES = Array.from({ length: 18 }, (_, i) => {
   const a = (i / 18) * Math.PI * 2 + (i % 2 ? 0.17 : 0)
@@ -20,28 +21,46 @@ const PARTICLES = Array.from({ length: 18 }, (_, i) => {
   return { x: Math.cos(a) * d, y: Math.sin(a) * d * 0.85 - 20, c: ['#E8C27A', '#F2557A', '#FFFFFF', '#F4DDAE'][i % 4], s: 4 + (i % 3) * 2, delay: (i % 5) * 30 }
 })
 
-const SEEN = 'spotla-intro-seen'
-const AWAY = 5 * 60_000 // absent plus de 5 minutes = on rejoue l'ouverture au retour
+const SEEN = 'spotla-intro-seen' // cette session a déjà eu son ouverture
+const DONE = 'spotla-intro-done' // l'intro complète a déjà été vue une fois sur cet appareil
+
+const get = (st: Storage, k: string) => { try { return st.getItem(k) } catch { return null } }
 
 /**
- * Quand jouer l'ouverture : une fois à l'ouverture de l'app (pas à chaque rafraîchissement de la page),
- * et de nouveau quand on revient dans l'app après l'avoir quittée plus de 5 minutes.
+ * Quand jouer l'ouverture :
+ * - toute première ouverture sur l'appareil : l'intro complète (vidéo + épingle + logo), puis l'accueil sur la même vidéo ;
+ * - ensuite, à chaque ouverture de l'app : juste le logo pendant une seconde, puis directement l'app (comme Instagram).
+ * Un simple rafraîchissement de la page ne rejoue rien.
  */
 export function Intro() {
-  const [run, setRun] = useState(() => { try { return sessionStorage.getItem(SEEN) ? 0 : 1 } catch { return 1 } })
-  useEffect(() => {
-    let hiddenAt = 0
-    const vis = () => {
-      if (document.visibilityState === 'hidden') hiddenAt = Date.now()
-      else if (hiddenAt && Date.now() - hiddenAt > AWAY) setRun((n) => n + 1)
-    }
-    document.addEventListener('visibilitychange', vis)
-    return () => document.removeEventListener('visibilitychange', vis)
-  }, [])
-  return run ? <IntroPlayer key={run} /> : null
+  const [mode] = useState<'full' | 'logo' | null>(() => (!get(localStorage, DONE) ? 'full' : get(sessionStorage, SEEN) ? null : 'logo'))
+  const [tour, setTour] = useState(false)
+  // La présentation se place sous l'intro pendant que celle-ci s'efface : pas d'écran intermédiaire.
+  if (mode === 'full') return <>{tour && <Tour onDone={() => setTour(false)} />}<IntroPlayer onEnd={() => { if (!tourDone()) setTour(true) }} /></>
+  if (mode === 'logo') return <LogoSplash />
+  return null
 }
 
-function IntroPlayer() {
+/** Ouverture courte des habitués : le logo apparaît puis s'efface (environ 1 s). */
+function LogoSplash() {
+  const [out, setOut] = useState(false)
+  const [done, setDone] = useState(false)
+  useEffect(() => {
+    try { sessionStorage.setItem(SEEN, '1') } catch { /* rien */ }
+    const a = setTimeout(() => setOut(true), 700)
+    const b = setTimeout(() => setDone(true), 1100)
+    return () => { clearTimeout(a); clearTimeout(b) }
+  }, [])
+  if (done) return null
+  return (
+    <div className={`logo-splash${out ? ' out' : ''}`} aria-hidden="true">
+      <svg viewBox="0 0 48 64" width="34" height="45"><path d="M24 2C12.4 2 3 11.2 3 22.6 3 37.8 24 62 24 62s21-24.2 21-39.4C45 11.2 35.6 2 24 2z" fill="#E8C27A" /><circle cx="24" cy="22.5" r="8" fill="#0B0B0D" /></svg>
+      <span>SpotLa</span>
+    </div>
+  )
+}
+
+function IntroPlayer({ onEnd }: { onEnd: () => void }) {
   const en = useLang((s) => s.lang) === 'en'
   const [phase, setPhase] = useState<'play' | 'out' | 'done'>('play')
   // Première ouverture : après l'animation, 2 écrans de présentation.
@@ -66,7 +85,8 @@ function IntroPlayer() {
     return () => { clearTimeout(a); clearTimeout(b) }
   }, [started]) // eslint-disable-line react-hooks/exhaustive-deps
   // L'ouverture n'est notée « vue » qu'une fois finie ou passée : si la page est rechargée en plein milieu, elle rejoue.
-  useEffect(() => { if (phase !== 'play') try { sessionStorage.setItem(SEEN, '1') } catch { /* rien */ } }, [phase])
+  useEffect(() => { if (phase !== 'play') try { sessionStorage.setItem(SEEN, '1'); localStorage.setItem(DONE, '1') } catch { /* rien */ } }, [phase])
+  useEffect(() => { if (phase === 'out') onEnd() }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
   if (phase === 'done') return null
   const skip = () => { setPhase('out'); setTimeout(() => setPhase('done'), 800) }
 
