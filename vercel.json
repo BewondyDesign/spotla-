@@ -1,5 +1,9 @@
 {
   "framework": "vite",
   "buildCommand": "npm run build",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/m/mixkit/:path*", "destination": "https://assets.mixkit.co/:path*" },
+    { "source": "/m/sb/:path*", "destination": "https://ksxomkznjwecwxdssdlc.supabase.co/storage/v1/object/public/:path*" }
+  ]
 }

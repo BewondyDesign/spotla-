@@ -54,7 +54,7 @@ export function PlaceDetail() {
         {gallery.length ? <Gallery items={gallery} /> : <Icon className="pcard-icon" size={160} strokeWidth={1} aria-hidden="true" />}
         <div className="ev-top">
           <button className="iconbtn glass" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft /></button>
-          <span className="row gap8"><button className="story-btn" onClick={() => shareStory({ title: p.name, badge: p.kind.toUpperCase(), line: `${p.area} · ${p.address}`, photo: p.photo, hash: `#/place/${encodeURIComponent(p.id)}` })} aria-label="Partager en story"><Instagram size={17} /> Story</button><button className="iconbtn glass" onClick={() => share(p.name, `#/place/${encodeURIComponent(p.id)}`)} aria-label="Partager"><Share2 size={20} /></button></span>
+          <span className="row gap8"><button className="story-btn" onClick={() => shareStory({ title: p.name, badge: p.kind.toUpperCase(), line: `${p.area} · ${p.address}`, photo: p.photo, video: gallery.find((m) => /\.(mp4|webm|mov)(\?|$)/i.test(m)), hash: `#/place/${encodeURIComponent(p.id)}` })} aria-label="Partager en story"><Instagram size={17} /> Story</button><button className="iconbtn glass" onClick={() => share(p.name, `#/place/${encodeURIComponent(p.id)}`)} aria-label="Partager"><Share2 size={20} /></button></span>
         </div>
       </div>
 

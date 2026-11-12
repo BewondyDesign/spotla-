@@ -23,7 +23,7 @@ export function AgendaDetail() {
         <Gallery items={[agendaVideo(e), e.image].filter((x): x is string => !!x)} />
         <div className="ev-top">
           <button className="iconbtn glass" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft /></button>
-          <span className="row gap8"><button className="story-btn" onClick={() => shareStory({ title: e.title, badge: e.type.toUpperCase(), line: [e.venue, e.area].filter(Boolean).join(' · '), photo: e.image, hash: `#/agenda/${encodeURIComponent(e.id)}` })} aria-label="Partager en story"><Instagram size={17} /> Story</button><button className="iconbtn glass" onClick={() => share(e.title, `#/agenda/${encodeURIComponent(e.id)}`)} aria-label="Partager"><Share2 size={20} /></button></span>
+          <span className="row gap8"><button className="story-btn" onClick={() => shareStory({ title: e.title, badge: e.type.toUpperCase(), line: [e.venue, e.area].filter(Boolean).join(' · '), photo: e.image, video: agendaVideo(e), hash: `#/agenda/${encodeURIComponent(e.id)}` })} aria-label="Partager en story"><Instagram size={17} /> Story</button><button className="iconbtn glass" onClick={() => share(e.title, `#/agenda/${encodeURIComponent(e.id)}`)} aria-label="Partager"><Share2 size={20} /></button></span>
         </div>
       </div>
       <div className="pad stack16 place-body">

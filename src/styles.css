@@ -1073,3 +1073,10 @@ p { line-height: 1.5; }
 .btn-fb { background: #1877F2; color: #fff; border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
 .prof-insta { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text); text-decoration: none; font-weight: 500; }
 .prof-insta.muted { color: var(--muted); font-weight: 400; }
+/* Fenêtre « Préparation de ta vidéo » (partage en story) */
+.story-sheet { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,.6); display: grid; align-items: end; padding: 16px; padding-bottom: calc(env(safe-area-inset-bottom) + 16px); animation: tour-in .2s ease; }
+.story-sheet-card { display: grid; gap: 14px; padding: 20px; border-radius: 22px; background: var(--night); border: 1px solid var(--line); color: var(--text); }
+.story-sheet-card b { font-size: 17px; font-weight: 600; }
+.story-sheet-bar { height: 6px; border-radius: 3px; background: var(--night-2); overflow: hidden; }
+.story-sheet-bar i { display: block; height: 100%; width: 0; background: var(--brand); transition: width .2s linear; }
+.story-sheet-card .textlink { justify-self: center; }
