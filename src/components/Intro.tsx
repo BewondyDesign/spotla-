@@ -25,6 +25,16 @@ const SEEN = 'spotla-intro-seen' // cette session a déjà eu son ouverture
 const DONE = 'spotla-intro-done' // l'intro complète a déjà été vue une fois sur cet appareil
 
 const get = (st: Storage, k: string) => { try { return st.getItem(k) } catch { return null } }
+/** Déjà venu sur cet appareil ? (mémoire locale, cookie de secours, ou une session de connexion enregistrée) */
+function introDone() {
+  if (get(localStorage, DONE) || document.cookie.includes('spotla_intro=1')) return true
+  try { return Object.keys(localStorage).some((k) => /^sb-.+-auth-token$/.test(k) || k === 'spotla-feed-cache') } catch { return false }
+}
+function markIntro() {
+  try { sessionStorage.setItem(SEEN, '1') } catch { /* rien */ }
+  try { localStorage.setItem(DONE, '1') } catch { /* rien */ }
+  document.cookie = 'spotla_intro=1; max-age=31536000; path=/; SameSite=Lax'
+}
 
 /**
  * Quand jouer l'ouverture :
@@ -33,7 +43,11 @@ const get = (st: Storage, k: string) => { try { return st.getItem(k) } catch { r
  * Un simple rafraîchissement de la page ne rejoue rien.
  */
 export function Intro() {
-  const [mode] = useState<'full' | 'logo' | null>(() => (!get(localStorage, DONE) ? 'full' : get(sessionStorage, SEEN) ? null : 'logo'))
+  const [mode] = useState<'full' | 'logo' | null>(() => {
+    // Lien spotla.vercel.app/?intro : rejoue l'intro et les pages de présentation (pour les montrer à quelqu'un).
+    if (/[?&]intro\b/.test(location.search)) { try { localStorage.removeItem('spotla-tour-done') } catch { /* rien */ } history.replaceState(null, '', location.pathname + location.hash); return 'full' }
+    return !introDone() ? 'full' : get(sessionStorage, SEEN) ? null : 'logo'
+  })
   const [tour, setTour] = useState(false)
   // La présentation se place sous l'intro pendant que celle-ci s'efface : pas d'écran intermédiaire.
   if (mode === 'full') return <>{tour && <Tour onDone={() => setTour(false)} />}<IntroPlayer onEnd={() => { if (!tourDone()) setTour(true) }} /></>
@@ -85,7 +99,8 @@ function IntroPlayer({ onEnd }: { onEnd: () => void }) {
     return () => { clearTimeout(a); clearTimeout(b) }
   }, [started]) // eslint-disable-line react-hooks/exhaustive-deps
   // L'ouverture n'est notée « vue » qu'une fois finie ou passée : si la page est rechargée en plein milieu, elle rejoue.
-  useEffect(() => { if (phase !== 'play') try { sessionStorage.setItem(SEEN, '1'); localStorage.setItem(DONE, '1') } catch { /* rien */ } }, [phase])
+  // Notée « vue » dès qu'elle démarre : un rafraîchissement ne la rejoue jamais.
+  useEffect(() => { markIntro() }, [])
   useEffect(() => { if (phase === 'out') onEnd() }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
   if (phase === 'done') return null
   const skip = () => { setPhase('out'); setTimeout(() => setPhase('done'), 800) }

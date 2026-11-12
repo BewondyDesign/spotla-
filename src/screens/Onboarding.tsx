@@ -32,33 +32,38 @@ export function Onboarding({ authId }: { authId?: string }) {
 function Welcome({ go }: { go: (v: View) => void }) {
   const t = useT()
   const when = PART_WHEN[useDayInfo().part]
+  const guest = () => useStore.getState().setGuest(true)
   return (
-    <div className="scr onboard">
+    <div className="scr onboard welcome">
       {/* Même vidéo que l'intro : l'accueil continue l'ambiance, sans changer d'univers. */}
       <div className="onboard-art onboard-vid" aria-hidden="true">
         <video src={CLIP.hd} poster={CLIP.poster} muted playsInline autoPlay loop preload="auto" disablePictureInPicture
           ref={(v) => { if (v) { v.muted = true; v.setAttribute('muted', ''); v.play().catch(() => {}) } }} />
         <div className="onboard-shade" />
       </div>
-      <div className="pad onboard-body">
-        <div className="row between"><div className="brand"><span className="dot" />SpotLa</div><LangSwitch className="glass" /></div>
-        <h1 className="title-xl">{t('On va où ', 'Where are we going ')}<em>{t(when[0], when[1])}</em>{t('\u00a0?', '?')}</h1>
-        <p className="lede">{t('Les sorties, activités et soirées près de toi, à toute heure. Même seul·e, même si tu ne connais personne en ville.', 'Outings, activities and parties near you, any time of day. Even solo, even if you don\'t know anyone in town.')}</p>
+      <header className="pad wel-top">
+        <span className="wel-brand">SpotLa</span>
+        <LangSwitch className="glass" />
+      </header>
+      <div className="pad wel-bottom">
+        <h1 className="wel-title">{t('On va où ', 'Where are we going ')}<em>{t(when[0], when[1])}</em>{t('\u00a0?', '?')}</h1>
+        <p className="wel-sub">{t('Sorties, activités et soirées près de toi, même seul·e.', 'Outings, activities and parties near you, even solo.')}</p>
         {isRemote ? (
-          <div className="stack12">
+          <div className="wel-actions">
             <button className="btn btn-primary btn-block" onClick={() => go('signup')}>{t('Créer un compte', 'Create an account')}</button>
-            <SocialButtons />
-            <p className="center muted">{t('Tu as déjà un compte ?', 'Already have an account?')} <button className="link-strong" onClick={() => go('login')}>{t('Se connecter', 'Log in')}</button></p>
-            <button className="btn btn-ghost btn-block" onClick={() => useStore.getState().setGuest(true)}>{t('Explorer sans compte', 'Browse without an account')}</button>
+            <div className="wel-social" role="group" aria-label={t('Continuer avec', 'Continue with')}>
+              <AppleButton round /><GoogleButton round /><FacebookButton round />
+            </div>
+            <p className="wel-login">{t('Déjà un compte ?', 'Already have an account?')} <button className="link-strong" onClick={() => go('login')}>{t('Se connecter', 'Log in')}</button></p>
           </div>
         ) : (
-          <>
+          <div className="wel-actions">
             <button className="btn btn-primary btn-block" onClick={() => go('profile')}>{t('C\'est parti', 'Let\'s go')}</button>
-            <button className="btn btn-ghost btn-block" onClick={() => useStore.getState().setGuest(true)}>{t('Explorer sans compte', 'Browse without an account')}</button>
-            <p className="hint center">Mode démo : tes données restent sur cet appareil.</p>
-            <TermsNote />
-          </>
+            <p className="wel-login muted">Mode démo : tes données restent sur cet appareil.</p>
+          </div>
         )}
+        <button className="wel-guest" onClick={guest}>{t('Explorer sans compte', 'Browse without an account')}</button>
+        <TermsNote />
       </div>
     </div>
   )
@@ -82,41 +87,41 @@ export function TermsNote() {
   )
 }
 
-function AppleButton() {
+function AppleButton({ round }: { round?: boolean }) {
   const [busy, setBusy] = useState(false)
   return (
-    <button className="btn btn-apple btn-block" disabled={busy} onClick={async () => {
+    <button className={round ? 'wel-round apple' : 'btn btn-apple btn-block'} aria-label={round ? 'Continuer avec Apple' : undefined} disabled={busy} onClick={async () => {
       setBusy(true)
       try { await signInWithApple() } catch (e) { toast('Connexion Apple impossible', (e as Error).message); setBusy(false) }
     }}>
       <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.37 12.62c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-2.99-.79-1.54.02-2.96.9-3.75 2.27-1.6 2.78-.41 6.89 1.15 9.14.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.39-.92-2.4-3.66zM14.1 5.86c.63-.77 1.06-1.83.94-2.89-.91.04-2.01.61-2.66 1.37-.58.67-1.1 1.76-.96 2.8 1.01.08 2.05-.52 2.68-1.28z"/></svg>
-      Continuer avec Apple
+      {!round && 'Continuer avec Apple'}
     </button>
   )
 }
 
-function FacebookButton() {
+function FacebookButton({ round }: { round?: boolean }) {
   const [busy, setBusy] = useState(false)
   return (
-    <button className="btn btn-fb btn-block" disabled={busy} onClick={async () => {
+    <button className={round ? 'wel-round facebook' : 'btn btn-fb btn-block'} aria-label={round ? 'Continuer avec Facebook' : undefined} disabled={busy} onClick={async () => {
       setBusy(true)
       try { await signInWithFacebook() } catch (e) { toast('Connexion Facebook impossible', (e as Error).message); setBusy(false) }
     }}>
       <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.69.24 2.69.24v2.97h-1.52c-1.49 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z"/></svg>
-      Continuer avec Facebook
+      {!round && 'Continuer avec Facebook'}
     </button>
   )
 }
 
-function GoogleButton() {
+function GoogleButton({ round }: { round?: boolean }) {
   const [busy, setBusy] = useState(false)
   return (
-    <button className="btn btn-light btn-block" disabled={busy} onClick={async () => {
+    <button className={round ? 'wel-round google' : 'btn btn-light btn-block'} aria-label={round ? 'Continuer avec Google' : undefined} disabled={busy} onClick={async () => {
       setBusy(true)
       try { await signInWithGoogle() } catch (e) { toast('Connexion Google impossible', (e as Error).message); setBusy(false) }
     }}>
       <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
-      Continuer avec Google
+      {!round && 'Continuer avec Google'}
     </button>
   )
 }

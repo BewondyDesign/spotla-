@@ -1185,3 +1185,23 @@ img.bad { visibility: hidden; }
 .tour-bg video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(1.05) saturate(1.15); }
 .tour-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,11,13,.55), rgba(11,11,13,.72) 45%, rgba(11,11,13,.9)); }
 .tour .tour-scene { background: rgba(20,18,16,.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.08); }
+
+/* ---------- Accueil (déconnecté) : épuré, la vidéo respire en haut, tout le reste en bas ---------- */
+.welcome { justify-content: space-between; padding-bottom: calc(20px + var(--safe-b)); }
+.wel-top { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; padding-top: 4px; }
+.wel-brand { font-size: 20px; font-weight: 700; letter-spacing: -.02em; color: #fff; }
+.wel-bottom { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 0; }
+.wel-title { font-size: 40px; line-height: 1.05; font-weight: 700; letter-spacing: -.03em; margin: 0 0 12px; }
+.wel-title em { font-style: normal; color: var(--brand, #E8C27A); }
+.wel-sub { margin: 0 0 32px; font-size: 16px; line-height: 1.45; color: rgba(255,255,255,.75); max-width: 30ch; }
+.wel-actions { display: flex; flex-direction: column; gap: 22px; }
+.wel-social { display: flex; justify-content: center; gap: 18px; }
+.wel-round { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); cursor: pointer; padding: 0; }
+.wel-round svg { width: 22px; height: 22px; }
+.wel-round.apple { color: #fff; }
+.wel-round:disabled { opacity: .5; }
+.wel-login { margin: 0; text-align: center; font-size: 15px; color: rgba(255,255,255,.7); }
+.wel-guest { margin: 18px auto 0; background: none; border: 0; color: rgba(255,255,255,.6); font: inherit; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 6px; }
+.welcome .terms-note { margin: 14px 0 0; font-size: 11px; line-height: 1.5; color: rgba(255,255,255,.45); }
+.welcome .terms-note a { color: rgba(255,255,255,.6); }
+.welcome .onboard-shade { background: linear-gradient(180deg, rgba(11,11,13,.45) 0%, rgba(11,11,13,0) 18%, rgba(11,11,13,.1) 38%, rgba(11,11,13,.8) 60%, #0B0B0D 82%); }
