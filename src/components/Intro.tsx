@@ -4,9 +4,9 @@ import { Tour, tourDone } from './Tour'
 import { dayInfo, PART_WHEN } from '../data/daypart'
 import { useStore } from '../data/store'
 
-// Vidéo de fond (Mixkit, licence gratuite) : foule qui danse en club, sous les lasers. Adultes seulement.
+// Vidéo de fond (Mixkit, licence gratuite) : un groupe d amis adultes qui danse en soirée, en plan rapproché.
 // Lue directement depuis Mixkit en 720p (nette sur téléphone) ; si elle ne démarre pas vite (réseau lent), on passe à la version 360p, plus légère.
-const CLIP = { hd: 'https://assets.mixkit.co/videos/4344/4344-720.mp4', sd: 'https://assets.mixkit.co/videos/4344/4344-360.mp4', poster: 'https://assets.mixkit.co/videos/4344/4344-thumb-720-0.jpg' }
+const CLIP = { hd: 'https://assets.mixkit.co/videos/46896/46896-720.mp4', sd: 'https://assets.mixkit.co/videos/46896/46896-360.mp4', poster: 'https://assets.mixkit.co/videos/46896/46896-thumb-720-0.jpg' }
 const LENGTH = 7000 // durée de l'animation, comptée à partir du moment où la vidéo joue
 const WAIT = 1800 // si la vidéo tarde (réseau lent, mode économie d'énergie), l'animation part quand même
 
