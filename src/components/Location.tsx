@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ChevronDown, LocateFixed, MapPin, Search, X } from 'lucide-react'
-import { useStore } from '../data/store'
-import { geocode, RADII, type Place } from '../data/util'
+import { isHidden, useStore } from '../data/store'
+import { activeCatalog } from '../data/catalog'
+import { useAgenda } from '../data/agenda'
+import { useT } from '../data/i18n'
+import { distanceKm, geocode, momentOf, RADII, type Place } from '../data/util'
 
 /** En-tête « Autour de toi » : ville détectée + rayon. Un tap ouvre le réglage. */
 export function LocationButton({ pill }: { pill?: boolean } = {}) {
@@ -32,6 +35,20 @@ export function LocationSheet({ onClose }: { onClose: () => void }) {
   const radius = useStore((s) => s.radius)
   const geo = useStore((s) => s.geo)
   const pos = useStore((s) => s.pos)
+  const city = useStore((s) => s.city)
+  const events = useStore((s) => s.events)
+  const meId = useStore((s) => s.meId)
+  const agenda = useAgenda()
+  const t = useT()
+  // Ce que le rayon choisi donne, recalculé à chaque tap : l'accueil derrière suit en même temps.
+  const found = useMemo(() => {
+    const near = (x: { lat: number; lng: number }) => distanceKm(pos, x) <= radius
+    return {
+      ev: events.filter((e) => !isHidden(e, meId) && momentOf(e) !== 'past' && near(e)).length,
+      places: activeCatalog().filter(near).length,
+      acts: agenda.filter(near).length,
+    }
+  }, [events, agenda, pos, radius, meId])
   const [q, setQ] = useState('')
   const [results, setResults] = useState<Place[]>([])
 
@@ -65,7 +82,11 @@ export function LocationSheet({ onClose }: { onClose: () => void }) {
             {RADII.map((km) => <button key={km} aria-pressed={radius === km} onClick={() => setRadius(km)}>{km} km</button>)}
           </div>
         </div>
-        <p className="hint">Position utilisée : {pos.lat.toFixed(3)}, {pos.lng.toFixed(3)}</p>
+        <p className="loc-found" aria-live="polite">
+          {t(`Autour de ${city}, à moins de ${radius} km :`, `Around ${city}, within ${radius} km:`)}{' '}
+          <b>{found.ev} {t(found.ev > 1 ? 'sorties' : 'sortie', found.ev > 1 ? 'outings' : 'outing')}</b> · <b>{found.places} {t(found.places > 1 ? 'lieux' : 'lieu', found.places > 1 ? 'places' : 'place')}</b> · <b>{found.acts} {t(found.acts > 1 ? 'activités' : 'activité', found.acts > 1 ? 'activities' : 'activity')}</b>
+        </p>
+        <button className="btn btn-primary btn-block" onClick={onClose}>{t('Voir les résultats', 'See results')}</button>
       </div>
     </div>
   )

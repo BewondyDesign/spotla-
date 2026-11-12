@@ -1216,3 +1216,10 @@ img.bad { visibility: hidden; }
 .wel-login { color: rgba(255,255,255,.82); }
 .wel-guest { color: rgba(255,255,255,.75); }
 .welcome .terms-note { color: rgba(255,255,255,.55); }
+
+/* Réglage du rayon : ce que le rayon donne, en direct */
+.loc-found { margin: 4px 0 0; font-size: 14px; line-height: 1.5; color: var(--muted, rgba(255,255,255,.7)); }
+.loc-found b { color: #fff; font-weight: 600; white-space: nowrap; }
+.empty-slot .btn-mini { align-self: flex-start; margin-top: 8px; }
+.loc-sheet .seg.five { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.loc-sheet .seg.five button { padding: 9px 0; font-size: 13px; white-space: nowrap; }

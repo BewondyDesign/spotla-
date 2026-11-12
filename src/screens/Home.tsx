@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Bell, Search } from 'lucide-react'
 import { isHidden, useMe, useStore } from '../data/store'
-import { distanceKm, momentOf } from '../data/util'
+import { distanceKm, momentOf, RADII } from '../data/util'
 import { EventCard } from '../components/EventCard'
 import { StoriesBar } from '../components/Stories'
 import { LocationButton } from '../components/Location'
@@ -115,12 +115,13 @@ export function Home() {
   const agendaPending = useAgendaPending()
   // Activités à faire : cette semaine et les deux suivantes, les plus proches de toi d'abord.
   const soon = useMemo(() => {
-    const inside = agenda.filter((e) => agendaIn(e, slot)).sort((a, b) => distanceKm(pos, a) - distanceKm(pos, b))
-    const later = agenda.filter((e) => !inside.includes(e) && inNextDays(e, 14)).sort((a, b) => distanceKm(pos, a) - distanceKm(pos, b))
+    const near = agenda.filter((e) => distanceKm(pos, e) <= radius)
+    const inside = near.filter((e) => agendaIn(e, slot)).sort((a, b) => distanceKm(pos, a) - distanceKm(pos, b))
+    const later = near.filter((e) => !inside.includes(e) && inNextDays(e, 14)).sort((a, b) => distanceKm(pos, a) - distanceKm(pos, b))
     // Jamais deux fois la même image dans la rangée.
     const seen = new Set<string>()
     return lovedFirst([...inside, ...later], (a) => likesAgenda(tastes, a)).filter((e) => { const k = e.image; if (seen.has(k)) return false; seen.add(k); return true }).slice(0, 12)
-  }, [agenda, pos, slot, tastes])
+  }, [agenda, pos, radius, slot, tastes])
   // « Ce week-end » : sorties et activités de samedi et dimanche, sans répéter ce qui est déjà plus haut.
   const weekendEvents = useMemo(() => {
     const [sat, sun] = weekendDays()
@@ -129,9 +130,9 @@ export function Home() {
   }, [events, me?.id, pos, radius, list, tastes])
   const weekendAgenda = useMemo(() => {
     const seen = new Set(soon.map((e) => e.image))
-    return lovedFirst(agenda.filter((e) => agendaIn(e, 'weekend') && !soon.includes(e)).sort((a, b) => distanceKm(pos, a) - distanceKm(pos, b)), (a) => likesAgenda(tastes, a))
+    return lovedFirst(agenda.filter((e) => agendaIn(e, 'weekend') && !soon.includes(e) && distanceKm(pos, e) <= radius).sort((a, b) => distanceKm(pos, a) - distanceKm(pos, b)), (a) => likesAgenda(tastes, a))
       .filter((e) => { if (seen.has(e.image)) return false; seen.add(e.image); return true }).slice(0, 10)
-  }, [agenda, soon, pos, tastes])
+  }, [agenda, soon, pos, radius, tastes])
   // Les lieux du créneau, les plus proches d'abord.
   // Un seul Top 10 : on pioche à tour de rôle dans chaque catégorie (clubs, activités, bars, fêtes, soirées, gourmand).
   const top10 = useMemo(() => {
@@ -142,7 +143,7 @@ export function Home() {
     return lovedFirst(out, (c) => likesPlace(tastes, c))
   }, [catalog, tastes])
   // Un lieu n'apparaît qu'une fois sur l'accueil : s'il est dans le Top 10, il ne revient pas dans cette rangée.
-  const spots = useMemo(() => lovedFirst(catalog.filter((c) => SLOT_CATS[slot].includes(c.category) && !top10.some((x) => x.id === c.id)).sort((a, b) => distanceKm(pos, a) - distanceKm(pos, b)), (c) => likesPlace(tastes, c)).slice(0, 12), [catalog, slot, pos, tastes, top10])
+  const spots = useMemo(() => lovedFirst(catalog.filter((c) => SLOT_CATS[slot].includes(c.category) && !top10.some((x) => x.id === c.id) && distanceKm(pos, c) <= radius).sort((a, b) => distanceKm(pos, a) - distanceKm(pos, b)), (c) => likesPlace(tastes, c)).slice(0, 12), [catalog, slot, pos, radius, tastes, top10])
   return (
     <div className="scr home-scr">
       <header className="home-hero">
@@ -188,7 +189,7 @@ export function Home() {
           <span className="kicker">{t('Ouvert à toute heure · près de toi', 'Open all day · near you')}</span>
           <h2 className="sec-title">{slot === 'soir' ? t('Où aller ce soir', 'Where to go tonight') : t('Envie de bouger ?', 'Feel like going out?')}</h2>
         </div>
-        <div className="rail">{spots.map((p) => <PlaceCard key={p.id} p={p} />)}</div>
+        {spots.length > 0 ? <div className="rail">{spots.map((p) => <PlaceCard key={p.id} p={p} />)}</div> : <WiderHint radius={radius} />}
       </section>
 
       <section className="rail-sec cat-sec" aria-label={t('Explorer par catégorie', 'Browse by category')}>
@@ -203,7 +204,7 @@ export function Home() {
         </div>
         {agendaPending && soon.length < 3
           ? <SkelRail kind="agenda" />
-          : <div className="rail">{soon.map((e) => <AgendaCard key={e.id} e={e} />)}</div>}
+          : soon.length > 0 ? <div className="rail">{soon.map((e) => <AgendaCard key={e.id} e={e} />)}</div> : <WiderHint radius={radius} />}
       </section>
 
       {community.length > 0 && (
@@ -244,6 +245,20 @@ export function Home() {
         </div>
         <div className="rail">{top10.map((p, i) => <PlaceCard key={p.id} p={{ ...p, rank: i + 1 }} />)}</div>
       </section>
+    </div>
+  )
+}
+
+/** Rangée vide à cause du rayon : on le dit, et un tap agrandit le rayon. */
+function WiderHint({ radius }: { radius: number }) {
+  const t = useT()
+  const next = RADII.find((k) => k > radius)
+  return (
+    <div className="pad">
+      <div className="empty-slot">
+        <b>{t(`Rien à moins de ${radius} km pour l'instant.`, `Nothing within ${radius} km right now.`)}</b>
+        {next && <button className="btn-mini" onClick={() => useStore.getState().setRadius(next)}>{t(`Voir jusqu'à ${next} km`, `Show up to ${next} km`)}</button>}
+      </div>
     </div>
   )
 }
