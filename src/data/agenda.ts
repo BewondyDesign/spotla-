@@ -63,6 +63,8 @@ const TYPE_POOL: Record<string, string[]> = {
   lecture: ['1693927033657-36449a4aeeab', '1773401863516-ee4bed40f72d', '1698429519708-4e340d7e09be', '1573644075593-f27844eac89b', '1566131807516-e3b3cd1a89d1', '1571193161738-deaba9b6cc26', '1571075002844-e5180c614639', '1719806379331-dd06acf16c4c', '1766793568215-6fd1fc8529b2', '1735178842924-c98b183f9009', '1633354516388-41b56d6fe980', '1695605302783-fd906b98389e'],
 }
 const TYPE_OF: [RegExp, string][] = [
+  [/artisanat/i, 'artisanat'], [/jeux/i, 'jeux'], [/science|techno/i, 'science'], [/jardinage/i, 'jardin'], [/bien-être/i, 'yoga'],
+  [/parole|société|histoire/i, 'conference'], [/^danse$/i, 'scene'],
   [/musique|concert/i, 'musique'], [/théâtre|humour|danse|spectacle|cirque/i, 'scene'], [/exposition|art|patrimoine|musée/i, 'art'],
   [/cuisine|gourmand/i, 'cuisine'], [/cinéma|film/i, 'cinema'], [/sport|plein air|bien-être|nature/i, 'plein'],
   [/société|histoire|lecture|littérature|conférence|atelier/i, 'lecture'], [/fête|marché|festival/i, 'fete'],
@@ -74,6 +76,13 @@ const TOPIC_POOL: Record<string, string[]> = {
   poterie: ['1781389004999-d1a7e41639c5', '1771523350538-29baf74f710c', '1771523350747-638a89667c8f', '1771523350533-a831d1f703a7', '1589051088132-06f36a22012a', '1764507768797-5b7de6eedcb7', '1480355781839-51097c7d4f9f'],
   peinture: ['1541753866388-0b3c701627d3', '1658303135227-fcdfb0dab396', '1597274303632-880ef8660375'],
   photo: ['1495745966610-2a67f2297e5e', '1542038784456-1ea8e935640e', '1516961642265-531546e84af2', '1495707902641-75cac588d2e9', '1502982720700-bfff97f2ecac', '1580707221190-bd94d9087b7f', '1512790182412-b19e6d62bc39'],
+  artisanat: ['1759719441268-7d807f21a4ea', '1557176765-6ff878f911b6', '1665953499482-9d8ef74bd269', '1665953495580-c9a5a2a1759d', '1631960527179-ce1809bfa834', '1695728130932-7b5967d59f52', '1750498407644-ed88cc6bbac4', '1616706161242-f1d591350d1c'],
+  bijoux: ['1646070107254-3713cec279c1', '1629481995102-ff98d306dd8a', '1609428126821-b26911b6d662', '1560847133-e6f64dc352ea', '1560696509-660210e603a7', '1659032882718-3e54e7da86ab', '1715374033196-0ff662284a7e', '1523252012848-c22188792c27', '1613274146063-8930e164c743'],
+  fleurs: ['1645542773499-eaf29bb7ff9d', '1774839355110-940ed353a53c', '1762380379205-1df2c40bfd3e', '1761994915803-b2aa4ae5b0e6', '1774788156004-24b26e961618', '1765912692132-acbdb2bfe47b', '1778299126023-e465a450d9a2', '1786118792123-6d3a65f9e8a4'],
+  ecriture: ['1761322572550-967ea8c0bfd9', '1679119790850-161688b0417e', '1772396867158-e26d9e6256b2', '1767547109500-db6a9d411ae9', '1647119309072-ae4694946676', '1787676166617-87c2cc7c468b', '1700864199335-d91cea43d4e5', '1643747238889-11ece81c323f'],
+  vin: ['1587920710219-f6f9804dc10d', '1598306442928-4d90f32c6866', '1568213816046-0ee1c42bd559', '1610065333275-b3e5c63fc872', '1690986535140-dc095e75b726', '1516600164266-f3b8166ae679', '1641830879467-e22004141bcb', '1625922379195-3f891e47eaee', '1558670426-931963635470'],
+  jeux: ['1677248245752-f45092b09e5a', '1661114544971-0aee18c148d4', '1677094365560-9f88ce594e7c', '1676385816437-51db716d18b2', '1676651471532-beb962a07291', '1781917389734-282472b03a2a', '1676984937857-3c0dace0e7e4', '1676482721054-59f8326cd1d9'],
+  science: ['1600456548090-7d1b3f0bbea5', '1733212543060-457679f1a682', '1604728890708-631078e3eab7', '1548124771-9f2040b66df8', '1505579962197-df174377e13f', '1470955233021-2c79a52e5034', '1654441895019-62a3d20846dd', '1609000142140-fb449c139c82'],
   conference: ['1540575467063-178a50c2df87', '1587825140708-dfaf72ae4b04', '1594122230689-45899d9e6f69', '1627931539006-d5c4677e05ea', '1544531586-fde5298cdd40', '1582192730841-2a682d7375f9', '1603478804503-dc909c7f5ce5', '1558008258-3256797b43f3', '1571645163064-77faa9676a46'],
   yoga: ['1544367567-0f2fcb009e0b', '1761035005546-62b8018b212a', '1599901860904-17e6ed7083a0', '1506126613408-eca07ce68773', '1552196563-55cd4e45efb3', '1787647089633-37e49ee2e054', '1579454566790-f9e5697ddf36', '1552196527-bffef41ef674', '1575052814086-f385e2e2ad1b'],
   danse: ['1524594152303-9fd13543fe6e', '1604954055722-7f80571fbfc3', '1550026593-f369f98df0af', '1555489401-79c274997434', '1591162689269-a3fcdab967e3', '1765632814488-52e6d0653ebe', '1682760631807-71067eeea033', '1593105722399-0ee263656fdd'],
@@ -81,17 +90,25 @@ const TOPIC_POOL: Record<string, string[]> = {
   numerique: ['1603302576837-37561b2e2302', '1539376248633-cf94fa8b7bd8', '1654119895136-6aad918f412c', '1568333261345-0918efdce2d9', '1620365602462-40d8f2cdd84c', '1547731030-cd126f44e9c5'],
 }
 const TOPIC_OF: [RegExp, string][] = [
-  [/couture|coudre|machine à coudre|broderie|textile|sewing/i, 'couture'],
+  [/histoire de l.art|lire.{0,4} un tableau|musée/i, 'art'],
+  [/vins?\b|dégustation|sommelier|bières?\b|cocktail/i, 'vin'],
+  [/bijou|boucles? d.oreilles|perles|bracelet|collier/i, 'bijoux'],
+  [/fleurs|floral|couronne|bouquet/i, 'fleurs'],
+  [/couture|coudre|machine à coudre|broderie|textile|feutrine|appliqué|sewing/i, 'couture'],
   [/tricot|crochet|laine|knit/i, 'tricot'],
   [/poterie|céramique|argile|modelage|pottery|ceramic/i, 'poterie'],
   [/peinture|aquarelle|dessin|croquis|acrylique|painting|drawing/i, 'peinture'],
   [/photograph|photo\b|appareil photo/i, 'photo'],
-  [/yoga|méditation|pleine conscience|tai[- ]chi|qi gong|pilates/i, 'yoga'],
+  [/yoga|méditation|pleine conscience|tai[- ]?chi|qi[- ]?gong|pilates|gestion du stress/i, 'yoga'],
   [/cours de danse|danse (en ligne|sociale|latine|swing)|salsa|tango|bachata|swing|zumba|dance class/i, 'danse'],
+  [/écriture|écrire|poésie|poétique|slam|conte\b/i, 'ecriture'],
+  [/scrabble|échecs|jeux? de société|bingo|backgammon|jeu de rôle|casse-tête|quiz/i, 'jeux'],
+  [/astronom|étoiles|planète|\blune\b|science/i, 'science'],
   [/jardin|horticult|plantes?\b|semis|potager|garden/i, 'jardin'],
-  [/informatique|numérique|ordinateur|internet|tablette|cellulaire|courriel|logiciel|code\b|coding/i, 'numerique'],
+  [/informatique|numérique|ordinateur|impression 3d|internet|tablette|cellulaire|courriel|logiciel|code\b|coding/i, 'numerique'],
   [/conférence|causerie|table ronde|discussion|débat|panel|talk/i, 'conference'],
 ]
+const POOL: Record<string, string[]> = { ...TYPE_POOL, ...TOPIC_POOL }
 const turn: Record<string, number> = {}
 const pick = (k: string, pool: string[]) => { turn[k] = (turn[k] ?? -1) + 1; return U(pool[turn[k] % pool.length]) }
 /** Le titre d'abord (le plus fiable), puis un type clair (concert, film…), sinon la description, sinon le type. */
@@ -99,7 +116,8 @@ const topic = (text: string) => TOPIC_OF.find(([r]) => r.test(text))?.[1]
 const imgFor = (type: string, title = '', description = '') => {
   const k = TYPE_OF.find(([r]) => r.test(type))?.[1] ?? 'fete'
   const t = topic(title) ?? (['musique', 'cinema', 'scene', 'cuisine'].includes(k) ? undefined : topic(description))
-  return t ? pick(t, TOPIC_POOL[t]) : pick(k, TYPE_POOL[k])
+  const key = t ?? k
+  return pick(key, POOL[key])
 }
 
 type CityRow = { id: string; title: string; url: string; description: string; start: string; end: string; type: string; free: boolean; cost: string; borough: string; venue: string; address: string; lat: number; lng: number }
@@ -165,7 +183,7 @@ const FEST_VIDEO: Record<string, number> = {
   'fest:osheaga-2027': 14088,
   'fest:fierte-2027': 47143,
 }
-const TOPIC_IDS = Object.values(TOPIC_POOL).flat()
+const TOPIC_IDS = Object.values(TOPIC_POOL).flat().filter((id) => !TYPE_POOL.plein.includes(id))
 const hasTopic = (e: AgendaItem) => TOPIC_IDS.some((id) => e.image.includes(id))
 /** Un atelier précis (couture, yoga…) garde sa photo assortie : pas de vidéo générique du type « Exposition ». */
 export const agendaVideo = (e: AgendaItem) => claimVideo(e.id, e.video ?? (FEST_VIDEO[e.id] ? MK(FEST_VIDEO[e.id]) : undefined)) ?? (hasTopic(e) ? undefined : uniqueVideo(e.id, e.title, e.type))
