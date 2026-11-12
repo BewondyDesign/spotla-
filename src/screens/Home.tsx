@@ -119,6 +119,17 @@ export function Home() {
     const seen = new Set<string>()
     return lovedFirst([...inside, ...later], (a) => likesAgenda(tastes, a)).filter((e) => { const k = e.image; if (seen.has(k)) return false; seen.add(k); return true }).slice(0, 12)
   }, [agenda, pos, slot, tastes])
+  // « Ce week-end » : sorties et activités de samedi et dimanche, sans répéter ce qui est déjà plus haut.
+  const weekendEvents = useMemo(() => {
+    const [sat, sun] = weekendDays()
+    return lovedFirst(events.filter((e) => !isHidden(e, me?.id ?? null) && distanceKm(pos, e) <= radius && !list.includes(e)
+      && [sat, sun].includes(ymd(new Date(e.start)))).sort((a, b) => a.start.localeCompare(b.start)), (e) => likesEvent(tastes, e)).slice(0, 8)
+  }, [events, me?.id, pos, radius, list, tastes])
+  const weekendAgenda = useMemo(() => {
+    const seen = new Set(soon.map((e) => e.image))
+    return lovedFirst(agenda.filter((e) => agendaIn(e, 'weekend') && !soon.includes(e)).sort((a, b) => distanceKm(pos, a) - distanceKm(pos, b)), (a) => likesAgenda(tastes, a))
+      .filter((e) => { if (seen.has(e.image)) return false; seen.add(e.image); return true }).slice(0, 10)
+  }, [agenda, soon, pos, tastes])
   // Les lieux du créneau, les plus proches d'abord.
   // Un seul Top 10 : on pioche à tour de rôle dans chaque catégorie (clubs, activités, bars, fêtes, soirées, gourmand).
   const top10 = useMemo(() => {
@@ -153,11 +164,6 @@ export function Home() {
 
       <StoriesBar />
 
-      <section className="rail-sec cat-sec" aria-label={t('Explorer par catégorie', 'Browse by category')}>
-        <div className="pad sec-head"><h2 className="sec-title">{t('Explorer par catégorie', 'Browse by category')}</h2></div>
-        <CategoryChips />
-      </section>
-
       <section className="rail-sec" aria-label={SLOT_TITLE[slot][en ? 3 : 1]}>
         <div className="pad row between sec-head">
           <div className="stack4"><span className="kicker">{SLOT_TITLE[slot][en ? 2 : 0]}</span><h2 className="sec-title">{SLOT_TITLE[slot][en ? 3 : 1]}</h2></div>
@@ -173,6 +179,11 @@ export function Home() {
               </Link>
             </div>
           )}
+      </section>
+
+      <section className="rail-sec cat-sec" aria-label={t('Explorer par catégorie', 'Browse by category')}>
+        <div className="pad sec-head"><h2 className="sec-title">{t('Explorer par catégorie', 'Browse by category')}</h2></div>
+        <CategoryChips />
       </section>
 
       <section className="rail-sec" aria-label="Envie de bouger">
@@ -205,6 +216,19 @@ export function Home() {
                 <span>{status}</span>
               </Link>
             ))}
+          </div>
+        </section>
+      )}
+
+      {(weekendEvents.length > 0 || weekendAgenda.length > 0) && (
+        <section className="rail-sec" aria-label={t('Ce week-end', 'This weekend')}>
+          <div className="pad row between sec-head">
+            <div className="stack4"><span className="kicker">{t('Pour prévoir', 'Plan ahead')} · {t('près de toi', 'near you')}</span><h2 className="sec-title">{t('Ce week-end', 'This weekend')}</h2></div>
+            <Link className="sec-link" to="/agenda">{t('Tout voir', 'See all')}</Link>
+          </div>
+          <div className="rail">
+            {weekendEvents.map((e) => <EventCard key={e.id} e={e} />)}
+            {weekendAgenda.map((e) => <AgendaCard key={e.id} e={e} />)}
           </div>
         </section>
       )}
