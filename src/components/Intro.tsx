@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLang } from '../data/i18n'
-import { Tour, tourDone } from './Tour'
 import { dayInfo, PART_WHEN } from '../data/daypart'
 import { useStore } from '../data/store'
 
 // Vidéo de fond (Mixkit, licence gratuite) : piste de club sous les lumières dorées, mains en l air, couple qui danse. Adultes seulement.
 // Lue directement depuis Mixkit en 720p (nette sur téléphone) ; si elle ne démarre pas vite (réseau lent), on passe à la version 360p, plus légère.
-const CLIP = { hd: 'https://assets.mixkit.co/videos/341/341-720.mp4', sd: 'https://assets.mixkit.co/videos/341/341-360.mp4', poster: 'https://assets.mixkit.co/videos/341/341-thumb-720-0.jpg' }
+export const CLIP = { hd: 'https://assets.mixkit.co/videos/341/341-720.mp4', sd: 'https://assets.mixkit.co/videos/341/341-360.mp4', poster: 'https://assets.mixkit.co/videos/341/341-thumb-720-0.jpg' }
 const LENGTH = 7000 // durée de l'animation, comptée à partir du moment où la vidéo joue
 const WAIT = 1800 // si la vidéo tarde (réseau lent, mode économie d'énergie), l'animation part quand même
 
@@ -44,9 +43,8 @@ export function Intro() {
 
 function IntroPlayer() {
   const en = useLang((s) => s.lang) === 'en'
-  const [phase, setPhase] = useState<'play' | 'out' | 'tour' | 'done'>('play')
+  const [phase, setPhase] = useState<'play' | 'out' | 'done'>('play')
   // Première ouverture : après l'animation, 2 écrans de présentation.
-  const [firstTime] = useState(() => !tourDone())
   const [when] = useState(() => PART_WHEN[dayInfo(new Date(), useStore.getState().pos).part])
   const [started, setStarted] = useState(false)
   const [src, setSrc] = useState(CLIP.hd)
@@ -63,15 +61,14 @@ function IntroPlayer() {
   useEffect(() => {
     if (!started) return
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    const a = setTimeout(() => setPhase(firstTime ? 'tour' : 'out'), reduce ? 900 : LENGTH)
-    const b = firstTime ? 0 : setTimeout(() => setPhase('done'), reduce ? 1300 : LENGTH + 800)
+    const a = setTimeout(() => setPhase('out'), reduce ? 900 : LENGTH)
+    const b = setTimeout(() => setPhase('done'), reduce ? 1300 : LENGTH + 800)
     return () => { clearTimeout(a); clearTimeout(b) }
   }, [started]) // eslint-disable-line react-hooks/exhaustive-deps
   // L'ouverture n'est notée « vue » qu'une fois finie ou passée : si la page est rechargée en plein milieu, elle rejoue.
   useEffect(() => { if (phase !== 'play') try { sessionStorage.setItem(SEEN, '1') } catch { /* rien */ } }, [phase])
   if (phase === 'done') return null
-  if (phase === 'tour') return <Tour onDone={() => setPhase('done')} />
-  const skip = () => { if (firstTime) { setPhase('tour'); return } setPhase('out'); setTimeout(() => setPhase('done'), 800) }
+  const skip = () => { setPhase('out'); setTimeout(() => setPhase('done'), 800) }
 
   return (
     <div className={`intro${phase === 'out' ? ' out' : ''}`} onClick={skip} role="presentation">

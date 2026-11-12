@@ -1171,3 +1171,8 @@ img.bad { visibility: hidden; }
 .price-chip { display: inline-flex; align-items: center; gap: 4px; }
 .price-chip input { width: 54px; background: transparent; border: 0; color: inherit; font: inherit; text-align: right; }
 .express-where { display: flex; align-items: center; gap: 6px; }
+
+/* Accueil (1re visite, déconnecté) : même vidéo dorée que l'intro, voile plus sombre en bas pour lire les boutons. */
+.onboard-vid video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(1.05) saturate(1.15); }
+.onboard-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,11,13,.35) 0%, rgba(11,11,13,.1) 22%, rgba(11,11,13,.55) 48%, rgba(11,11,13,.92) 72%, #0B0B0D 100%); }
+.onboard-vid + .onboard-body .lede { color: rgba(255,255,255,.82); }

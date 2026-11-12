@@ -6,6 +6,8 @@ import { cleanHandle, createProfile, isRemote, uploadMedia, sendPasswordReset, s
 import { TASTES } from '../data/tastes'
 import { LangSwitch, useT } from '../data/i18n'
 import { Link } from 'react-router-dom'
+import { CLIP } from '../components/Intro'
+import { PART_WHEN, useDayInfo } from '../data/daypart'
 import type { AccountKind } from '../data/types'
 
 type View = 'welcome' | 'signup' | 'login' | 'forgot' | 'check-email' | 'profile'
@@ -29,12 +31,18 @@ export function Onboarding({ authId }: { authId?: string }) {
 
 function Welcome({ go }: { go: (v: View) => void }) {
   const t = useT()
+  const when = PART_WHEN[useDayInfo().part]
   return (
     <div className="scr onboard">
-      <div className="onboard-art"><div className="glow g1" /><div className="glow g2" /><div className="glow g3" /></div>
+      {/* Même vidéo que l'intro : l'accueil continue l'ambiance, sans changer d'univers. */}
+      <div className="onboard-art onboard-vid" aria-hidden="true">
+        <video src={CLIP.hd} poster={CLIP.poster} muted playsInline autoPlay loop preload="auto" disablePictureInPicture
+          ref={(v) => { if (v) { v.muted = true; v.setAttribute('muted', ''); v.play().catch(() => {}) } }} />
+        <div className="onboard-shade" />
+      </div>
       <div className="pad onboard-body">
-        <div className="row between"><div className="brand"><span className="dot" />SpotLa</div><LangSwitch /></div>
-        <h1 className="title-xl">{t('On fait quoi ', 'What\'s the plan ')}<em>{t('maintenant', 'right now')}</em>{t('\u00a0?', '?')}</h1>
+        <div className="row between"><div className="brand"><span className="dot" />SpotLa</div><LangSwitch className="glass" /></div>
+        <h1 className="title-xl">{t('On va où ', 'Where are we going ')}<em>{t(when[0], when[1])}</em>{t('\u00a0?', '?')}</h1>
         <p className="lede">{t('Les sorties, activités et soirées près de toi, à toute heure. Même seul·e, même si tu ne connais personne en ville.', 'Outings, activities and parties near you, any time of day. Even solo, even if you don\'t know anyone in town.')}</p>
         {isRemote ? (
           <div className="stack12">
