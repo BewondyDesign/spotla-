@@ -5,4 +5,4 @@ export const SUPABASE_URL = 'https://ksxomkznjwecwxdssdlc.supabase.co'
 export const SUPABASE_ANON_KEY = 'sb_publishable_kI6AQvAd8-uNAv4j1GWb8w_ZgIUtNJD'
 
 /** Courriel de support affiché dans les pages légales (laisser vide tant qu'il n'est pas choisi : le formulaire « Contacter SpotLa » reste disponible). */
-export const CONTACT_EMAIL = ''
+export const CONTACT_EMAIL = 'bewondydesign@gmail.com'
