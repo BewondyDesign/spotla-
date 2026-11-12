@@ -1,13 +1,13 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell, Check, Clapperboard, Heart, MapPin, UserPlus } from 'lucide-react'
+import { Bell, Check, Clapperboard, Heart, MapPin, PartyPopper, UserPlus } from 'lucide-react'
 import { useStore } from '../data/store'
 import { timeAgo } from '../data/util'
 import { Empty } from '../components/ui'
 import type { Notif } from '../data/types'
 
 const ICON: Record<Notif['kind'], React.ReactNode> = {
-  nearby: <MapPin size={18} />, request: <UserPlus size={18} />, accepted: <Check size={18} />, like: <Heart size={18} />, comment: <Heart size={18} />, follow: <UserPlus size={18} />, story: <Clapperboard size={18} />,
+  nearby: <MapPin size={18} />, request: <UserPlus size={18} />, accepted: <Check size={18} />, like: <Heart size={18} />, comment: <Heart size={18} />, follow: <UserPlus size={18} />, story: <Clapperboard size={18} />, going: <PartyPopper size={18} />,
 }
 
 export function Notifs() {

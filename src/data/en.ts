@@ -29,6 +29,8 @@ export const EN: Record<string, string> = {
   'Ce texte contient des mots interdits par les règles de SpotLa (insultes, haine, contenu sexuel ou drogues). Modifie-le pour publier.': 'This text contains words banned by SpotLa\'s rules (insults, hate, sexual content or drugs). Edit it to post.',
   'Signaler la publication': 'Report post', 'Signaler ce commentaire': 'Report comment', 'Signaler cette story': 'Report story', 'Signaler ce message': 'Report message', 'Signaler ou bloquer': 'Report or block',
   'Mettre en avant · gratuit': 'Feature · free', 'Mettre en avant': 'Feature', 'Mise en avant activée': 'Featured', 'Ton événement est en tête ce soir, gratuitement.': 'Your event is at the top tonight, for free.',
+  'Prévenir mes abonnés quand je dis « J\'y vais »': 'Tell my followers when I tap "I\'m going"',
+  'Les gens qui te suivent sur SpotLa reçoivent une notification avec la sortie. Décoche pour garder tes sorties privées.': 'People who follow you on SpotLa get a notification with the outing. Uncheck to keep your plans private.',
   // ---------- Compte / inscription ----------
   'Rejoins la discussion': 'Join the chat', 'Publie une sortie ou une story': 'Post an outing or a story', 'Ton profil SpotLa': 'Your SpotLa profile',
   'Tes réglages': 'Your settings', 'Ton espace pro': 'Your business space', 'Tes notifications': 'Your notifications', 'Retrouve tes sorties ici': 'Find your plans here',
@@ -269,6 +271,7 @@ export const EN: Record<string, string> = {
 export const PATTERNS: [RegExp, string | ((...m: string[]) => string)][] = [
   [/^Rayon de (\d+) km$/, 'Radius $1 km'],
   [/^Tu as bloqué (.+)$/, 'You blocked $1'],
+  [/^(.+) y va$/, '$1 is going'],
   [/^Mettre « (.+) » en avant \? Il passe en tête de « Ce soir » dans un rayon de 3 km\. C'est gratuit pendant le lancement\.$/, 'Feature "$1"? It moves to the top of "Tonight" within 3 km. It\'s free during launch.'],
   [/^Note (.+) sur 5$/, 'Rated $1 out of 5'],
   [/^(\d) étoiles?$/, (_, n) => `${n} star${n === '1' ? '' : 's'}`],

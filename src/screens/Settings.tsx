@@ -89,6 +89,14 @@ export function Settings() {
         </section>
 
         <section className="set-group">
+          <h2>Mes sorties</h2>
+          <label className="report-block">
+            <input type="checkbox" checked={me.shareGoing !== false} onChange={(ev) => updateProfile({ shareGoing: ev.target.checked }).catch((err) => toast('Ça n\'a pas marché', (err as Error).message))} />
+            <span>Prévenir mes abonnés quand je dis « J'y vais »<small>Les gens qui te suivent sur SpotLa reçoivent une notification avec la sortie. Décoche pour garder tes sorties privées.</small></span>
+          </label>
+        </section>
+
+        <section className="set-group">
           <h2>Ce que tu aimes</h2>
           <p className="hint">L'accueil te montre d'abord ces sorties, puis tout le reste.</p>
           <div className="wrap-chips set-tastes">

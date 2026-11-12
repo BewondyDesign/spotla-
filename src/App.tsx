@@ -4,7 +4,7 @@ import { Settings } from './screens/Settings'
 import { MySorties } from './screens/MySorties'
 import { useEffect } from 'react'
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { useMe, useStore } from './data/store'
+import { useConfirm, useMe, useStore } from './data/store'
 import { isRemote, sb, subscribe } from './data/backend'
 import { NewPassword, Onboarding } from './screens/Onboarding'
 import { Home } from './screens/Home'
@@ -39,6 +39,8 @@ function Shell() {
   const me = useMe()
   const loc = useLocation()
   useOutingReminders()
+  // Changer d'écran ferme une question restée ouverte (comme « Annuler »).
+  useEffect(() => { const q = useConfirm.getState().q; if (q) { useConfirm.setState({ q: null }); q.resolve(false) } }, [loc.pathname])
 
   // Mode Supabase : on suit la session et on recharge en temps réel.
   useEffect(() => {

@@ -4,11 +4,13 @@ import type { AccountKind, Notif, Post, SpotEvent, Story, StoryMedia, User } fro
 import { SEED_USERS, seedEvents, seedNotifs, seedPosts, seedStories } from './seed'
 import { distanceKm, MONTREAL, PARIS, RADII, reverseCity, uid as localUid } from './util'
 import { isForKids } from './adult'
-import { isRemote, loadAll, remote, signOut } from './backend'
+import { isRemote, loadAll, markNotifsRead, remote, signOut } from './backend'
 
 // En mode Supabase, les ids sont des UUID partagés avec la base.
 const uid = (p: string) => (isRemote ? crypto.randomUUID() : localUid(p))
 /** Lance l'écriture distante sans bloquer l'interface ; en cas d'échec, on prévient et on recharge. */
+/** Compte pour lequel les notifications ont déjà été chargées (pas d'alerte au premier chargement). */
+let loadedFor: string | null | undefined
 const sync = (fn: () => Promise<unknown>) => {
   if (!isRemote) return
   fn().catch((e: Error) => { toast('Ça n\'a pas marché', e.message); useStore.getState().reload() })
@@ -75,7 +77,7 @@ interface State {
   deleteStory: (storyId: string) => void
   deleteEvent: (eventId: string) => void
   toggleFollow: (userId: string) => void
-  updateProfile: (patch: { name?: string; handle?: string; city?: string; bio?: string; avatarUrl?: string; coverUrl?: string; coverKind?: 'image' | 'video'; vibes?: string[]; instagram?: string }) => Promise<void>
+  updateProfile: (patch: { name?: string; handle?: string; city?: string; bio?: string; avatarUrl?: string; coverUrl?: string; coverKind?: 'image' | 'video'; vibes?: string[]; instagram?: string; shareGoing?: boolean }) => Promise<void>
   report: (eventId: string) => void
   boost: (eventId: string) => void
   bump: (eventId: string, field: 'views' | 'shares') => void
@@ -155,8 +157,17 @@ export const useStore = create<State>()(
         const me = get().meId
         if (!isRemote || (!me && !get().guest)) return
         try {
+          const before = new Set(get().notifs.map((n) => n.id))
+          const first = loadedFor !== me
+          loadedFor = me
           const data = await loadAll(me, get().pos)
           set({ ...data, loading: false })
+          // Quelqu'un que tu suis vient de dire « J'y vais » : on te prévient tout de suite.
+          const fresh = first ? [] : data.notifs.filter((n) => !n.read && !before.has(n.id))
+          for (const n of fresh.slice(0, 2)) {
+            useToast.getState().show(n.title, n.body)
+            try { if ('Notification' in window && Notification.permission === 'granted' && document.visibilityState !== 'visible') new Notification(n.title, { body: n.body, icon: './icon-192.png' }) } catch { /* rien */ }
+          }
         } catch (e) {
           set({ loading: false })
           toast('Connexion impossible', (e as Error).message)
@@ -325,7 +336,7 @@ export const useStore = create<State>()(
         set((s) => ({ events: mapEv(s, eventId, (e) => ({ ...e, [field]: e[field] + 1 })) }))
       },
 
-      readNotifs: () => set((s) => ({ notifs: s.notifs.map((n) => ({ ...n, read: true })) })),
+      readNotifs: () => { markNotifsRead(get().notifs.map((n) => n.id)); set((s) => ({ notifs: s.notifs.map((n) => ({ ...n, read: true })) })) },
       pushNotif: (n) => {
         set((s) => ({ notifs: [{ ...n, id: uid('n'), createdAt: new Date().toISOString(), read: false }, ...s.notifs] }))
         useToast.getState().show(n.title, n.body)
@@ -394,10 +405,10 @@ export const useToast = create<ToastState>((set) => ({
 export const toast = (title: string, body?: string) => useToast.getState().show(title, body)
 
 // ---------- Fenêtre de confirmation dans l'app (remplace window.confirm) ----------
-interface ConfirmState { q: { text: string; ok: string; resolve: (v: boolean) => void } | null }
+interface ConfirmState { q: { text: string; ok: string; cancel?: string; resolve: (v: boolean) => void } | null }
 export const useConfirm = create<ConfirmState>(() => ({ q: null }))
-export const askConfirm = (text: string, ok = 'Confirmer') =>
-  new Promise<boolean>((resolve) => useConfirm.setState({ q: { text, ok, resolve } }))
+export const askConfirm = (text: string, ok = 'Confirmer', cancel?: string) =>
+  new Promise<boolean>((resolve) => useConfirm.setState({ q: { text, ok, cancel, resolve } }))
 
 /** À appeler avant une action qui demande un compte. Sans compte, ouvre la feuille d'inscription et renvoie false. */
 export function requireAccount(reason: string) {

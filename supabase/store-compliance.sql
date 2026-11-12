@@ -62,6 +62,9 @@ alter table public.profiles add column if not exists terms_at timestamptz;
 -- Lieu partenaire qui a amené le membre (lien ?ref= des affiches avec code QR).
 alter table public.profiles add column if not exists ref_venue text;
 
+-- 5. « Ton réseau y va » : chacun peut choisir de ne pas annoncer ses sorties à ses abonnés.
+alter table public.profiles add column if not exists share_going boolean not null default true;
+
 -- 4. Supprimer son compte depuis l'app (exigé par Apple et Google).
 -- Efface le compte de connexion : le profil, les sorties, publications, stories, commentaires, etc. suivent (on delete cascade).
 create or replace function public.delete_my_account() returns void language plpgsql security definer set search_path = public, auth as $$

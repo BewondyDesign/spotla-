@@ -23,6 +23,8 @@ export interface User {
   vibes?: string[]
   /** Nom d'utilisateur Instagram (sans @), affiché sur le profil */
   instagram?: string
+  /** false : ses sorties (« J'y vais ») ne sont pas annoncées à ses abonnés. */
+  shareGoing?: boolean
   /** Business : adresse du lieu */
   venueAddress?: string
   /** Photo de profil et couverture (image ou courte vidéo) */
@@ -100,7 +102,7 @@ export interface Post {
 
 export interface Notif {
   id: string
-  kind: 'nearby' | 'request' | 'accepted' | 'like' | 'comment' | 'follow' | 'story'
+  kind: 'nearby' | 'request' | 'accepted' | 'like' | 'comment' | 'follow' | 'story' | 'going'
   title: string
   body: string
   link?: string

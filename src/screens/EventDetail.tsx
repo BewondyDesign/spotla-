@@ -3,7 +3,7 @@ import { ConfirmDelete } from '../components/Confirm'
 import { SoloCard, VibeGauge } from '../components/Solo'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Calendar, Check, Clapperboard, ExternalLink, Flag, Lock, MapPin, Share2, X } from 'lucide-react'
-import { canSeeAddress, goingCount, toast, useMe, useStore } from '../data/store'
+import { askConfirm, canSeeAddress, goingCount, toast, useMe, useStore } from '../data/store'
 import { distanceKm, fmtDay, fmtKm, fmtTime, isLive, startsIn } from '../data/util'
 import { eventVideo } from '../data/ambiance'
 import { Art, Avatar, LiveBadge, PriceBadge, Verified, VisBadge } from '../components/ui'
@@ -57,6 +57,29 @@ export function EventDetail() {
     return undefined
   }
 
+  /** Story Instagram / Facebook / TikTok : vidéo du lieu, titre, date. `going` : version « J'y vais » avec ton prénom. */
+  const story = async (going = false) => {
+    const real = await realStoryVideo()
+    const first = me?.name.split(' ')[0] ?? ''
+    const when = `${fmtDay(e.start)} · ${fmtTime(e.start)}`
+    if (await shareStory({
+      title: e.title,
+      badge: going ? (t('J\'Y VAIS', 'I\'M GOING')) : live ? t('EN DIRECT', 'LIVE') : when.toUpperCase(),
+      line: going ? `${first ? `${first} ${t('y va', 'is going')} · ` : ''}${e.venue} · ${when}` : `${e.venue} · ${e.area}`,
+      video: real ?? eventVideo(e), maxSeconds: real ? 15 : 10, hash: `#/event/${e.id}`,
+    })) bump(e.id, 'shares')
+  }
+  // Après « J'y vais » : tes abonnés SpotLa sont prévenus, et on propose de l'annoncer en story sur tes réseaux.
+  const onGoing = async () => {
+    toggleGoing(e.id)
+    if (going) return
+    const shared = me?.shareGoing !== false
+    if (await askConfirm(shared
+      ? t('C\'est noté ! Tes abonnés SpotLa sont prévenus. Tu veux aussi le dire à ta gang en story sur Instagram, Facebook ou TikTok ?', 'Done! Your SpotLa followers have been told. Want to tell your crew in a story on Instagram, Facebook or TikTok too?')
+      : t('C\'est noté ! On te rappelle 1 h avant. Tu veux le dire à ta gang en story sur Instagram, Facebook ou TikTok ?', 'Done! We\'ll remind you 1 h before. Want to tell your crew in a story on Instagram, Facebook or TikTok?'),
+    t('Partager en story', 'Share as a story'), t('Plus tard', 'Later'))) story(true)
+  }
+
   const onReport = () => openReport({ kind: 'event', targetId: e.id, userId: e.hostId, userName: host?.name })
 
 
@@ -67,7 +90,7 @@ export function EventDetail() {
         <div className="shade" />
         <div className="ev-top">
           <button className="iconbtn glass" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft size={20} /></button>
-          <span className="row gap8"><button className="story-btn" onClick={async () => { const real = await realStoryVideo(); if (await shareStory({ title: e.title, badge: live ? (t('EN DIRECT', 'LIVE')) : `${fmtDay(e.start)} · ${fmtTime(e.start)}`.toUpperCase(), line: `${e.venue} · ${e.area}`, video: real ?? eventVideo(e), maxSeconds: real ? 15 : 10, hash: `#/event/${e.id}` })) bump(e.id, 'shares') }} aria-label="Partager en story"><Instagram size={17} /> Story</button><button className="iconbtn glass" onClick={async () => { if (await share(e.title, `#/event/${e.id}`)) bump(e.id, 'shares') }} aria-label="Partager"><Share2 size={20} /></button></span>
+          <span className="row gap8"><button className="story-btn" onClick={() => story()} aria-label="Partager en story"><Instagram size={17} /> Story</button><button className="iconbtn glass" onClick={async () => { if (await share(e.title, `#/event/${e.id}`)) bump(e.id, 'shares') }} aria-label="Partager"><Share2 size={20} /></button></span>
         </div>
         <div className="stack8">
           <div className="row gap6 wrapf"><PriceBadge e={e} /><VisBadge e={e} />{live && <LiveBadge />}</div>
@@ -93,7 +116,7 @@ export function EventDetail() {
             ) : full ? (
               <button className="btn btn-block btn-ghost" disabled>{t('Complet', 'Full')}</button>
             ) : (
-              <button className={`btn btn-block ${going ? 'btn-ok' : 'btn-primary'}`} onClick={() => { toggleGoing(e.id); if (!going) toast('C\'est noté !', 'On te rappelle 1 h avant. Partage-le à tes potes.') }}>
+              <button className={`btn btn-block ${going ? 'btn-ok' : 'btn-primary'}`} onClick={onGoing}>
                 {going ? <><Check size={18} /> {t('J\'y vais', 'I\'m going')}</> : t('J\'y vais', 'I\'m going')}
               </button>
             )}

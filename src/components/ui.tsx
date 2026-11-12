@@ -71,7 +71,7 @@ export function ConfirmSheet() {
       <div className="confirm" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <p>{q.text}</p>
         <div className="row gap8">
-          <button className="btn btn-ghost grow" onClick={() => done(false)}>Annuler</button>
+          <button className="btn btn-ghost grow" onClick={() => done(false)}>{q.cancel ?? 'Annuler'}</button>
           <button className="btn btn-primary grow" onClick={() => done(true)} autoFocus>{q.ok}</button>
         </div>
       </div>

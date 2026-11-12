@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../config'
-import type { AccountKind, Post, SpotEvent, Story, User } from './types'
+import type { AccountKind, Notif, Post, SpotEvent, Story, User } from './types'
 
 // Connexion à Supabase. Sans variables d'environnement, l'app reste en mode démo (données locales).
 const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || SUPABASE_URL
@@ -121,7 +121,7 @@ export async function loadAll(meId: string | null, pos: { lat: number; lng: numb
     sb!.from('events').select('*').gte('ends_at', new Date(Date.now() - 86_400_000).toISOString())
       .gte('lat', pos.lat - 1).lte('lat', pos.lat + 1).gte('lng', pos.lng - dLng).lte('lng', pos.lng + dLng).order('starts_at'),
     sb!.from('event_addresses').select('*'),
-    sb!.from('attendances').select('event_id, user_id, status'),
+    sb!.from('attendances').select('event_id, user_id, status, created_at'),
     sb!.from('stories').select('*').gt('expires_at', new Date().toISOString()),
     meId ? sb!.from('story_views').select('story_id, user_id').eq('user_id', meId) : Promise.resolve({ data: [], error: null }),
     sb!.from('posts').select('*').order('created_at', { ascending: false }).limit(200),
@@ -133,7 +133,7 @@ export async function loadAll(meId: string | null, pos: { lat: number; lng: numb
   const users: User[] = (profiles as Row[]).map((p) => ({
     id: p.id, name: p.name, handle: p.handle, kind: p.kind, verified: p.verified, color: p.color, bio: p.bio, city: p.city,
     venueAddress: p.venue_address ?? undefined, vibes: p.vibes,
-    avatarUrl: p.avatar_url ?? undefined, instagram: p.instagram ?? undefined, coverUrl: p.cover_url ?? undefined, coverKind: p.cover_kind ?? undefined,
+    avatarUrl: p.avatar_url ?? undefined, instagram: p.instagram ?? undefined, coverUrl: p.cover_url ?? undefined, coverKind: p.cover_kind ?? undefined, shareGoing: p.share_going !== false,
     followers: fol.filter((f) => f.followee === p.id).length,
     following: fol.filter((f) => f.follower === p.id).map((f) => f.followee),
   }))
@@ -163,7 +163,28 @@ export async function loadAll(meId: string | null, pos: { lat: number; lng: numb
     comments: (comments as Row[]).filter((c) => c.post_id === p.id).map((c) => ({ id: c.id, authorId: c.author_id, text: c.body, createdAt: c.created_at })),
   }))
 
-  return { users, events: evs, stories: sts, posts: ps }
+  // « Ton réseau y va » : les sorties à venir où vont les gens que tu suis (3 derniers jours), sauf s'ils l'ont désactivé.
+  const mine = users.find((u) => u.id === meId)
+  const read = readIds()
+  const notifs: Notif[] = !mine ? [] : (att as Row[])
+    .filter((a) => (a.status === 'going' || a.status === 'accepted') && a.user_id !== meId && mine.following.includes(a.user_id)
+      && Date.now() - new Date(a.created_at ?? 0).getTime() < 3 * 86_400_000)
+    .flatMap((a) => {
+      const u = users.find((x) => x.id === a.user_id), ev = evs.find((x) => x.id === a.event_id)
+      if (!u || !ev || u.shareGoing === false || ev.hostId === u.id || new Date(ev.end) < new Date()) return []
+      const id = `go:${ev.id}:${u.id}`
+      return [{ id, kind: 'going' as const, title: `${u.name} y va`, body: `${ev.title} · ${ev.venue}`, link: `/event/${ev.id}`, createdAt: a.created_at, read: read.has(id) }]
+    })
+    .sort((x, y) => y.createdAt.localeCompare(x.createdAt))
+
+  return { users, events: evs, stories: sts, posts: ps, notifs }
+}
+
+const READ_KEY = 'spotla-read-notifs'
+const readIds = () => { try { return new Set<string>(JSON.parse(localStorage.getItem(READ_KEY) ?? '[]')) } catch { return new Set<string>() } }
+/** Garde en mémoire les notifications déjà lues (elles sont recalculées à chaque chargement). */
+export function markNotifsRead(ids: string[]) {
+  try { localStorage.setItem(READ_KEY, JSON.stringify([...new Set([...readIds(), ...ids])].slice(-300))) } catch { /* rien */ }
 }
 
 // ---------- Écriture ----------
@@ -181,8 +202,9 @@ export const remote = {
     if (status === null) { must(await sb!.from('attendances').delete().match({ event_id: eventId, user_id: userId })); return }
     must(await sb!.from('attendances').upsert({ event_id: eventId, user_id: userId, status }))
   },
-  async updateProfile(me: string, patch: { name?: string; handle?: string; city?: string; bio?: string; avatarUrl?: string | null; coverUrl?: string | null; coverKind?: 'image' | 'video' | null; vibes?: string[]; instagram?: string }) {
+  async updateProfile(me: string, patch: { name?: string; handle?: string; city?: string; bio?: string; avatarUrl?: string | null; coverUrl?: string | null; coverKind?: 'image' | 'video' | null; vibes?: string[]; instagram?: string; shareGoing?: boolean }) {
     const row: Record<string, unknown> = {}
+    if (patch.shareGoing !== undefined) row.share_going = patch.shareGoing
     if (patch.instagram !== undefined) row.instagram = patch.instagram || null
     if (patch.vibes !== undefined) row.vibes = patch.vibes
     if (patch.bio !== undefined) row.bio = patch.bio
@@ -193,6 +215,7 @@ export const remote = {
     if (patch.coverUrl !== undefined) row.cover_url = patch.coverUrl
     if (patch.coverKind !== undefined) row.cover_kind = patch.coverKind
     const r = await sb!.from('profiles').update(row).eq('id', me)
+    if (r.error && /share_going/i.test(r.error.message)) throw new Error('Il manque une petite mise à jour de la base : exécute supabase/store-compliance.sql dans Supabase.')
     if (r.error && /instagram/i.test(r.error.message)) throw new Error('Il manque une petite mise à jour de la base : exécute supabase/instagram.sql dans Supabase.')
     if (r.error && /avatar_url|cover_url|cover_kind|schema cache|column/i.test(r.error.message)) throw new Error('Il manque une petite mise à jour de la base : exécute supabase/profile-media.sql dans Supabase.')
     if (r.error && /profiles_handle_key|duplicate key/i.test(r.error.message)) throw new Error('Ce nom d\'utilisateur est déjà pris.')
