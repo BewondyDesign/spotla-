@@ -1,4 +1,3 @@
-import { money } from '../data/util'
 import { useShallow } from 'zustand/react/shallow'
 import { Link, Navigate } from 'react-router-dom'
 import { BadgeCheck, Eye, Share2, Sparkles, Users } from 'lucide-react'
@@ -6,7 +5,7 @@ import { askConfirm, goingCount, toast, useMe, useStore } from '../data/store'
 import { fmtDay, fmtTime, momentOf } from '../data/util'
 import { Art, PriceBadge } from '../components/ui'
 
-export const BOOST_PRICE = money(9.99)
+// Mise en avant gratuite pendant le lancement : aucun achat dans l'app (règle 3.1.1 de l'App Store, paiements Google Play).
 
 export function Business() {
   const me = useMe()!
@@ -49,8 +48,8 @@ export function Business() {
             {e.boosted ? (
               <span className="badge b-boost"><Sparkles size={11} /> Boosté</span>
             ) : (
-              <button className="btn-mini accent" onClick={async () => { if (await askConfirm(`Booster « ${e.title} » pour ${BOOST_PRICE} ? Il passe en tête de « Ce soir » dans un rayon de 3 km.`, 'Booster')) { boost(e.id); toast('Boost activé', 'Ton événement est mis en avant ce soir. (Paiement simulé dans le MVP.)') } }}>
-                Booster · {BOOST_PRICE}
+              <button className="btn-mini accent" onClick={async () => { if (await askConfirm(`Mettre « ${e.title} » en avant ? Il passe en tête de « Ce soir » dans un rayon de 3 km. C'est gratuit pendant le lancement.`, 'Mettre en avant')) { boost(e.id); toast('Mise en avant activée', 'Ton événement est en tête ce soir, gratuitement.') } }}>
+                Mettre en avant · gratuit
               </button>
             )}
           </div>

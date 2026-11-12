@@ -4,6 +4,9 @@ import { ArrowLeft, Send, Trash2 } from 'lucide-react'
 import { toast, useStore } from '../data/store'
 import { chatOpen, CHAT_HOURS_AFTER, deleteMessage, sendMessage, soloMembers, useChat } from '../data/social'
 import { fmtTime } from '../data/util'
+import { openReport } from '../components/ReportSheet'
+import { isBlocked, textOk } from '../data/safety'
+import { Flag } from 'lucide-react'
 import { Avatar } from '../components/ui'
 
 /** Discussion temporaire du groupe « J'y vais seul·e » d'une sortie. */
@@ -28,6 +31,7 @@ export function EventChat() {
     ev.preventDefault()
     const body = draft.trim()
     if (!body || !meId) return
+    if (!textOk(body)) return
     setDraft('')
     try { await sendMessage(id, meId, body); refresh() } catch (x) { toast('Message non envoyé', (x as Error).message); setDraft(body) }
   }
@@ -44,7 +48,7 @@ export function EventChat() {
       <div className="chat-list pad">
         {member === false && <p className="hint center">Rejoins le groupe depuis la page de la sortie pour lire et écrire ici.</p>}
         {member && msgs.length === 0 && <p className="hint center">Personne n'a encore écrit. Dis bonjour et propose un point de rendez-vous (dans un lieu public).</p>}
-        {member && msgs.map((m) => {
+        {member && msgs.filter((m) => !isBlocked(m.userId)).map((m) => {
           const u = users.find((x) => x.id === m.userId)
           const mine = m.userId === meId
           return (
@@ -53,7 +57,7 @@ export function EventChat() {
               <div className="bubble">
                 {!mine && <b>{u?.name.split(' ')[0] ?? 'Membre'}</b>}
                 <p>{m.body}</p>
-                <small>{fmtTime(m.createdAt)}{mine && <button className="msg-del" onClick={async () => { await deleteMessage(m.id).catch(() => {}); refresh() }} aria-label="Supprimer mon message"><Trash2 size={12} /></button>}</small>
+                <small>{fmtTime(m.createdAt)}{mine ? <button className="msg-del" onClick={async () => { await deleteMessage(m.id).catch(() => {}); refresh() }} aria-label="Supprimer mon message"><Trash2 size={12} /></button> : <button className="msg-del" onClick={() => openReport({ kind: 'message', targetId: m.id, userId: m.userId, userName: u?.name })} aria-label="Signaler ce message"><Flag size={12} /></button>}</small>
               </div>
             </div>
           )

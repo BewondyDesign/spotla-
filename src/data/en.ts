@@ -17,6 +17,18 @@ export const EN: Record<string, string> = {
   'Danser': 'Dancing', 'Musique live': 'Live music', 'Chill': 'Chill', 'Apéro': 'Drinks', 'Culture': 'Culture', 'Sport': 'Sports',
   'Ouvert à tous': 'Open to all', 'Places limitées': 'Limited spots', 'Sur demande': 'On request', 'Cercle restreint': 'Close circle', 'Cercle': 'Circle',
   'Calme': 'Quiet', 'Ça bouge': 'Lively', 'Plein à craquer': 'Packed',
+  // ---------- Conformité stores : sécurité, signalement, compte ----------
+  'Continuer avec Apple': 'Continue with Apple', 'Connexion Apple impossible': 'Apple sign-in failed', 'La connexion avec Apple n\'est pas encore activée.': 'Apple sign-in isn\'t enabled yet.',
+  'Sécurité': 'Safety', 'Tu ne vois plus les contenus des membres bloqués, et ils ne peuvent plus te suivre.': 'You no longer see content from blocked members, and they can\'t follow you.',
+  'Tu n\'as bloqué personne.': 'You haven\'t blocked anyone.', 'Débloquer': 'Unblock', 'Aide et informations': 'Help and information', 'Contacter SpotLa': 'Contact SpotLa',
+  'Règles de la communauté': 'Community Rules', 'Conditions d\'utilisation': 'Terms of Use', 'Politique de confidentialité': 'Privacy Policy',
+  'Supprimer mon compte': 'Delete my account', 'Ton compte, ton profil, tes sorties, publications, stories, commentaires et messages sont effacés définitivement. Cette action ne peut pas être annulée.': 'Your account, profile, outings, posts, stories, comments and messages are permanently erased. This can\'t be undone.',
+  'Pour confirmer, écris SUPPRIMER': 'To confirm, type SUPPRIMER', 'Suppression…': 'Deleting…', 'Supprimer définitivement': 'Delete permanently', 'Compte supprimé': 'Account deleted',
+  'Toutes tes données ont été effacées. À bientôt peut-être !': 'All your data has been erased. Hope to see you again!',
+  'Tu ne vois plus ses contenus et il ne peut plus te suivre.': 'You no longer see their content and they can\'t follow you.',
+  'Ce texte contient des mots interdits par les règles de SpotLa (insultes, haine, contenu sexuel ou drogues). Modifie-le pour publier.': 'This text contains words banned by SpotLa\'s rules (insults, hate, sexual content or drugs). Edit it to post.',
+  'Signaler la publication': 'Report post', 'Signaler ce commentaire': 'Report comment', 'Signaler cette story': 'Report story', 'Signaler ce message': 'Report message', 'Signaler ou bloquer': 'Report or block',
+  'Mettre en avant · gratuit': 'Feature · free', 'Mettre en avant': 'Feature', 'Mise en avant activée': 'Featured', 'Ton événement est en tête ce soir, gratuitement.': 'Your event is at the top tonight, for free.',
   // ---------- Compte / inscription ----------
   'Rejoins la discussion': 'Join the chat', 'Publie une sortie ou une story': 'Post an outing or a story', 'Ton profil SpotLa': 'Your SpotLa profile',
   'Tes réglages': 'Your settings', 'Ton espace pro': 'Your business space', 'Tes notifications': 'Your notifications', 'Retrouve tes sorties ici': 'Find your plans here',
@@ -256,6 +268,8 @@ export const EN: Record<string, string> = {
 /** Textes avec une partie variable : [motif français, remplacement anglais]. */
 export const PATTERNS: [RegExp, string | ((...m: string[]) => string)][] = [
   [/^Rayon de (\d+) km$/, 'Radius $1 km'],
+  [/^Tu as bloqué (.+)$/, 'You blocked $1'],
+  [/^Mettre « (.+) » en avant \? Il passe en tête de « Ce soir » dans un rayon de 3 km\. C'est gratuit pendant le lancement\.$/, 'Feature "$1"? It moves to the top of "Tonight" within 3 km. It\'s free during launch.'],
   [/^Note (.+) sur 5$/, 'Rated $1 out of 5'],
   [/^(\d) étoiles?$/, (_, n) => `${n} star${n === '1' ? '' : 's'}`],
   [/^Étape (\d) sur (\d)$/, 'Step $1 of $2'],

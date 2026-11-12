@@ -6,7 +6,7 @@ import { toast, useMe, useStore } from '../data/store'
 import { MAX_STORY_SECONDS, putBlob, videoDuration } from '../data/media'
 import { isRemote, uploadMedia } from '../data/backend'
 import { geocode, momentOf, PALETTES, uid, VIBES, VIS_LABEL, type Place } from '../data/util'
-import { isForKids, KIDS_REFUSED } from '../data/adult'
+import { textOk } from '../data/safety'
 import type { Visibility } from '../data/types'
 
 type Mode = 'event' | 'story' | 'post'
@@ -77,7 +77,7 @@ function EventForm() {
   const dayChoice = date === addDays(0) ? 0 : date === addDays(1) ? 1 : 2
 
   const submit = async () => {
-    if (isForKids(title, desc)) { toast('Publication refusée', KIDS_REFUSED); return }
+    if (!textOk(title, desc, venue)) return
     setBusy(true)
     const found = spot ?? (await geocode(address.trim(), pos))[0]
     if (!found) toast('Adresse non trouvée sur la carte', 'L\'événement est placé près de ta position. Vérifie l\'adresse si besoin.')
@@ -214,6 +214,7 @@ function StoryForm({ defaultEvent }: { defaultEvent: string }) {
   }
 
   const publish = async () => {
+    if (!textOk(caption)) return
     if (!file) return
     setBusy(true)
     try {
@@ -276,7 +277,7 @@ function PostForm() {
   const mineOrGoing = events.filter((e) => momentOf(e) !== 'past' && (e.hostId === me.id || e.going.includes(me.id)))
 
   const publish = async () => {
-    if (isForKids(text)) { toast('Publication refusée', KIDS_REFUSED); return }
+    if (!textOk(text)) return
     let imageKey: string | undefined
     let imageUrl: string | undefined
     setBusy(true)

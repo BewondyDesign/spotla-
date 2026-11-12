@@ -15,16 +15,19 @@ import type { Category } from '../data/catalog'
 import type { SpotEvent } from '../data/types'
 import { LangSwitch, useLang, useT } from '../data/i18n'
 import { CategoryChips } from './Explore'
+import { dayInfo, PART_WHEN, useDayInfo, type DayPart, type Light } from '../data/daypart'
 import { likesAgenda, likesEvent, likesPlace, lovedFirst } from '../data/tastes'
 
-// Photo d'entête choisie automatiquement selon la date à Montréal : temps des fêtes, hiver, printemps, été, automne.
+// Photo d'entête choisie automatiquement selon la saison à Montréal (temps des fêtes, hiver, printemps, été, automne)
+// et la lumière du moment : matin, plein jour, coucher du soleil, nuit. Aucune photo avec des enfants.
 type Season = 'fetes' | 'hiver' | 'printemps' | 'ete' | 'automne'
-const SEASON_PHOTO: Record<Season, string> = {
-  fetes: 'photo-1702214957911-03f594aa4181', // rue enneigée la nuit, sapin illuminé
-  hiver: 'photo-1643915868532-0ba6a4c1be1b', // rue sous la neige, le soir
-  printemps: 'photo-1683665265710-9364501fcec0', // gens assis dans l'herbe
-  ete: 'photo-1683624668626-2fce96bf73a9', // belvédère au-dessus de la ville
-  automne: 'photo-1697978235636-e3c4d9898983', // allée de parc aux feuilles rouges
+type Shot = 'matin' | 'jour' | 'soir' | 'nuit'
+const HERO: Record<Season, Record<Shot, string>> = {
+  fetes: { matin: '1670513734654-b171df8802d9', jour: '1781195348267-4dd426296e82', soir: '1708184136688-8a0c58fcc01a', nuit: '1702214957911-03f594aa4181' },
+  hiver: { matin: '1670513734929-fc5ae6e37e64', jour: '1612196755540-602022b439cc', soir: '1670513734943-72b3f145034e', nuit: '1643915868532-0ba6a4c1be1b' },
+  printemps: { matin: '1525919148070-2252e96e4c44', jour: '1753013811459-ad077dbf3ef6', soir: '1715196947436-ece6a0882618', nuit: '1670722469904-0c5601c9157c' },
+  ete: { matin: '1587127457386-1ab504456133', jour: '1581408864626-43a5394853de', soir: '1723921027116-c6bb4914a0fb', nuit: '1730860763372-ae1ef7d8d538' },
+  automne: { matin: '1599856576425-c1c986570c2f', jour: '1697978235636-e3c4d9898983', soir: '1570195823626-db54fe9a8f16', nuit: '1612231868724-f5192a66c84a' },
 }
 const seasonOf = (d = new Date()): Season => {
   const md = Number(new Intl.DateTimeFormat('en-CA', { month: '2-digit', day: '2-digit', timeZone: 'America/Montreal' }).format(d).replace(/\D/g, ''))
@@ -34,11 +37,12 @@ const seasonOf = (d = new Date()): Season => {
   if (md <= 922) return 'ete'
   return 'automne'
 }
-const heroPhoto = () => `https://images.unsplash.com/${SEASON_PHOTO[seasonOf()]}?auto=format&fit=crop&w=900&h=1100&q=70`
+const shotOf = (light: Light, hour: number): Shot => light === 'noir' ? 'nuit' : light === 'aube' ? 'matin' : light === 'crepuscule' ? 'soir' : hour < 11 ? 'matin' : 'jour'
+const heroPhoto = (light: Light, hour: number) => `https://images.unsplash.com/photo-${HERO[seasonOf()][shotOf(light, hour)]}?auto=format&fit=crop&w=900&h=1100&q=70`
 /** Heure de Montréal, pour saluer au bon moment. */
 const hourIn = (d: Date) => Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: 'America/Montreal' }).format(d)) % 24
 const mtlHour = () => hourIn(new Date())
-const greet = (en: boolean) => { const h = mtlHour(); return h >= 5 && h < 12 ? (en ? 'Good morning' : 'Bonjour') : h >= 12 && h < 18 ? (en ? 'Good afternoon' : 'Bel après-midi') : (en ? 'Good evening' : 'Bonsoir') }
+const greet = (en: boolean, part: DayPart) => part === 'matin' ? (en ? 'Good morning' : 'Bonjour') : part === 'aprem' ? (en ? 'Good afternoon' : 'Bel après-midi') : (en ? 'Good evening' : 'Bonsoir')
 /** « quand » en toutes lettres, FR puis EN. */
 const WHEN: Record<Slot, [string, string]> = { now: ['aujourd\'hui', 'today'], aprem: ['cet après-midi', 'this afternoon'], soir: ['ce soir', 'tonight'], weekend: ['ce week-end', 'this weekend'] }
 
@@ -75,7 +79,10 @@ export function Home() {
   const radius = useStore((s) => s.radius)
   const unread = useStore((s) => s.notifs.filter((n) => !n.read).length)
   const me = useMe()
-  const [slot, setSlot] = useState<Slot>(() => (mtlHour() >= 17 || mtlHour() < 5 ? 'soir' : 'now'))
+  const day = useDayInfo()
+  const [slot, setSlot] = useState<Slot>(() => { const p = dayInfo().part; return p === 'soir' || p === 'nuit' ? 'soir' : 'now' })
+  // « On va où … ? » suit l'heure : aujourd'hui (matin), cet après-midi, ce soir, cette nuit.
+  const when = (slot === 'now' || (slot === 'soir' && day.part === 'nuit')) ? PART_WHEN[day.part] : WHEN[slot]
   const users = useStore((s) => s.users)
   const storeTastes = useStore((s) => s.vibes)
   const tastes = me?.vibes?.length ? me.vibes : storeTastes
@@ -129,7 +136,7 @@ export function Home() {
   return (
     <div className="scr home-scr">
       <header className="home-hero">
-        <img className="hero-vid" src={heroPhoto()} alt="" />
+        <img className="hero-vid" src={heroPhoto(day.light, day.hour)} alt="" />
         <div className="hero-shade" />
         <div className="hero-top">
           <span className="wordmark light">spotla<i /></span>
@@ -140,8 +147,8 @@ export function Home() {
           </div>
         </div>
         <div className="hero-copy">
-          <p className="hero-hi">{greet(en)}{me?.name ? `, ${me.name.split(' ')[0]}` : ''}</p>
-          <h1 className="hero-h">{en ? <>Where are we going <em>{WHEN[slot][1]}</em>?</> : <>On va où <em>{WHEN[slot][0]}</em> ?</>}</h1>
+          <p className="hero-hi">{greet(en, day.part)}{me?.name ? `, ${me.name.split(' ')[0]}` : ''}</p>
+          <h1 className="hero-h">{en ? <>Where are we going <em>{when[1]}</em>?</> : <>On va où <em>{when[0]}</em> ?</>}</h1>
           <LocationButton pill />
           <div className="slot-chips" role="tablist" aria-label={t('Quand ?', 'When?')}>
             {SLOTS.filter((x) => x.k !== 'aprem' || mtlHour() < 17).map((x) => (

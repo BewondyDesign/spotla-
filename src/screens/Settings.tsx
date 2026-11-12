@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChevronRight, LogOut } from 'lucide-react'
+import { ArrowLeft, ChevronRight, LogOut, Trash2 } from 'lucide-react'
+import { deleteMyAccount, textOk, unblockUser, useSafety } from '../data/safety'
+import { openReport } from '../components/ReportSheet'
 import { askConfirm, toast, useMe, useStore } from '../data/store'
 import { LangSwitch } from '../data/i18n'
 import { TASTES } from '../data/tastes'
@@ -23,6 +25,10 @@ export function Settings() {
   const [google, setGoogle] = useState(false)
   const [pw, setPw] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
+  const [delOpen, setDelOpen] = useState(false)
+  const [delWord, setDelWord] = useState('')
+  const blocked = useSafety((s) => s.blocked)
+  const users = useStore((s) => s.users)
 
   useEffect(() => { if (isRemote) accountInfo().then((a) => { setEmail(a.email); setEmail0(a.email); setGoogle(a.google); setProvider(a.provider) }) }, [])
 
@@ -55,7 +61,7 @@ export function Settings() {
           <label className="set-row"><span>Instagram</span><div className="set-at">@<input value={insta} onChange={(e) => setInsta(cleanHandle(e.target.value.replace(/^.*instagram\.com\//i, '').replace(/^@/, '')))} autoCapitalize="none" placeholder="ton.compte" /></div></label>
           {dirty && (
             <button className="btn btn-primary btn-block" disabled={busy === 'p' || name.trim().length < 2 || handle.length < 3}
-              onClick={() => run('p', () => updateProfile({ name: name.trim(), handle, city: city.trim(), bio: bio.trim(), ...(insta !== (me.instagram ?? '') ? { instagram: insta } : {}) }), 'Profil mis à jour')}>
+              onClick={() => textOk(name, bio) && run('p', () => updateProfile({ name: name.trim(), handle, city: city.trim(), bio: bio.trim(), ...(insta !== (me.instagram ?? '') ? { instagram: insta } : {}) }), 'Profil mis à jour')}>
               {busy === 'p' ? 'Enregistrement…' : 'Enregistrer'}
             </button>
           )}
@@ -99,8 +105,40 @@ export function Settings() {
           {me.kind === 'business' && <button className="set-row link" onClick={() => nav('/business')}><span>Espace business</span><ChevronRight size={18} /></button>}
         </section>
 
+        <section className="set-group">
+          <h2>Sécurité</h2>
+          <p className="hint">Tu ne vois plus les contenus des membres bloqués, et ils ne peuvent plus te suivre.</p>
+          {blocked.length === 0 ? <p className="hint">Tu n'as bloqué personne.</p> : blocked.map((id) => {
+            const b = users.find((x) => x.id === id)
+            return <div key={id} className="set-row"><span>{b?.name ?? 'Membre'}{b ? ` · @${b.handle}` : ''}</span><button className="btn-mini" onClick={() => unblockUser(id)}>Débloquer</button></div>
+          })}
+        </section>
+
+        <section className="set-group">
+          <h2>Aide et informations</h2>
+          <button className="set-row link" onClick={() => openReport({ kind: 'support', targetId: null })}><span>Contacter SpotLa</span><ChevronRight size={18} /></button>
+          <button className="set-row link" onClick={() => nav('/legal/regles')}><span>Règles de la communauté</span><ChevronRight size={18} /></button>
+          <button className="set-row link" onClick={() => nav('/legal/conditions')}><span>Conditions d'utilisation</span><ChevronRight size={18} /></button>
+          <button className="set-row link" onClick={() => nav('/legal/confidentialite')}><span>Politique de confidentialité</span><ChevronRight size={18} /></button>
+        </section>
+
         <button className="set-out" onClick={async () => { if (await askConfirm('Se déconnecter ?', 'Se déconnecter')) logout() }}><LogOut size={18} /> Se déconnecter</button>
-        <p className="hint center">Pour supprimer ton compte, écris-nous depuis l'adresse de ton compte.</p>
+
+        <section className="set-group danger-zone">
+          <h2>Supprimer mon compte</h2>
+          <p className="hint">Ton compte, ton profil, tes sorties, publications, stories, commentaires et messages sont effacés définitivement. Cette action ne peut pas être annulée.</p>
+          {!delOpen ? (
+            <button className="btn btn-ghost btn-block danger" onClick={() => setDelOpen(true)}><Trash2 size={17} /> Supprimer mon compte</button>
+          ) : (
+            <>
+              <label className="set-row col"><span>Pour confirmer, écris SUPPRIMER</span><input value={delWord} onChange={(e) => setDelWord(e.target.value)} autoCapitalize="characters" /></label>
+              <button className="btn btn-block btn-danger" disabled={delWord.trim().toUpperCase() !== 'SUPPRIMER' || busy === 'd'}
+                onClick={() => run('d', async () => { await deleteMyAccount(); nav('/', { replace: true }) }, 'Compte supprimé', 'Toutes tes données ont été effacées. À bientôt peut-être !')}>
+                {busy === 'd' ? 'Suppression…' : 'Supprimer définitivement'}
+              </button>
+            </>
+          )}
+        </section>
       </div>
     </div>
   )

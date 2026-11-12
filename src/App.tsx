@@ -25,6 +25,9 @@ import { AgeGate } from './components/AgeGate'
 import { Explore } from './screens/Explore'
 import { Intro } from './components/Intro'
 import { startAutoTranslate, useLang } from './data/i18n'
+import { Legal } from './screens/Legal'
+import { ReportSheet } from './components/ReportSheet'
+import { startSafety } from './data/safety'
 
 function Shell() {
   const meId = useStore((s) => s.meId)
@@ -69,6 +72,8 @@ function Shell() {
     return subscribe(() => useStore.getState().reload())
   }, [meId, guest])
 
+  // Pages légales : publiques, lisibles sans compte ni écran d'âge (liens donnés à Apple, Google et Meta).
+  if (loc.pathname.startsWith('/legal')) return <div className="app"><Routes><Route path="/legal/:doc" element={<Legal />} /><Route path="*" element={<Legal />} /></Routes><Toast /></div>
   // Moins de 18 ans : rien d'autre ne s'affiche (ni inscription, ni visite) tant que l'âge n'est pas confirmé.
   if (minorBlocked) return <div className="app"><AgeGate /></div>
   if (isRemote && loading) return <div className="app"><div className="splash"><span className="dot" />SpotLa</div></div>
@@ -104,6 +109,7 @@ function Shell() {
       <Toast />
       <ConfirmSheet />
       <JoinSheet />
+      <ReportSheet />
     </div>
   )
 }
@@ -112,6 +118,7 @@ function Shell() {
 export function App() {
   const lang = useLang((s) => s.lang)
   useEffect(() => { startAutoTranslate(lang) }, [lang])
+  useEffect(() => { startSafety() }, [])
   // Changer de langue remonte l'app : le texte d'origine revient, puis il est traduit si besoin.
   return <><HashRouter key={lang}><Shell /></HashRouter><Intro /></>
 }

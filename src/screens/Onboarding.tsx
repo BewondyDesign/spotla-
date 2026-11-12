@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Building2, Camera, Eye, EyeOff, PartyPopper } from 'lucide-react'
 import { toast, useStore } from '../data/store'
-import { cleanHandle, createProfile, isRemote, uploadMedia, sendPasswordReset, signIn, signInWithGoogle, signInWithFacebook, signUp, signupInfo, updatePassword } from '../data/backend'
+import { cleanHandle, createProfile, isRemote, uploadMedia, sendPasswordReset, signIn, signInWithGoogle, signInWithFacebook, signInWithApple, signUp, signupInfo, updatePassword } from '../data/backend'
 import { TASTES } from '../data/tastes'
 import { LangSwitch, useT } from '../data/i18n'
+import { Link } from 'react-router-dom'
 import type { AccountKind } from '../data/types'
 
 type View = 'welcome' | 'signup' | 'login' | 'forgot' | 'check-email' | 'profile'
@@ -37,7 +38,7 @@ function Welcome({ go }: { go: (v: View) => void }) {
         {isRemote ? (
           <div className="stack12">
             <button className="btn btn-primary btn-block" onClick={() => go('signup')}>{t('Créer un compte', 'Create an account')}</button>
-            <GoogleButton /><FacebookButton />
+            <SocialButtons />
             <p className="center muted">{t('Tu as déjà un compte ?', 'Already have an account?')} <button className="link-strong" onClick={() => go('login')}>{t('Se connecter', 'Log in')}</button></p>
             <button className="btn btn-ghost btn-block" onClick={() => useStore.getState().setGuest(true)}>{t('Explorer sans compte', 'Browse without an account')}</button>
           </div>
@@ -46,10 +47,42 @@ function Welcome({ go }: { go: (v: View) => void }) {
             <button className="btn btn-primary btn-block" onClick={() => go('profile')}>{t('C\'est parti', 'Let\'s go')}</button>
             <button className="btn btn-ghost btn-block" onClick={() => useStore.getState().setGuest(true)}>{t('Explorer sans compte', 'Browse without an account')}</button>
             <p className="hint center">Mode démo : tes données restent sur cet appareil.</p>
+            <TermsNote />
           </>
         )}
       </div>
     </div>
+  )
+}
+
+/** Connexion par un compte existant : Apple, Google, Facebook, puis la mention des conditions. */
+function SocialButtons() {
+  return <><AppleButton /><GoogleButton /><FacebookButton /><TermsNote /></>
+}
+
+/** Acceptation des conditions, affichée à côté de chaque façon de créer un compte. */
+export function TermsNote() {
+  const t = useT()
+  return (
+    <p className="hint center terms-note">
+      {t('En continuant, tu confirmes avoir 18 ans ou plus et tu acceptes les ', 'By continuing, you confirm you are 18 or older and accept the ')}
+      <Link to="/legal/conditions">{t('Conditions d\'utilisation', 'Terms of Use')}</Link>{t(', les ', ', the ')}
+      <Link to="/legal/regles">{t('Règles de la communauté', 'Community Rules')}</Link>{t(' et la ', ' and the ')}
+      <Link to="/legal/confidentialite">{t('Politique de confidentialité', 'Privacy Policy')}</Link>.
+    </p>
+  )
+}
+
+function AppleButton() {
+  const [busy, setBusy] = useState(false)
+  return (
+    <button className="btn btn-apple btn-block" disabled={busy} onClick={async () => {
+      setBusy(true)
+      try { await signInWithApple() } catch (e) { toast('Connexion Apple impossible', (e as Error).message); setBusy(false) }
+    }}>
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.37 12.62c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-2.99-.79-1.54.02-2.96.9-3.75 2.27-1.6 2.78-.41 6.89 1.15 9.14.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.39-.92-2.4-3.66zM14.1 5.86c.63-.77 1.06-1.83.94-2.89-.91.04-2.01.61-2.66 1.37-.58.67-1.1 1.76-.96 2.8 1.01.08 2.05-.52 2.68-1.28z"/></svg>
+      Continuer avec Apple
+    </button>
   )
 }
 
@@ -132,7 +165,7 @@ function SignUp({ go, onEmail }: { go: (v: View) => void; onEmail: (e: string) =
     <form className="scr" onSubmit={submit}>
       <div className="pad stack16">
         <Header title="Créer un compte" back={() => go('welcome')} />
-        <GoogleButton /><FacebookButton />
+        <SocialButtons />
         <div className="or"><span>ou</span></div>
         <div className="field">
           <label className="lbl" htmlFor="su-name">Nom</label>
@@ -181,7 +214,7 @@ function Login({ go, onEmail, email: initial }: { go: (v: View) => void; onEmail
         {err && <p className="error" role="alert">{err}</p>}
         <button className="btn btn-primary btn-block" type="submit" disabled={!emailOk(email) || !pw || busy}>{busy ? 'Connexion…' : 'Se connecter'}</button>
         <div className="or"><span>ou</span></div>
-        <GoogleButton /><FacebookButton />
+        <SocialButtons />
         <p className="center muted">Pas encore de compte ? <button type="button" className="link-strong" onClick={() => go('signup')}>Créer un compte</button></p>
       </div>
     </form>

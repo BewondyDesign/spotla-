@@ -13,7 +13,9 @@ import { Avatar, Empty, Verified } from '../components/ui'
 import { CAT_ICON, Stars } from '../components/PlaceCard'
 import { useCatalog, userPassport, type Review } from '../data/places'
 import { CATALOG } from '../data/catalog'
-import { Instagram } from 'lucide-react'
+import { Ban, Flag, Instagram } from 'lucide-react'
+import { openReport } from '../components/ReportSheet'
+import { unblockUser, useSafety } from '../data/safety'
 import type { User } from '../data/types'
 
 const COVER_MAX_S = 15
@@ -27,6 +29,7 @@ export function Profile() {
   const posts = useStore(useShallow((s) => s.posts.filter((p) => p.authorId === uid)))
   const events = useStore(useShallow((s) => s.events.filter((e) => e.hostId === uid && momentOf(e) !== 'past')))
   const toggleFollow = useStore((s) => s.toggleFollow)
+  const blocked = useSafety((s) => s.blocked.includes(uid))
   const group = useStoryGroups().find((g) => g.authorId === uid)
   const [tab, setTab] = useState<'places' | 'events' | 'posts'>('places')
   const [editing, setEditing] = useState(false)
@@ -38,6 +41,13 @@ export function Profile() {
   const places = useMemo(() => [...new Set([...pass.reviews.map((r) => r.placeId), ...pass.liked])].map(placeOf).filter((x) => !!x), [pass, placeOf])
 
   if (!u) return <div className="scr"><Empty>Profil introuvable.</Empty></div>
+  if (blocked) return (
+    <div className="scr">
+      <div className="pad"><button className="iconbtn soft" onClick={() => nav(-1)} aria-label="Retour"><ArrowLeft size={20} /></button></div>
+      <div className="blocked-note"><Ban size={28} /><b>Tu as bloqué {u.name}</b><span>Tu ne vois plus ses contenus et il ne peut plus te suivre.</span>
+        <button className="btn btn-ghost" onClick={() => unblockUser(u.id)}>Débloquer</button></div>
+    </div>
+  )
   const isMe = u.id === me?.id
   const following = (me?.following ?? []).includes(u.id)
   const ratingOf = (pid: string) => pass.reviews.find((r) => r.placeId === pid)
@@ -55,6 +65,7 @@ export function Profile() {
             <button className="iconbtn glass sm" onClick={() => share(`${u.name} sur SpotLa`, `#/u/${u.id}`)} aria-label="Partager le profil"><Share2 size={17} /></button>
             {isMe && <button className="iconbtn glass sm" onClick={() => setEditing(true)} aria-label="Modifier le profil"><Pencil size={17} /></button>}
             {isMe && <Link className="iconbtn glass sm" to="/settings" aria-label="Réglages"><Settings size={17} /></Link>}
+            {!isMe && <button className="iconbtn glass sm" onClick={() => openReport({ kind: 'user', targetId: u.id, userId: u.id, userName: u.name })} aria-label="Signaler ou bloquer"><Flag size={16} /></button>}
           </div>
         </div>
       </div>

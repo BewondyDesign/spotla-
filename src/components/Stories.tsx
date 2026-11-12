@@ -7,6 +7,8 @@ import { useStore } from '../data/store'
 import type { Story } from '../data/types'
 import { blobUrl, MAX_STORY_SECONDS } from '../data/media'
 import { isLive, timeAgo } from '../data/util'
+import { openReport } from './ReportSheet'
+import { Flag } from 'lucide-react'
 import { Art, Avatar, LiveBadge, Verified } from './ui'
 
 /** Stories actives (moins de 24 h), regroupées par auteur, les non vues d'abord. */
@@ -171,7 +173,9 @@ export function StoryViewer() {
             {story.media.kind === 'video' && (
               <button className="iconbtn glass" onPointerDown={(e) => e.stopPropagation()} onClick={() => setMuted(!muted)} aria-label={muted ? 'Activer le son' : 'Couper le son'}>{muted ? <VolumeX size={18} /> : <Volume2 size={18} />}</button>
             )}
-            {story.authorId === myId && <button className="iconbtn glass" onPointerDown={(e) => e.stopPropagation()} onClick={() => { setPaused(true); setAskDel(true) }} aria-label="Supprimer ma story"><Trash2 size={18} /></button>}
+            {story.authorId === myId
+              ? <button className="iconbtn glass" onPointerDown={(e) => e.stopPropagation()} onClick={() => { setPaused(true); setAskDel(true) }} aria-label="Supprimer ma story"><Trash2 size={18} /></button>
+              : <button className="iconbtn glass" onPointerDown={(e) => e.stopPropagation()} onClick={() => { setPaused(true); openReport({ kind: 'story', targetId: story.id, userId: story.authorId, userName: users.find((u) => u.id === story.authorId)?.name }) }} aria-label="Signaler cette story"><Flag size={17} /></button>}
             <button className="iconbtn glass" onPointerDown={(e) => e.stopPropagation()} onClick={close} aria-label="Fermer"><X size={20} /></button>
           </div>
         </div>

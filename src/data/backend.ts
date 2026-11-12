@@ -53,6 +53,12 @@ export async function signInWithGoogle() {
   const { error } = await sb!.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: home() } })
   check(error)
 }
+/** Connexion Apple (exigée par l'App Store dès qu'on propose Google ou Facebook). */
+export async function signInWithApple() {
+  const { error } = await sb!.auth.signInWithOAuth({ provider: 'apple', options: { redirectTo: home() } })
+  if (error && /provider is not enabled|unsupported provider/i.test(error.message)) throw new Error('La connexion avec Apple n\'est pas encore activée.')
+  check(error)
+}
 /** Connexion Facebook : nom et photo du compte Facebook pré-remplissent le profil. */
 export async function signInWithFacebook() {
   const { error } = await sb!.auth.signInWithOAuth({ provider: 'facebook', options: { redirectTo: home(), scopes: 'public_profile email' } })
@@ -88,12 +94,18 @@ export async function updateEmail(email: string) {
 
 export async function createProfile(p: { id: string; name: string; handle?: string; city?: string; kind: AccountKind; vibes: string[]; venueAddress?: string; avatarUrl?: string }) {
   const handle = p.handle ? cleanHandle(p.handle) : `${cleanHandle(p.name.replace(/\s+/g, '.')) || 'membre'}.${p.id.slice(0, 4)}`
-  const { error } = await sb!.from('profiles').insert({
+  const row = {
     id: p.id, name: p.name, handle, city: p.city ?? 'Montréal', kind: p.kind, vibes: p.vibes, venue_address: p.venueAddress ?? null,
     color: p.kind === 'business' ? '#3A3A40' : '#F2557A',
     bio: p.kind === 'business' ? 'Compte business en cours de vérification.' : '',
     ...(p.avatarUrl ? { avatar_url: p.avatarUrl } : {}),
-  })
+  }
+  // Date d'acceptation des conditions (colonne ajoutée par supabase/store-compliance.sql).
+  // Lieu partenaire qui a amené la personne (lien ?ref= de l'affiche), s'il y en a un.
+  let ref: string | null = null
+  try { ref = localStorage.getItem('spotla-ref') } catch { /* rien */ }
+  let { error } = await sb!.from('profiles').insert({ ...row, terms_at: new Date().toISOString(), ...(ref ? { ref_venue: ref } : {}) })
+  if (error && /terms_at|ref_venue/.test(error.message)) ({ error } = await sb!.from('profiles').insert(row))
   check(error)
 }
 

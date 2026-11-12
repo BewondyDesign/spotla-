@@ -6,6 +6,9 @@ import { sb } from './data/backend'
 import { toast, useStore } from './data/store'
 import './styles.css'
 
+// Lien d'un lieu partenaire (affiche avec code QR) : ?ref=<lieu>, gardé jusqu'à l'inscription pour compter les inscriptions par lieu.
+try { const r = new URLSearchParams(location.search).get('ref'); if (r && /^[a-z0-9-]{2,60}$/.test(r)) localStorage.setItem('spotla-ref', r) } catch { /* rien */ }
+
 // Le lien de connexion revient avec les jetons (ou une erreur) dans l'URL, après le #.
 // On laisse Supabase les lire AVANT que le routeur (qui utilise aussi le #) ne démarre,
 // puis on nettoie l'adresse.

@@ -1,11 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLang } from '../data/i18n'
 import { Tour, tourDone } from './Tour'
+import { dayInfo, PART_WHEN } from '../data/daypart'
+import { useStore } from '../data/store'
+
+// Vidéos de fond (Mixkit, licence gratuite) : foule qui danse en club, mains levées, couple sur la piste. Adultes seulement.
+// Passent par le proxy du site (/m/mixkit) pour se charger sur iPhone.
+const CLIPS = [48510, 341, 344].map((id) => ({ src: `/m/mixkit/videos/${id}/${id}-720.mp4`, poster: `/m/mixkit/videos/${id}/${id}-thumb-720-0.jpg` }))
+const CUT = [0, 2400, 4600] // début de chaque plan (ms), fondu enchaîné d'une seconde
+const LENGTH = 6600 // durée totale avant le fondu de sortie
 
 /**
  * Animation d'ouverture : un plan de ville apparaît, un repère « spot » tombe et rebondit,
  * des ondes partent du point, une petite gerbe de lumières (ambiance soirée), puis le nom SpotLa.
- * Jouée à chaque ouverture de l'app (environ 2,6 s). Toucher l'écran la passe.
+ * Le tout par-dessus une vidéo de soirée au ralenti. Jouée à chaque ouverture de l'app (environ 7 s). Toucher l'écran la passe.
  */
 const PARTICLES = Array.from({ length: 18 }, (_, i) => {
   const a = (i / 18) * Math.PI * 2 + (i % 2 ? 0.17 : 0)
@@ -18,18 +26,34 @@ export function Intro() {
   const [phase, setPhase] = useState<'play' | 'out' | 'tour' | 'done'>('play')
   // Première ouverture : après l'animation, 2 écrans de présentation.
   const [firstTime] = useState(() => !tourDone())
+  const [when] = useState(() => PART_WHEN[dayInfo(new Date(), useStore.getState().pos).part])
+  const [clip, setClip] = useState(0)
+  const vids = useRef<(HTMLVideoElement | null)[]>([])
   useEffect(() => {
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    const a = setTimeout(() => setPhase(firstTime ? 'tour' : 'out'), reduce ? 700 : 2600)
-    const b = firstTime ? 0 : setTimeout(() => setPhase('done'), reduce ? 1000 : 3100)
-    return () => { clearTimeout(a); clearTimeout(b) }
+    const a = setTimeout(() => setPhase(firstTime ? 'tour' : 'out'), reduce ? 900 : LENGTH)
+    const b = firstTime ? 0 : setTimeout(() => setPhase('done'), reduce ? 1300 : LENGTH + 800)
+    // Plans suivants : on ne coupe que si la vidéo est prête, sinon le plan en cours continue.
+    const cuts = reduce ? [] : CUT.slice(1).map((t, i) => setTimeout(() => {
+      const v = vids.current[i + 1]
+      if (v && v.readyState >= 3) { v.currentTime = 0; v.play().catch(() => {}); setClip(i + 1) }
+    }, t))
+    return () => { clearTimeout(a); clearTimeout(b); cuts.forEach(clearTimeout) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   if (phase === 'done') return null
   if (phase === 'tour') return <Tour onDone={() => setPhase('done')} />
-  const skip = () => { if (firstTime) { setPhase('tour'); return } setPhase('out'); setTimeout(() => setPhase('done'), 450) }
+  const skip = () => { if (firstTime) { setPhase('tour'); return } setPhase('out'); setTimeout(() => setPhase('done'), 800) }
 
   return (
     <div className={`intro${phase === 'out' ? ' out' : ''}`} onClick={skip} role="presentation" aria-hidden="true">
+      <div className="intro-vids">
+        {CLIPS.map((c, i) => (
+          <video key={c.src} ref={(el) => { vids.current[i] = el; if (el) el.playbackRate = 0.8 }} className={i === clip ? 'on' : ''}
+            src={c.src} poster={i === 0 ? c.poster : undefined} muted playsInline autoPlay={i === 0} loop preload="auto"
+            onLoadedMetadata={(e) => { e.currentTarget.playbackRate = 0.8 }} />
+        ))}
+      </div>
+      <div className="intro-shade" />
       <div className="intro-glow" />
       <svg className="intro-map" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice">
         <g fill="none" stroke="currentColor" strokeLinecap="round">
@@ -49,7 +73,7 @@ export function Intro() {
           <span className="intro-ring r1" /><span className="intro-ring r2" /><span className="intro-ring r3" />
           <span className="intro-shadow" />
           {PARTICLES.map((p, i) => (
-            <i key={i} className="intro-p" style={{ '--x': `${p.x}px`, '--y': `${p.y}px`, '--c': p.c, '--s': `${p.s}px`, animationDelay: `${780 + p.delay}ms` } as React.CSSProperties} />
+            <i key={i} className="intro-p" style={{ '--x': `${p.x}px`, '--y': `${p.y}px`, '--c': p.c, '--s': `${p.s}px`, animationDelay: `${2500 + p.delay * 1.5}ms` } as React.CSSProperties} />
           ))}
           <svg className="intro-pin" viewBox="0 0 48 64" width="56" height="75">
             <defs>
@@ -64,9 +88,9 @@ export function Intro() {
         </div>
 
         <h1 className="intro-word">
-          {'SpotLa'.split('').map((ch, i) => <span key={i} style={{ animationDelay: `${1050 + i * 55}ms` }}>{ch}</span>)}
+          {'SpotLa'.split('').map((ch, i) => <span key={i} style={{ animationDelay: `${2900 + i * 110}ms` }}>{ch}</span>)}
         </h1>
-        <p className="intro-tag">{en ? 'Where are we going today?' : 'On va où aujourd\'hui ?'}</p>
+        <p className="intro-tag">{en ? `Where are we going ${when[1]}?` : `On va où ${when[0]} ?`}</p>
       </div>
     </div>
   )

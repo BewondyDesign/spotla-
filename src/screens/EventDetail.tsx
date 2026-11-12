@@ -3,7 +3,7 @@ import { ConfirmDelete } from '../components/Confirm'
 import { SoloCard, VibeGauge } from '../components/Solo'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Calendar, Check, Clapperboard, ExternalLink, Flag, Lock, MapPin, Share2, X } from 'lucide-react'
-import { askConfirm, canSeeAddress, goingCount, toast, useMe, useStore } from '../data/store'
+import { canSeeAddress, goingCount, toast, useMe, useStore } from '../data/store'
 import { distanceKm, fmtDay, fmtKm, fmtTime, isLive, startsIn } from '../data/util'
 import { eventVideo } from '../data/ambiance'
 import { Art, Avatar, LiveBadge, PriceBadge, Verified, VisBadge } from '../components/ui'
@@ -12,6 +12,7 @@ import { useStoryGroups } from '../components/Stories'
 import { shareStory } from '../components/storyShare'
 import { Instagram } from 'lucide-react'
 import { blobUrl } from '../data/media'
+import { openReport } from '../components/ReportSheet'
 import { useT } from '../data/i18n'
 
 export function EventDetail() {
@@ -21,7 +22,7 @@ export function EventDetail() {
   const users = useStore((s) => s.users)
   const pos = useStore((s) => s.pos)
   const stories = useStore((s) => s.stories)
-  const { toggleGoing, requestJoin, answerRequest, report, bump, toggleFollow, deleteEvent } = useStore.getState()
+  const { toggleGoing, requestJoin, answerRequest, bump, toggleFollow, deleteEvent } = useStore.getState()
   const [askDel, setAskDel] = useState(false)
   const [allGoers, setAllGoers] = useState(false)
   const me = useMe()
@@ -56,11 +57,8 @@ export function EventDetail() {
     return undefined
   }
 
-  const onReport = async () => {
-    if (!(await askConfirm('Signaler cet événement à la modération ? (contenu trompeur, dangereux ou inapproprié)', 'Signaler'))) return
-    report(e.id)
-    toast('Merci, on regarde ça', 'L\'équipe de modération est notifiée. Après 3 signalements, l\'événement est masqué.')
-  }
+  const onReport = () => openReport({ kind: 'event', targetId: e.id, userId: e.hostId, userName: host?.name })
+
 
   return (
     <div className="scr no-tab ev-scr">

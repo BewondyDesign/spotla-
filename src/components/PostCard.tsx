@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Heart, MessageCircle, MoreHorizontal, Send, Share2, X } from 'lucide-react'
+import { Flag, Heart, MessageCircle, MoreHorizontal, Send, Share2, X } from 'lucide-react'
+import { openReport } from './ReportSheet'
+import { textOk } from '../data/safety'
 import { ConfirmDelete } from './Confirm'
 import type { Post } from '../data/types'
 import { useStore } from '../data/store'
@@ -39,7 +41,9 @@ export function PostCard({ p }: { p: Post }) {
           <Link to={`/u/${u?.id}`}><b>{u?.name}</b> <Verified u={u} /></Link>
           <span>{timeAgo(p.createdAt)}</span>
         </div>
-        {p.authorId === meId && <button className="iconbtn post-more" onClick={() => setAsk({ kind: 'post' })} aria-label="Supprimer la publication"><MoreHorizontal size={20} /></button>}
+        {p.authorId === meId
+          ? <button className="iconbtn post-more" onClick={() => setAsk({ kind: 'post' })} aria-label="Supprimer la publication"><MoreHorizontal size={20} /></button>
+          : <button className="iconbtn post-more" onClick={() => openReport({ kind: 'post', targetId: p.id, userId: p.authorId, userName: u?.name })} aria-label="Signaler la publication"><Flag size={17} /></button>}
       </header>
       {p.text && <p className="post-text">{p.text}</p>}
       {visual}
@@ -59,11 +63,13 @@ export function PostCard({ p }: { p: Post }) {
         <div className="comments">
           {(open ? p.comments : p.comments.slice(-1)).map((c) => {
             const cu = users.find((x) => x.id === c.authorId)
-            return <p key={c.id} className="c-row"><span className="grow"><Link className="c-who" to={`/u/${c.authorId}`}><b>{cu?.name}</b></Link> {c.text}</span>{c.authorId === meId && <button className="c-del" onClick={() => setAsk({ kind: 'comment', id: c.id })} aria-label="Supprimer mon commentaire"><X size={14} /></button>}</p>
+            return <p key={c.id} className="c-row"><span className="grow"><Link className="c-who" to={`/u/${c.authorId}`}><b>{cu?.name}</b></Link> {c.text}</span>{c.authorId === meId
+              ? <button className="c-del" onClick={() => setAsk({ kind: 'comment', id: c.id })} aria-label="Supprimer mon commentaire"><X size={14} /></button>
+              : <button className="c-del" onClick={() => openReport({ kind: 'comment', targetId: c.id, userId: c.authorId, userName: cu?.name })} aria-label="Signaler ce commentaire"><Flag size={13} /></button>}</p>
           })}
           {!open && p.comments.length > 1 && <button className="textlink" onClick={() => setOpen(true)}>Voir les {p.comments.length} commentaires</button>}
           {open && (
-            <form className="comment-form" onSubmit={(e) => { e.preventDefault(); if (draft.trim()) { addComment(p.id, draft.trim()); setDraft('') } }}>
+            <form className="comment-form" onSubmit={(e) => { e.preventDefault(); if (draft.trim() && textOk(draft)) { addComment(p.id, draft.trim()); setDraft('') } }}>
               <input className="input" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Ajouter un commentaire…" aria-label="Commentaire" />
               <button className="iconbtn" aria-label="Envoyer"><Send size={18} /></button>
             </form>
